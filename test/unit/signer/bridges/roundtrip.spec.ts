@@ -8,7 +8,7 @@ describe('Round-trip: RawKey → viemAccount → viemAccountToSigner', () => {
   const pkBytes = new Uint8Array(32).fill(42)
   const pkHex = `0x${Array.from(pkBytes)
     .map(b => b.toString(16).padStart(2, '0'))
-    .join('')}` as `0x${string}`
+    .join('')}`
 
   it('RawKey and round-tripped signer should produce identical Cosmos signatures', async () => {
     const key = new RawKey(pkBytes)

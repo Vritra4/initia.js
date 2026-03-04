@@ -89,8 +89,8 @@ export function keyToViemAccount(key: RawKey): LocalAccount {
         lowS: true,
         format: 'recovered',
       })
-      const r = `0x${bytesToHex(sig.slice(1, 33))}` as `0x${string}`
-      const s = `0x${bytesToHex(sig.slice(33, 65))}` as `0x${string}`
+      const r = `0x${bytesToHex(sig.slice(1, 33))}`
+      const s = `0x${bytesToHex(sig.slice(33, 65))}`
       return serializeTransaction(tx, { r, s, yParity: sig[0] as 0 | 1 })
     },
 
