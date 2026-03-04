@@ -1,0 +1,167 @@
+{
+  "name": "initia.js",
+  "version": "2.0.0",
+  "license": "Apache-2.0",
+  "type": "module",
+  "main": "dist/entry.node.mjs",
+  "types": "dist/entry.node.d.mts",
+  "exports": {
+    ".": {
+      "node": {
+        "types": "./dist/entry.node.d.mts",
+        "import": "./dist/entry.node.mjs"
+      },
+      "default": {
+        "types": "./dist/entry.browser.d.mts",
+        "import": "./dist/entry.browser.mjs"
+      }
+    },
+    "./tx": {
+      "types": "./dist/entry.tx.d.mts",
+      "import": "./dist/entry.tx.mjs"
+    },
+    "./msgs": {
+      "types": "./dist/entry.msgs.d.mts",
+      "import": "./dist/entry.msgs.mjs"
+    },
+    "./client": {
+      "types": "./dist/entry.client.d.mts",
+      "import": "./dist/entry.client.mjs"
+    },
+    "./evm": {
+      "types": "./dist/entry.evm.d.mts",
+      "import": "./dist/entry.evm.mjs"
+    },
+    "./move": {
+      "types": "./dist/entry.move.d.mts",
+      "import": "./dist/entry.move.mjs"
+    },
+    "./wasm": {
+      "types": "./dist/entry.wasm.d.mts",
+      "import": "./dist/entry.wasm.mjs"
+    },
+    "./bridge": {
+      "types": "./dist/entry.bridge.d.mts",
+      "import": "./dist/entry.bridge.mjs"
+    },
+    "./provider": {
+      "types": "./dist/entry.provider.d.mts",
+      "import": "./dist/entry.provider.mjs"
+    },
+    "./util": {
+      "types": "./dist/entry.util.d.mts",
+      "import": "./dist/entry.util.mjs"
+    },
+    "./signer": {
+      "types": "./dist/entry.signer.d.mts",
+      "import": "./dist/entry.signer.mjs"
+    },
+    "./events": {
+      "types": "./dist/entry.events.d.mts",
+      "import": "./dist/entry.events.mjs"
+    },
+    "./usernames": {
+      "types": "./dist/entry.usernames.d.mts",
+      "import": "./dist/entry.usernames.mjs"
+    },
+    "./cosmos": {
+      "types": "./dist/entry.cosmos.d.mts",
+      "import": "./dist/entry.cosmos.mjs"
+    },
+    "./codegen": {
+      "types": "./dist/entry.codegen.d.mts",
+      "import": "./dist/entry.codegen.mjs"
+    },
+    "./vip": {
+      "types": "./dist/entry.vip.d.mts",
+      "import": "./dist/entry.vip.mjs"
+    }
+  },
+  "bin": {
+    "abigen": "./dist/codegen/cli.mjs"
+  },
+  "sideEffects": false,
+  "scripts": {
+    "build": "tsdown src/entry.node.ts src/entry.browser.ts src/entry.cosmos.ts src/entry.tx.ts src/entry.msgs.ts src/entry.client.ts src/entry.evm.ts src/entry.move.ts src/entry.wasm.ts src/entry.bridge.ts src/entry.provider.ts src/entry.util.ts src/entry.signer.ts src/entry.events.ts src/entry.usernames.ts src/entry.codegen.ts src/entry.vip.ts src/codegen/cli.ts --format esm --dts",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:l2": "vitest run test/e2e/l2.spec.ts --reporter verbose",
+    "test:bridge": "vitest run test/e2e/bridge.spec.ts --reporter verbose",
+    "lint": "eslint src",
+    "lint:fix": "eslint src --fix",
+    "format": "prettier --write \"src/**/*.ts\"",
+    "format:check": "prettier --check \"src/**/*.ts\"",
+    "typecheck": "tsc --noEmit",
+    "prepare": "husky",
+    "changeset": "changeset",
+    "version": "changeset version",
+    "release": "npm run build && changeset publish"
+  },
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "dependencies": {
+    "@bufbuild/protobuf": "^2.11.0",
+    "@chain-registry/types": "^2.0.149",
+    "@connectrpc/connect": "^2.1.1",
+    "@connectrpc/connect-node": "^2.1.1",
+    "@connectrpc/connect-web": "^2.1.1",
+    "@initia/initia-registry-types": "^1.0.13",
+    "@mysten/bcs": "^2.0.1",
+    "@noble/curves": "^2.0.1",
+    "@noble/hashes": "^2.0.1",
+    "@scure/base": "^2.0.0",
+    "@scure/bip32": "^2.0.1",
+    "@scure/bip39": "^2.0.1",
+    "abitype": "^1.2.3",
+    "chain-registry": "^2.0.149",
+    "tiny-lru": "^11.4.7",
+    "valibot": "^1.2.0",
+    "viem": "^2.45.1"
+  },
+  "peerDependencies": {
+    "@buf/cosmos_cosmos-sdk.bufbuild_es": "*",
+    "@buf/cosmwasm_wasmd.bufbuild_es": "*",
+    "@buf/initia-labs_initia.bufbuild_es": "*",
+    "@buf/initia-labs_minievm.bufbuild_es": "*",
+    "@buf/initia-labs_opinit.bufbuild_es": "*"
+  },
+  "peerDependenciesMeta": {
+    "@buf/cosmwasm_wasmd.bufbuild_es": {
+      "optional": true
+    },
+    "@buf/initia-labs_minievm.bufbuild_es": {
+      "optional": true
+    },
+    "@buf/initia-labs_opinit.bufbuild_es": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@buf/cosmos_cosmos-sdk.bufbuild_es": "latest",
+    "@buf/cosmwasm_wasmd.bufbuild_es": "latest",
+    "@buf/initia-labs_initia.bufbuild_es": "latest",
+    "@buf/initia-labs_minievm.bufbuild_es": "latest",
+    "@buf/initia-labs_opinit.bufbuild_es": "latest",
+    "@changesets/cli": "^2.29.8",
+    "@types/node": "^25.3.0",
+    "esbuild": "^0.27.2",
+    "eslint": "^9.39.2",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.2.7",
+    "prettier": "^3.8.1",
+    "tsdown": "^0.20.3",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.54.0",
+    "vitest": "^4.0.18"
+  },
+  "lint-staged": {
+    "*.ts": [
+      "eslint --fix",
+      "prettier --write"
+    ]
+  }
+}
