@@ -35,12 +35,12 @@ function addressConversionExample() {
 
   // Different Bech32 prefixes
   const cosmosAddress = AccAddress.fromHex(evmAddress, { prefix: 'cosmos' })
-  const terraAddress = AccAddress.fromHex(evmAddress, { prefix: 'terra' })
+  const celestiaAddress = AccAddress.fromHex(evmAddress, { prefix: 'celestia' })
   const osmosisAddress = AccAddress.fromHex(evmAddress, { prefix: 'osmo' })
 
   console.log('Same address with different prefixes:')
   console.log(`  Cosmos: ${cosmosAddress}`)
-  console.log(`  Terra: ${terraAddress}`)
+  console.log(`  celestia: ${celestiaAddress}`)
   console.log(`  Osmosis: ${osmosisAddress}`)
 
   // All convert back to the same EVM address

@@ -729,16 +729,16 @@ describe.skipIf(SKIP)('Cross-Platform Integration', () => {
       // Different prefixes
       const initAddress = AccAddress.fromHex(evmAddress, { prefix: 'init' })
       const cosmosAddress = AccAddress.fromHex(evmAddress, { prefix: 'cosmos' })
-      const terraAddress = AccAddress.fromHex(evmAddress, { prefix: 'terra' })
+      const celestiaAddress = AccAddress.fromHex(evmAddress, { prefix: 'celestia' })
 
       expect(initAddress.startsWith('init1')).toBe(true)
       expect(cosmosAddress.startsWith('cosmos1')).toBe(true)
-      expect(terraAddress.startsWith('terra1')).toBe(true)
+      expect(celestiaAddress.startsWith('celestia1')).toBe(true)
 
       // All should convert back to the same EVM address
       expect(AccAddress.toHex(initAddress).toLowerCase()).toBe(evmAddress.toLowerCase())
       expect(AccAddress.toHex(cosmosAddress).toLowerCase()).toBe(evmAddress.toLowerCase())
-      expect(AccAddress.toHex(terraAddress).toLowerCase()).toBe(evmAddress.toLowerCase())
+      expect(AccAddress.toHex(celestiaAddress).toLowerCase()).toBe(evmAddress.toLowerCase())
     })
   })
 

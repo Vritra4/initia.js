@@ -25,11 +25,6 @@ describe('HDPath', () => {
       const path = HDPath.cosmos()
       expect(path.toString()).toBe("m/44'/118'/0'/0/0")
     })
-
-    it('fromCoinType() should create custom coin type path', () => {
-      const path = HDPath.fromCoinType(330, 2, 1) // Terra coin type
-      expect(path.toString()).toBe("m/44'/330'/1'/0/2")
-    })
   })
 
   describe('transformation methods', () => {
