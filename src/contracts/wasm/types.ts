@@ -75,7 +75,7 @@ export interface WasmContractSchema {
 }
 
 // =============================================================================
-// Readonly Schema Types (for as const inference)
+// Readonly Schema Types (for wasmAbi() / as const inference)
 // =============================================================================
 
 /**
@@ -94,7 +94,7 @@ export interface ReadonlyWasmVariant {
 
 /**
  * Readonly message schema with oneOf or anyOf variants.
- * Used for as const inference of execute/query message schemas.
+ * Used for `wasmAbi()` / `as const` inference of execute/query message schemas.
  */
 export interface ReadonlyWasmMsgSchema {
   readonly oneOf?: readonly ReadonlyWasmVariant[]
@@ -102,25 +102,29 @@ export interface ReadonlyWasmMsgSchema {
 }
 
 /**
- * Readonly contract schema for as const inference.
+ * Readonly contract schema for `wasmAbi()` / `as const` inference.
  * Contains typed execute and query message schemas.
  *
  * @example
  * ```typescript
- * const schema = {
+ * // Option A: using wasmAbi() helper (recommended)
+ * const schema = wasmAbi({
  *   execute: {
  *     oneOf: [
- *       { required: ['transfer'] as const, properties: { transfer: {} } },
- *       { required: ['burn'] as const, properties: { burn: {} } },
+ *       { required: ['transfer'], properties: { transfer: {} } },
+ *       { required: ['burn'], properties: { burn: {} } },
  *     ]
  *   },
  *   query: {
  *     oneOf: [
- *       { required: ['balance'] as const, properties: { balance: {} } },
- *       { required: ['token_info'] as const, properties: { token_info: {} } },
+ *       { required: ['balance'], properties: { balance: {} } },
+ *       { required: ['token_info'], properties: { token_info: {} } },
  *     ]
  *   },
- * } as const satisfies ReadonlyWasmContractSchema
+ * })
+ *
+ * // Option B: using as const satisfies (also supported)
+ * const schema = { ... } as const satisfies ReadonlyWasmContractSchema
  * ```
  */
 export interface ReadonlyWasmContractSchema {
@@ -225,24 +229,25 @@ export type WasmQueryProxyTyped<T extends ReadonlyWasmMsgSchema> = {
 
 /**
  * WasmContract with typed execute/query proxies from a static schema.
- * Provides IDE autocomplete for variant names when using `as const` schemas.
+ * Provides IDE autocomplete for variant names when using `wasmAbi()` or `as const` schemas.
  *
  * @example
  * ```typescript
- * const schema = {
+ * // Using wasmAbi() helper (recommended — no nested `as const` needed)
+ * const schema = wasmAbi({
  *   execute: {
  *     oneOf: [
- *       { required: ['transfer'] as const, properties: { transfer: {} } },
- *       { required: ['burn'] as const, properties: { burn: {} } },
+ *       { required: ['transfer'], properties: { transfer: {} } },
+ *       { required: ['burn'], properties: { burn: {} } },
  *     ]
  *   },
  *   query: {
  *     oneOf: [
- *       { required: ['balance'] as const, properties: { balance: {} } },
- *       { required: ['token_info'] as const, properties: { token_info: {} } },
+ *       { required: ['balance'], properties: { balance: {} } },
+ *       { required: ['token_info'], properties: { token_info: {} } },
  *     ]
  *   },
- * } as const satisfies ReadonlyWasmContractSchema
+ * })
  *
  * type MyContract = TypedWasmContract<typeof schema>
  * // MyContract.execute.transfer(...)  // autocomplete!

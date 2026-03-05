@@ -4,6 +4,8 @@
  * Type-safe EVM contract interactions via gRPC or JSON-RPC.
  */
 
+export { evmAbi } from '../abi-helpers'
+
 // Contract factory and utilities
 export { createEvmContract, createDeployEvmContractMsg, decodeRevertReason } from './contract'
 

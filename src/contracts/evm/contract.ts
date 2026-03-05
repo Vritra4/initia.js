@@ -177,23 +177,23 @@ export function convertEvmArgs(contractAbi: Abi, functionName: string, args: unk
  * const txHash = await erc20.write.transfer(to, amount)
  * ```
  */
-export function createEvmContract<TAbi extends Abi>(
+export function createEvmContract<const TAbi extends Abi>(
   context: HasEvmService & { evmTransport: 'jsonrpc' },
   address: string,
   abi: TAbi
 ): EvmContractJsonRpc<TAbi>
-export function createEvmContract<TAbi extends Abi>(
+export function createEvmContract<const TAbi extends Abi>(
   context: HasEvmService,
   address: string,
   abi: TAbi,
   options: EvmContractJsonRpcOptions
 ): EvmContractJsonRpc<TAbi>
-export function createEvmContract<TAbi extends Abi>(
+export function createEvmContract<const TAbi extends Abi>(
   context: HasEvmService,
   address: string,
   abi: TAbi
 ): EvmContract<TAbi>
-export function createEvmContract<TAbi extends Abi>(
+export function createEvmContract<const TAbi extends Abi>(
   context: HasEvmService,
   address: string,
   abi: TAbi,
@@ -577,7 +577,7 @@ function createEvmContractJsonRpc<TAbi extends Abi>(
  * const result = await ctx.signAndBroadcast([deployMsg])
  * ```
  */
-export function createDeployEvmContractMsg<TAbi extends Abi>(
+export function createDeployEvmContractMsg<const TAbi extends Abi>(
   sender: string,
   options: DeployEvmContractOptions<TAbi>
 ): MsgCall {

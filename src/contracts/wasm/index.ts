@@ -4,6 +4,8 @@
  * Provides utilities for interacting with CosmWasm contracts.
  */
 
+export { wasmAbi } from '../abi-helpers'
+
 // Types
 export type {
   JsonSchema,

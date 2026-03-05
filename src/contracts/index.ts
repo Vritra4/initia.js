@@ -4,6 +4,9 @@
  * Type-safe contract interactions for EVM, Move, and CosmWasm.
  */
 
+// ABI definition helpers
+export { abi, evmAbi, moveAbi, wasmAbi } from './abi-helpers'
+
 // Common types and utilities
 export type { TokenInfo, NftInfo, OwnerOfResponse, NftApproval, NftExpiration } from './types'
 export { ContractError } from './errors'

@@ -113,3 +113,9 @@ export {
   type WasmEnabled,
   type MoveEnabled,
 } from './token'
+
+// =============================================================================
+// Contracts - VM-agnostic ABI helper
+// =============================================================================
+
+export { abi } from './contracts/abi-helpers'

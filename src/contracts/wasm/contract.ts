@@ -99,21 +99,21 @@ function validateContractAddress(address: string): void {
  *
  * @param context - ChainContext with client (must have wasm service)
  * @param contractAddress - Contract address (bech32)
- * @param schema - Static schema with `as const satisfies ReadonlyWasmContractSchema`
+ * @param schema - Static schema (use `wasmAbi()` or `as const satisfies ReadonlyWasmContractSchema`)
  * @returns Typed wasm contract with IDE autocomplete for variant names
  *
  * @example
  * ```typescript
- * const schema = {
- *   execute: { oneOf: [{ required: ['transfer'] as const, properties: { transfer: {} } }] },
- *   query: { oneOf: [{ required: ['balance'] as const, properties: { balance: {} } }] },
- * } as const satisfies ReadonlyWasmContractSchema
+ * const schema = wasmAbi({
+ *   execute: { oneOf: [{ required: ['transfer'], properties: { transfer: {} } }] },
+ *   query: { oneOf: [{ required: ['balance'], properties: { balance: {} } }] },
+ * })
  *
  * const cw20 = createWasmContract(ctx, 'cosmos1...', schema)
  * cw20.execute.transfer(sender, { recipient: '...', amount: '1000' })  // autocomplete!
  * ```
  */
-export function createWasmContract<T extends ReadonlyWasmContractSchema>(
+export function createWasmContract<const T extends ReadonlyWasmContractSchema>(
   context: HasWasmService,
   contractAddress: string,
   schema: T
