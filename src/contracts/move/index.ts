@@ -4,6 +4,8 @@
  * Provides utilities for interacting with Move modules on Initia.
  */
 
+export { moveAbi } from '../abi-helpers'
+
 // Types
 export type {
   MoveModuleAbi,

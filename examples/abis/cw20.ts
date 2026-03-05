@@ -4,35 +4,43 @@
  * Extracted from the cw20-base contract JSON schema.
  * Only commonly-used variants are included for brevity.
  *
+ * Two styles are supported:
+ *   // Style A: wasmAbi() helper (no nested `as const` needed)
+ *   import { wasmAbi } from 'initia.js/wasm'
+ *   export const CW20_SCHEMA = wasmAbi({...})
+ *
+ *   // Style B: as const satisfies (requires `as const` on each required array)
+ *   import type { ReadonlyWasmContractSchema } from 'initia.js/wasm'
+ *   export const CW20_SCHEMA = {...} as const satisfies ReadonlyWasmContractSchema
+ *
  * Usage:
- *   import { CW20_SCHEMA } from './abis/cw20'
  *   const cw20 = createWasmContract(ctx, addr, CW20_SCHEMA)
  *   cw20.execute.transfer(sender, { recipient: '...', amount: '1000' })
  *   cw20.query.balance({ address: '...' })
  */
 
-import type { ReadonlyWasmContractSchema } from 'initia.js/wasm'
+import { wasmAbi } from 'initia.js/wasm'
 
-export const CW20_SCHEMA = {
+export const CW20_SCHEMA = wasmAbi({
   execute: {
     oneOf: [
-      { required: ['transfer'] as const, properties: { transfer: {} } },
-      { required: ['burn'] as const, properties: { burn: {} } },
-      { required: ['send'] as const, properties: { send: {} } },
-      { required: ['increase_allowance'] as const, properties: { increase_allowance: {} } },
-      { required: ['decrease_allowance'] as const, properties: { decrease_allowance: {} } },
-      { required: ['transfer_from'] as const, properties: { transfer_from: {} } },
-      { required: ['mint'] as const, properties: { mint: {} } },
+      { required: ['transfer'], properties: { transfer: {} } },
+      { required: ['burn'], properties: { burn: {} } },
+      { required: ['send'], properties: { send: {} } },
+      { required: ['increase_allowance'], properties: { increase_allowance: {} } },
+      { required: ['decrease_allowance'], properties: { decrease_allowance: {} } },
+      { required: ['transfer_from'], properties: { transfer_from: {} } },
+      { required: ['mint'], properties: { mint: {} } },
     ],
   },
   query: {
     oneOf: [
-      { required: ['balance'] as const, properties: { balance: {} } },
-      { required: ['token_info'] as const, properties: { token_info: {} } },
-      { required: ['minter'] as const, properties: { minter: {} } },
-      { required: ['allowance'] as const, properties: { allowance: {} } },
-      { required: ['all_allowances'] as const, properties: { all_allowances: {} } },
-      { required: ['all_accounts'] as const, properties: { all_accounts: {} } },
+      { required: ['balance'], properties: { balance: {} } },
+      { required: ['token_info'], properties: { token_info: {} } },
+      { required: ['minter'], properties: { minter: {} } },
+      { required: ['allowance'], properties: { allowance: {} } },
+      { required: ['all_allowances'], properties: { all_allowances: {} } },
+      { required: ['all_accounts'], properties: { all_accounts: {} } },
     ],
   },
-} as const satisfies ReadonlyWasmContractSchema
+})

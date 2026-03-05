@@ -4,16 +4,24 @@
  * Dumped from chain: `await getModuleAbi(ctx, '0x1', 'coin')`
  * Only commonly-used functions are included for brevity.
  *
+ * Two styles are supported:
+ *   // Style A: moveAbi() helper
+ *   import { moveAbi } from 'initia.js/move'
+ *   export const COIN_ABI = moveAbi({...})
+ *
+ *   // Style B: as const satisfies
+ *   import type { ReadonlyMoveModuleAbi } from 'initia.js/move'
+ *   export const COIN_ABI = {...} as const satisfies ReadonlyMoveModuleAbi
+ *
  * Usage:
- *   import { COIN_ABI } from './abis/coin'
  *   const coin = createMoveContract(ctx, COIN_ABI)       // sync!
  *   coin.view.name({ args: [metadataAddr] })              // → Promise<string>
  *   coin.execute.transfer(sender, { typeArgs: [...], ... })
  */
 
-import type { ReadonlyMoveModuleAbi } from 'initia.js/move'
+import { moveAbi } from 'initia.js/move'
 
-export const COIN_ABI = {
+export const COIN_ABI = moveAbi({
   address: '0x1',
   name: 'coin',
   friends: [],
@@ -74,4 +82,4 @@ export const COIN_ABI = {
     },
   ],
   structs: [],
-} as const satisfies ReadonlyMoveModuleAbi
+})

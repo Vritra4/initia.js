@@ -297,7 +297,7 @@ export { UpgradePolicy } from '@buf/initia-labs_initia.bufbuild_es/initia/move/v
 // Static ABI Type Inference (Phase 4)
 // =============================================================================
 
-/** Readonly function ABI for as const inference */
+/** Readonly function ABI for `moveAbi()` / `as const` inference */
 export interface ReadonlyMoveFunctionAbi {
   readonly name: string
   readonly visibility: string
@@ -311,7 +311,7 @@ export interface ReadonlyMoveFunctionAbi {
   readonly return: readonly string[]
 }
 
-/** Readonly module ABI for as const inference */
+/** Readonly module ABI for `moveAbi()` / `as const` inference */
 export interface ReadonlyMoveModuleAbi {
   readonly address: string
   readonly name: string

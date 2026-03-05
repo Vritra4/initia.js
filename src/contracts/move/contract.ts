@@ -508,17 +508,25 @@ function buildContract(
  * Returns synchronously since no ABI fetch is needed.
  *
  * @param context - ChainContext with client (must have move service)
- * @param abi - Static ABI object (use `as const satisfies ReadonlyMoveModuleAbi`)
+ * @param abi - Static ABI object (use `moveAbi()` or `as const satisfies ReadonlyMoveModuleAbi`)
  * @returns Typed Move contract instance with autocomplete and type inference
  *
  * @example
  * ```typescript
- * const COIN_ABI = { ... } as const satisfies ReadonlyMoveModuleAbi
+ * const COIN_ABI = moveAbi({
+ *   address: '0x1', name: 'coin', friends: [],
+ *   exposed_functions: [
+ *     { name: 'decimals', visibility: 'public', is_entry: false, is_view: true,
+ *       generic_type_params: [], params: ['0x1::object::Object<0x1::fungible_asset::Metadata>'],
+ *       return: ['u8'] },
+ *   ],
+ *   structs: [],
+ * })
  * const coin = createMoveContract(ctx, COIN_ABI)
  * const dec = await coin.view.decimals({ args: ['0xabc'] }) // dec: number
  * ```
  */
-export function createMoveContract<T extends ReadonlyMoveModuleAbi>(
+export function createMoveContract<const T extends ReadonlyMoveModuleAbi>(
   context: HasMoveService,
   abi: T
 ): TypedMoveContract<T>

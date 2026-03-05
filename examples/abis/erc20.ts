@@ -1,17 +1,25 @@
 /**
  * Static ERC20 ABI for typed contract interactions.
  *
+ * Two styles are supported:
+ *   // Style A: evmAbi() helper
+ *   import { evmAbi } from 'initia.js/evm'
+ *   export const ERC20_ABI = evmAbi([...])
+ *
+ *   // Style B: as const satisfies (familiar to viem users)
+ *   import type { Abi } from 'initia.js/evm'
+ *   export const ERC20_ABI = [...] as const satisfies Abi
+ *
  * Usage:
- *   import { ERC20_ABI } from './abis/erc20'
  *   const erc20 = createEvmContract(ctx, addr, ERC20_ABI)
  *   erc20.read.name()          // → Promise<string>
  *   erc20.read.balanceOf(addr) // → Promise<bigint>
  *   erc20.write.transfer(...)  // → Message (args typed)
  */
 
-import type { Abi } from 'initia.js/evm'
+import { evmAbi } from 'initia.js/evm'
 
-export const ERC20_ABI = [
+export const ERC20_ABI = evmAbi([
   {
     type: 'function',
     name: 'name',
@@ -106,4 +114,4 @@ export const ERC20_ABI = [
       { name: 'value', type: 'uint256', indexed: false },
     ],
   },
-] as const satisfies Abi
+])
