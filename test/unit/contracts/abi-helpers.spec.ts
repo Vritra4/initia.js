@@ -41,16 +41,16 @@ describe('evmAbi', () => {
   })
 
   it('is identity at runtime', () => {
-    const input = [
+    const input: Abi = [
       {
-        type: 'function' as const,
-        name: 'name' as const,
-        inputs: [] as const,
-        outputs: [{ name: '' as const, type: 'string' as const }],
-        stateMutability: 'view' as const,
+        type: 'function',
+        name: 'name',
+        inputs: [],
+        outputs: [{ name: '', type: 'string' }],
+        stateMutability: 'view',
       },
     ]
-    const result = evmAbi(input as Abi)
+    const result = evmAbi(input)
     expect(result).toBe(input)
   })
 })
@@ -135,8 +135,8 @@ describe('wasmAbi', () => {
   })
 
   it('is identity at runtime', () => {
-    // `as const` on required is needed: pre-assigned variables widen to string[]
-    // which doesn't satisfy readonly tuple constraint in ReadonlyWasmVariant
+    // TypeScript widens `required: ['transfer']` to `string[]` when assigned to a
+    // variable. `as const` retains the literal tuple type. Inline literals do not need this.
     const input = {
       execute: {
         oneOf: [{ required: ['transfer'] as const, properties: { transfer: {} } }],
@@ -200,6 +200,8 @@ describe('end-to-end type compatibility', () => {
 
 describe('abi (unified overload)', () => {
   it('dispatches array to EVM and preserves literal types', () => {
+    // TypeScript widens string literals when assigned to a variable.
+    // `as const` retains the literal type. Inline literals do not need this.
     const input = [
       {
         type: 'function' as const,
@@ -215,6 +217,8 @@ describe('abi (unified overload)', () => {
   })
 
   it('dispatches object with address+name to Move and preserves literal types', () => {
+    // TypeScript widens array literals to `never[]` when assigned to a variable.
+    // Explicit type annotations retain the correct element types.
     const input = {
       address: '0x1',
       name: 'coin',
@@ -228,8 +232,8 @@ describe('abi (unified overload)', () => {
   })
 
   it('dispatches object with execute/query to Wasm and preserves literal types', () => {
-    // `as const` on required is needed here: unified abi() overload cannot narrow
-    // pre-assigned variables (string[] doesn't satisfy readonly tuple constraint)
+    // TypeScript widens `required: ['transfer']` to `string[]` when assigned to a
+    // variable. `as const` retains the literal tuple type. Inline literals do not need this.
     const input = {
       execute: {
         oneOf: [{ required: ['transfer'] as const, properties: { transfer: {} } }],

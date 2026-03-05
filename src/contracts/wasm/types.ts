@@ -102,7 +102,7 @@ export interface ReadonlyWasmMsgSchema {
 }
 
 /**
- * Readonly contract schema for as const inference.
+ * Readonly contract schema for `wasmAbi()` / `as const` inference.
  * Contains typed execute and query message schemas.
  *
  * @example
