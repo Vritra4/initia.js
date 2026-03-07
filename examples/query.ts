@@ -13,9 +13,7 @@ import { createInitiaContext } from 'initia.js'
 import { SENDER } from './constants'
 
 async function main() {
-  // Query-only context (no key needed) — narrowed to 'initia' for type-safe service access
   const ctx = await createInitiaContext({ network: 'testnet' })
-
   console.log('Connected to:', ctx.chainId)
 
   // -------------------------------------------------------------------------
@@ -25,21 +23,15 @@ async function main() {
 
   const address = SENDER.bech32
 
-  // Bank queries (available on BaseClient)
-  const balanceResponse = await ctx.client.bank.balance({
-    address,
-    denom: 'uinit',
-  })
+  const balanceResponse = await ctx.client.bank.balance({ address, denom: 'uinit' })
   console.log('Balance:', balanceResponse.balance?.amount, 'uinit')
 
   const allBalancesResponse = await ctx.client.bank.allBalances({ address })
   console.log('All balances:', allBalancesResponse.balances.length, 'denoms')
 
-  // Auth queries (available on BaseClient)
   const accountResponse = await ctx.client.auth.account({ address })
   console.log('Account type:', accountResponse.account?.typeUrl)
 
-  // Staking queries (mstaking available via narrowed InitiaClient)
   const delegationsResponse = await ctx.client.mstaking.delegatorDelegations({
     delegatorAddr: address,
   })
