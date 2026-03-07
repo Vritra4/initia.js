@@ -86,7 +86,7 @@ declare class AbortController {
 declare interface AbortSignal {
   readonly aborted: boolean
   readonly reason: unknown
-  addEventListener(type: 'abort', listener: () => void): void
+  addEventListener(type: 'abort', listener: () => void, options?: { once?: boolean }): void
   removeEventListener(type: 'abort', listener: () => void): void
 }
 

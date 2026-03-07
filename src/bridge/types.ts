@@ -281,6 +281,8 @@ export interface WatchDepositOptions {
   l1Sequence?: Numeric
   sender?: string
   recipient?: string
+  /** Called when a WebSocket subscription fails. If not provided, the watch is terminated and an error is logged via console.error. The waitForDeposit() wrapper handles this via Promise rejection. */
+  onError?: (error: unknown) => void
 }
 
 export interface WatchWithdrawalOptions {
@@ -288,6 +290,8 @@ export interface WatchWithdrawalOptions {
   l2Sequence?: Numeric
   sender?: string
   timeout?: number
+  /** Called when a WebSocket subscription, query, or timeout fails. If not provided, the watch is terminated and an error is logged via console.error. The waitForClaimable() wrapper handles this via Promise rejection. */
+  onError?: (error: unknown) => void
 }
 
 export interface BridgeWatchHandle {

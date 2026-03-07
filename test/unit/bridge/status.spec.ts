@@ -3,6 +3,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { ConnectError, Code } from '@connectrpc/connect'
 import { base64 } from '@scure/base'
 import type { ChainInfo, ChainInfoProvider } from '../../../src/provider/types'
 
@@ -262,6 +263,22 @@ describe('Bridge: Status Determination', () => {
       expect(mockOphost.claimed).toHaveBeenCalledOnce()
     })
 
+    it('should propagate non-NotFound gRPC errors from outputProposal', async () => {
+      const provider = createMockProvider([l1Chain, l2Chain])
+      const bridge = new Bridge(provider)
+
+      mockFetch.mockResolvedValueOnce(mockFetchList([makeExecutorWithdrawal({ output_index: 5 })]))
+
+      // Non-NotFound error must propagate, not be silently swallowed
+      mockOphost.outputProposal.mockRejectedValueOnce(
+        new ConnectError('internal server error', Code.Internal)
+      )
+
+      await expect(bridge.getWithdrawals('minimove-1', 'init1address')).rejects.toThrow(
+        ConnectError
+      )
+    })
+
     it('should throw for missing executorUri', async () => {
       const provider = createMockProvider([l1Chain, l2ChainNoExecutor])
       const bridge = new Bridge(provider)
@@ -307,10 +324,23 @@ describe('Bridge: Status Determination', () => {
       mockFetch.mockResolvedValueOnce(mockFetchSingle(makeExecutorWithdrawal({ output_index: 5 })))
 
       // outputProposal fails — output not found
-      mockOphost.outputProposal.mockRejectedValueOnce(new Error('not found'))
+      mockOphost.outputProposal.mockRejectedValueOnce(new ConnectError('not found', Code.NotFound))
 
       const result = await bridge.getWithdrawalStatus('minimove-1', 1n)
       expect(result.status).toEqual({ status: 'pending' })
+    })
+
+    it('should propagate non-NotFound gRPC errors', async () => {
+      const provider = createMockProvider([l1Chain, l2Chain])
+      const bridge = new Bridge(provider)
+
+      mockFetch.mockResolvedValueOnce(mockFetchSingle(makeExecutorWithdrawal({ output_index: 5 })))
+
+      mockOphost.outputProposal.mockRejectedValueOnce(
+        new ConnectError('internal server error', Code.Internal)
+      )
+
+      await expect(bridge.getWithdrawalStatus('minimove-1', 1n)).rejects.toThrow(ConnectError)
     })
 
     it('should throw for missing executorUri', async () => {
