@@ -18,13 +18,20 @@ import type { DirectSigner, DirectSignDoc, DirectSignResponse } from '../types'
  *
  * @param pkBytes - 32-byte private key
  * @param publicKey - 33-byte compressed public key
- * @param prefix - Bech32 prefix (default: 'init')
+ * @param prefix - Bech32 prefix (e.g., 'init')
  */
 export function createEthSecp256k1Signer(
   pkBytes: Uint8Array,
   publicKey: Uint8Array,
   prefix: string
 ): DirectSigner {
+  if (pkBytes.length !== 32) {
+    throw new Error(`Private key must be 32 bytes, got ${pkBytes.length}`)
+  }
+  if (publicKey.length !== 33) {
+    throw new Error(`Public key must be 33 bytes (compressed), got ${publicKey.length}`)
+  }
+
   // Derive address (ethsecp256k1 = keccak256 of uncompressed[1:])
   const point = secp256k1.Point.fromHex(bytesToHex(publicKey))
   const uncompressed = point.toBytes(false).slice(1)

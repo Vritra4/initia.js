@@ -1,5 +1,5 @@
 import type { HasClient } from './types'
-import { ConnectError, Code } from '@connectrpc/connect'
+import { isNotFoundError } from '../errors'
 import type { Any } from '@bufbuild/protobuf/wkt'
 import { anyUnpack } from '@bufbuild/protobuf/wkt'
 import {
@@ -212,7 +212,7 @@ async function queryAuth(client: AuthQueryClient, address: string): Promise<Auth
   try {
     response = await client.auth.account({ address })
   } catch (err) {
-    if (err instanceof ConnectError && err.code === Code.NotFound) {
+    if (isNotFoundError(err)) {
       return null
     }
     throw err
@@ -263,7 +263,7 @@ async function queryWasmContract(client: WasmQueryClient, address: string): Prom
     const response = await client.wasm.contractInfo({ address })
     return response.contractInfo?.codeId ?? null
   } catch (err) {
-    if (err instanceof ConnectError && err.code === Code.NotFound) {
+    if (isNotFoundError(err)) {
       return null
     }
     throw err

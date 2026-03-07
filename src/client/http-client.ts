@@ -7,6 +7,7 @@
 
 import { DEFAULT_REQUEST_TIMEOUT_MS } from '../constants'
 import { toFetchHeaders } from './headers'
+import { mergeAbortSignals } from '../util/fetch'
 import type { AuthConfig, HttpRequestOptions } from './types'
 
 /**
@@ -24,7 +25,7 @@ export interface HttpClientConfig {
  *
  * Header priority: config.headers (base) → config.auth → requestOptions.headers (highest)
  * Timeout: requestOptions.timeoutMs → config.timeoutMs → DEFAULT_REQUEST_TIMEOUT_MS
- * Signal: merged via AbortSignal.any() when user signal is provided
+ * Signal: merged with user signal when provided (AbortSignal.any or manual forwarding fallback)
  */
 export async function httpRequest(
   config: HttpClientConfig,
@@ -37,7 +38,7 @@ export async function httpRequest(
 
   const controller = new AbortController()
   const signal = requestOptions?.signal
-    ? AbortSignal.any([requestOptions.signal, controller.signal])
+    ? mergeAbortSignals(requestOptions.signal, controller)
     : controller.signal
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs)
 

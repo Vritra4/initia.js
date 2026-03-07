@@ -4,6 +4,17 @@
  * All SDK errors extend InitiaError for easy catch-all handling.
  */
 
+import { ConnectError, Code } from '@connectrpc/connect'
+
+/**
+ * Check if an error is a gRPC NotFound error.
+ * Centralizes the ConnectError + Code.NotFound pattern used across the codebase.
+ * Also acts as a type guard, narrowing the error to `ConnectError`.
+ */
+export function isNotFoundError(err: unknown): err is ConnectError {
+  return err instanceof ConnectError && err.code === Code.NotFound
+}
+
 /**
  * Base error class for all initia.js errors.
  *

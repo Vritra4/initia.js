@@ -16,6 +16,15 @@ import { Message, type MoveExecuteInput } from './types'
  * Accepts positional args or an object: `execute({ sender, moduleAddress, moduleName, functionName, typeArgs, args })`.
  */
 export function execute(
+  sender: string,
+  moduleAddress: string,
+  moduleName: string,
+  functionName: string,
+  typeArgs: string[],
+  args: Uint8Array[]
+): Message<typeof MsgExecuteSchema>
+export function execute(input: MoveExecuteInput): Message<typeof MsgExecuteSchema>
+export function execute(
   senderOrInput: string | MoveExecuteInput,
   moduleAddress?: string,
   moduleName?: string,

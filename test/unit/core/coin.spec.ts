@@ -4,6 +4,7 @@
 
 import { describe, it, expect } from 'vitest'
 import { Coin, coin, coins, parseCoin } from '../../../src/core/coin'
+import { ValidationError } from '../../../src/errors'
 
 describe('Coin', () => {
   describe('constructor', () => {
@@ -21,6 +22,26 @@ describe('Coin', () => {
     it('should create coin with bigint amount', () => {
       const c = new Coin('uinit', 1000000n)
       expect(c.amount).toBe('1000000')
+    })
+
+    it('should reject non-numeric strings', () => {
+      expect(() => new Coin('uinit', '1.5')).toThrow(ValidationError)
+      expect(() => new Coin('uinit', 'abc')).toThrow(ValidationError)
+      expect(() => new Coin('uinit', '')).toThrow(ValidationError)
+      expect(() => new Coin('uinit', '12abc')).toThrow(ValidationError)
+    })
+
+    it('should reject non-safe-integer numbers', () => {
+      expect(() => new Coin('uinit', NaN)).toThrow(ValidationError)
+      expect(() => new Coin('uinit', Infinity)).toThrow(ValidationError)
+      expect(() => new Coin('uinit', 1.5)).toThrow(ValidationError)
+      expect(() => new Coin('uinit', Number.MAX_SAFE_INTEGER + 1)).toThrow(ValidationError)
+    })
+
+    it('should accept negative integers (for subtraction results)', () => {
+      expect(new Coin('uinit', '-100').amount).toBe('-100')
+      expect(new Coin('uinit', -100).amount).toBe('-100')
+      expect(new Coin('uinit', -100n).amount).toBe('-100')
     })
   })
 

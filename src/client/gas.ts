@@ -15,7 +15,7 @@ import {
 import { SignMode } from '@buf/cosmos_cosmos-sdk.bufbuild_es/cosmos/tx/signing/v1beta1/signing_pb'
 import { Coin } from '../core/coin'
 import { getAccount, type AuthClient } from '../core/account'
-import { AccountNotFoundError, ParseError, SimulationError } from '../errors'
+import { AccountNotFoundError, isNotFoundError, ParseError, SimulationError } from '../errors'
 
 /**
  * Gas estimation result.
@@ -81,8 +81,14 @@ function calculateFee(gasLimit: bigint, gasPrice: string): Coin[] {
 /**
  * Multiply a bigint by a float using fixed-point arithmetic.
  * Avoids Number(bigint) precision loss for values > 2^53.
+ * The multiplier is scaled to 6 decimal places and ceiled, so the result
+ * may be slightly above the true mathematical ceiling. This is safe for
+ * gas estimation (always rounds in the user's favor).
  */
 function mulBigIntByFloat(value: bigint, multiplier: number): bigint {
+  if (!Number.isFinite(multiplier) || multiplier < 0) {
+    throw new ParseError('multiplier', `Expected a non-negative finite number, got: ${multiplier}`)
+  }
   const PRECISION = 1_000_000n
   const scaledMultiplier = BigInt(Math.ceil(multiplier * Number(PRECISION)))
   return (value * scaledMultiplier + PRECISION - 1n) / PRECISION // ceil division
@@ -126,8 +132,9 @@ export async function estimateGas(
     sequence = account.sequence
   } catch (error) {
     // Account not found = new account, sequence 0 is correct.
+    // Some chains return gRPC NotFound for non-existent accounts.
     // Any other error (network, auth) should propagate.
-    if (!(error instanceof AccountNotFoundError)) {
+    if (!(error instanceof AccountNotFoundError) && !isNotFoundError(error)) {
       throw error
     }
   }

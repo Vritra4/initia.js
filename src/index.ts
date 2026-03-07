@@ -43,6 +43,7 @@ export {
   type BroadcastErrorCategory,
   ChainNotFoundError,
   HeaderConflictError,
+  isNotFoundError,
   SimulationError,
   TimeoutError,
 } from './errors'

@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { TimeoutError } from '../../../src/errors'
 import { parseTxEvents } from '../../../src/bridge/watch'
 import type { WsTxResult } from '../../../src/client/websocket'
 import type { ChainInfoProvider, ChainInfo } from '../../../src/provider/types'
@@ -381,10 +382,34 @@ describe('waitForDeposit', () => {
     expect(result.l1Sequence).toBe(42n)
   })
 
-  it('should reject on timeout', async () => {
+  it('should reject on timeout with TimeoutError', async () => {
     await expect(
       waitForDeposit(mockProvider, { l2ChainId: 'minimove-1', l1Sequence: 999n, timeout: 50 })
-    ).rejects.toThrow('timed out')
+    ).rejects.toThrow(TimeoutError)
+  })
+
+  it('should reject when onError is triggered by subscription failure', async () => {
+    // Create a mock that rejects the subscribe promise to simulate WS failure
+    const { createSession } = await import('../../../src/client/websocket/session')
+    const mockedCreateSession = vi.mocked(createSession)
+
+    // Make the L1 subscription fail
+    mockedCreateSession.mockReturnValueOnce({
+      subscribe: vi.fn().mockRejectedValueOnce(new Error('WebSocket connection failed')),
+      close: vi.fn(),
+    } as any)
+    // L2 subscription succeeds
+    mockedCreateSession.mockReturnValueOnce({
+      subscribe: vi.fn(async (_spec: unknown, cb: SubscribeCallback) => {
+        subscribeCallbacks.push(cb)
+        return { id: 'sub-ok', unsubscribe: vi.fn() }
+      }),
+      close: vi.fn(),
+    } as any)
+
+    await expect(
+      waitForDeposit(mockProvider, { l2ChainId: 'minimove-1', l1Sequence: 42n, timeout: 5000 })
+    ).rejects.toThrow('WebSocket connection failed')
   })
 })
 
@@ -397,9 +422,30 @@ describe('waitForClaimable', () => {
     subscribeCallbacks.length = 0
   })
 
-  it('should reject on timeout', async () => {
+  it('should reject on timeout with TimeoutError', async () => {
     await expect(
       waitForClaimable(mockProvider, { l2ChainId: 'minimove-1', l2Sequence: 10n, timeout: 50 })
-    ).rejects.toThrow('timed out')
+    ).rejects.toThrow(TimeoutError)
+  })
+
+  it('should not pass timeout to underlying watchWithdrawal', async () => {
+    // waitForEvent should own timeout semantics, not duplicate with watchWithdrawal
+    // If timeout IS passed through, watchWithdrawal's internal timeout would also fire,
+    // causing double-timeout. We verify by checking that a short timeout results in
+    // exactly one TimeoutError rejection (not double invocation of onError).
+    const onErrorSpy = vi.fn()
+
+    await expect(
+      waitForClaimable(mockProvider, {
+        l2ChainId: 'minimove-1',
+        l2Sequence: 10n,
+        timeout: 50,
+        onError: onErrorSpy,
+      })
+    ).rejects.toThrow(TimeoutError)
+
+    // onError should NOT be called by the underlying watcher's own timeout
+    // (since timeout: undefined is passed to watchWithdrawal)
+    expect(onErrorSpy).not.toHaveBeenCalled()
   })
 })

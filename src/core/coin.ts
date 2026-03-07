@@ -33,6 +33,10 @@ export class Coin {
     if (typeof amount === 'string' && !/^-?\d+$/.test(amount)) {
       throw new ValidationError('amount', `Invalid numeric string: '${amount}'`)
     }
+    // isSafeInteger rejects NaN, Infinity, floats, and integers > 2^53 that lose precision in String()
+    if (typeof amount === 'number' && !Number.isSafeInteger(amount)) {
+      throw new ValidationError('amount', `Amount must be a safe integer, got: ${amount}`)
+    }
     this.denom = denom
     this._amount = String(amount)
   }

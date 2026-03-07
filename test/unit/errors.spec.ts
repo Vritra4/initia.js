@@ -20,9 +20,43 @@ import {
   ValidationError,
   KeyError,
   ParseError,
+  isNotFoundError,
 } from '../../src/errors'
+import { ConnectError, Code } from '@connectrpc/connect'
 import { NoSignerError } from '../../src/wallet/chain-context'
 import { UsernameServiceError } from '../../src/client/usernames/types'
+
+// =============================================================================
+// isNotFoundError — gRPC error classification
+// =============================================================================
+
+describe('isNotFoundError', () => {
+  it('should return true for ConnectError with Code.NotFound', () => {
+    const err = new ConnectError('not found', Code.NotFound)
+    expect(isNotFoundError(err)).toBe(true)
+  })
+
+  it('should return false for ConnectError with different codes', () => {
+    expect(isNotFoundError(new ConnectError('internal', Code.Internal))).toBe(false)
+    expect(isNotFoundError(new ConnectError('unavailable', Code.Unavailable))).toBe(false)
+    expect(isNotFoundError(new ConnectError('permission', Code.PermissionDenied))).toBe(false)
+  })
+
+  it('should return false for non-ConnectError', () => {
+    expect(isNotFoundError(new Error('not found'))).toBe(false)
+    expect(isNotFoundError(new InitiaError('not found'))).toBe(false)
+    expect(isNotFoundError(null)).toBe(false)
+    expect(isNotFoundError(undefined)).toBe(false)
+  })
+
+  it('should narrow type to ConnectError', () => {
+    const err: unknown = new ConnectError('not found', Code.NotFound)
+    if (isNotFoundError(err)) {
+      // Type guard should allow accessing ConnectError properties
+      expect(err.code).toBe(Code.NotFound)
+    }
+  })
+})
 
 // =============================================================================
 // Base Error Class
