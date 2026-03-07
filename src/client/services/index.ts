@@ -16,7 +16,7 @@ import { OtherServices } from './other'
 
 export { InitiaServices, MinievmServices, MiniwasmServices, MinimoveServices, OtherServices }
 
-function getServiceRegistry(chainType: ChainType) {
+export function getServiceRegistry(chainType: ChainType) {
   switch (chainType) {
     case 'initia':
       return InitiaServices

@@ -281,6 +281,8 @@ export interface WatchDepositOptions {
   l1Sequence?: Numeric
   sender?: string
   recipient?: string
+  /** Called when a WebSocket subscription fails. If omitted, errors are silently ignored. */
+  onError?: (error: unknown) => void
 }
 
 export interface WatchWithdrawalOptions {
@@ -288,6 +290,8 @@ export interface WatchWithdrawalOptions {
   l2Sequence?: Numeric
   sender?: string
   timeout?: number
+  /** Called when a WebSocket subscription or query fails. If omitted, errors are silently ignored. */
+  onError?: (error: unknown) => void
 }
 
 export interface BridgeWatchHandle {

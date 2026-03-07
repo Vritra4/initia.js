@@ -30,6 +30,9 @@ export class Coin {
   private readonly _amount: string
 
   constructor(denom: string, amount: string | bigint | number) {
+    if (typeof amount === 'string' && !/^-?\d+$/.test(amount)) {
+      throw new ValidationError('amount', `Invalid numeric string: '${amount}'`)
+    }
     this.denom = denom
     this._amount = String(amount)
   }

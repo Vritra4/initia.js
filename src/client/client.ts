@@ -6,16 +6,9 @@ import type { Transport } from '@connectrpc/connect'
 import type { ChainInfo, ChainInfoForType } from '../provider/types'
 import { createGrpcClient } from './grpc-client'
 import { wrapClientWithCache } from './cached-client'
-import {
-  InitiaServices,
-  MinievmServices,
-  MiniwasmServices,
-  MinimoveServices,
-  OtherServices,
-} from './services'
+import { getServiceRegistry } from './services'
 import type {
   AuthConfig,
-  ChainType,
   Client,
   InitiaClient,
   MinievmClient,
@@ -23,24 +16,6 @@ import type {
   MinimoveClient,
   BaseClient,
 } from './types'
-
-/**
- * Get service registry for a chain type.
- */
-function getServiceRegistry(chainType: ChainType) {
-  switch (chainType) {
-    case 'initia':
-      return InitiaServices
-    case 'minievm':
-      return MinievmServices
-    case 'miniwasm':
-      return MiniwasmServices
-    case 'minimove':
-      return MinimoveServices
-    default:
-      return OtherServices
-  }
-}
 
 /**
  * Create a gRPC client from chain info and an existing transport.

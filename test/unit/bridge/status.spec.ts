@@ -3,6 +3,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { ConnectError, Code } from '@connectrpc/connect'
 import { base64 } from '@scure/base'
 import type { ChainInfo, ChainInfoProvider } from '../../../src/provider/types'
 
@@ -307,7 +308,7 @@ describe('Bridge: Status Determination', () => {
       mockFetch.mockResolvedValueOnce(mockFetchSingle(makeExecutorWithdrawal({ output_index: 5 })))
 
       // outputProposal fails — output not found
-      mockOphost.outputProposal.mockRejectedValueOnce(new Error('not found'))
+      mockOphost.outputProposal.mockRejectedValueOnce(new ConnectError('not found', Code.NotFound))
 
       const result = await bridge.getWithdrawalStatus('minimove-1', 1n)
       expect(result.status).toEqual({ status: 'pending' })

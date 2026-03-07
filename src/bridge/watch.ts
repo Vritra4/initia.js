@@ -147,7 +147,7 @@ export function watchDeposit(
       }
     })
     .then(sub => subs.push(sub))
-    .catch(() => {})
+    .catch(err => options.onError?.(err))
 
   // L2: finalize_token_deposit
   const l2Session = createSession(l2Info)
@@ -172,7 +172,7 @@ export function watchDeposit(
       }
     })
     .then(sub => subs.push(sub))
-    .catch(() => {})
+    .catch(err => options.onError?.(err))
 
   return { unsubscribe: cleanup }
 }
@@ -234,8 +234,8 @@ export function watchWithdrawal(
       const resp = await ophost.bridge({ bridgeId })
       const fp = resp.bridgeConfig?.finalizationPeriod
       if (fp) finalizationMs = durationToMs(fp)
-    } catch {
-      // If we can't get finalization period, skip waiting -> claimable
+    } catch (err) {
+      options.onError?.(err)
     }
   })()
 
@@ -261,7 +261,7 @@ export function watchWithdrawal(
       }
     })
     .then(sub => subs.push(sub))
-    .catch(() => {})
+    .catch(err => options.onError?.(err))
 
   // L1: propose_output + finalize_token_withdrawal
   const l1Session = createSession(l1Info)
@@ -292,7 +292,7 @@ export function watchWithdrawal(
       }
     })
     .then(sub => subs.push(sub))
-    .catch(() => {})
+    .catch(err => options.onError?.(err))
 
   const claimFilter = buildWithdrawalFilter('finalize_token_withdrawal', options, bridgeId)
   void l1Session
@@ -312,7 +312,7 @@ export function watchWithdrawal(
       }
     })
     .then(sub => subs.push(sub))
-    .catch(() => {})
+    .catch(err => options.onError?.(err))
 
   return { unsubscribe: cleanup }
 }

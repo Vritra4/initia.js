@@ -25,6 +25,7 @@ import type {
 } from './types'
 import { parseCoin } from '../core/coin'
 import { hexToBytes } from '@noble/hashes/utils.js'
+import { ConnectError, Code } from '@connectrpc/connect'
 import { fromChain } from '../client/from-chain-standalone'
 import { fetchWithdrawals, fetchWithdrawal, type FetchWithdrawalsOptions } from './executor'
 import { calculateWithdrawalHash } from './hash'
@@ -208,8 +209,11 @@ export class OpBridgeInternal {
       if (proposalsResponse.outputProposals.length > 0) {
         latestProposedIndex = proposalsResponse.outputProposals[0].outputIndex
       }
-    } catch {
-      // No proposals yet — all withdrawals are pending
+    } catch (err) {
+      // No proposals yet is normal for new bridges; any other error should propagate
+      if (!(err instanceof ConnectError && err.code === Code.NotFound)) {
+        throw err
+      }
     }
 
     // 4. Query outputProposal for each unique non-pending outputIndex
@@ -230,8 +234,11 @@ export class OpBridgeInternal {
           if (response.outputProposal?.l1BlockTime) {
             outputTimestamps.set(outputIndex, timestampToMs(response.outputProposal.l1BlockTime))
           }
-        } catch {
-          // Output not found — treat as pending
+        } catch (err) {
+          // Output not found is expected; other errors should propagate
+          if (!(err instanceof ConnectError && err.code === Code.NotFound)) {
+            throw err
+          }
         }
       })
     )
@@ -296,8 +303,10 @@ export class OpBridgeInternal {
           outputTimestamps.set(raw.outputIndex, timestampToMs(response.outputProposal.l1BlockTime))
           latestProposedIndex = raw.outputIndex // exists, so it's at least this
         }
-      } catch {
-        // Output not found → pending
+      } catch (err) {
+        if (!(err instanceof ConnectError && err.code === Code.NotFound)) {
+          throw err
+        }
       }
     }
 

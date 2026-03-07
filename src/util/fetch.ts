@@ -20,8 +20,14 @@ export async function fetchWithTimeout(url: string, init?: FetchOptions): Promis
   const controller = new AbortController()
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs)
 
+  // Merge caller's signal with timeout signal to respect both
+  const signal =
+    fetchInit.signal && typeof AbortSignal.any === 'function'
+      ? AbortSignal.any([fetchInit.signal, controller.signal])
+      : controller.signal
+
   try {
-    return await fetch(url, { ...fetchInit, signal: controller.signal })
+    return await fetch(url, { ...fetchInit, signal })
   } finally {
     clearTimeout(timeoutId)
   }

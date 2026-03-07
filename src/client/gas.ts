@@ -15,7 +15,7 @@ import {
 import { SignMode } from '@buf/cosmos_cosmos-sdk.bufbuild_es/cosmos/tx/signing/v1beta1/signing_pb'
 import { Coin } from '../core/coin'
 import { getAccount, type AuthClient } from '../core/account'
-import { ParseError, SimulationError } from '../errors'
+import { AccountNotFoundError, ParseError, SimulationError } from '../errors'
 
 /**
  * Gas estimation result.
@@ -74,9 +74,18 @@ function parseGasPrice(gasPrice: string): { amount: string; denom: string } {
  */
 function calculateFee(gasLimit: bigint, gasPrice: string): Coin[] {
   const { amount, denom } = parseGasPrice(gasPrice)
-  const priceNum = parseFloat(amount)
-  const feeAmount = Math.ceil(Number(gasLimit) * priceNum)
+  const feeAmount = mulBigIntByFloat(gasLimit, parseFloat(amount))
   return [new Coin(denom, feeAmount)]
+}
+
+/**
+ * Multiply a bigint by a float using fixed-point arithmetic.
+ * Avoids Number(bigint) precision loss for values > 2^53.
+ */
+function mulBigIntByFloat(value: bigint, multiplier: number): bigint {
+  const PRECISION = 1_000_000n
+  const scaledMultiplier = BigInt(Math.ceil(multiplier * Number(PRECISION)))
+  return (value * scaledMultiplier + PRECISION - 1n) / PRECISION // ceil division
 }
 
 /**
@@ -115,8 +124,12 @@ export async function estimateGas(
   try {
     const account = await getAccount(client, _signer)
     sequence = account.sequence
-  } catch {
-    // Account may not exist yet; use sequence 0
+  } catch (error) {
+    // Account not found = new account, sequence 0 is correct.
+    // Any other error (network, auth) should propagate.
+    if (!(error instanceof AccountNotFoundError)) {
+      throw error
+    }
   }
 
   // Create a minimal tx for simulation
@@ -172,7 +185,7 @@ export async function estimateGas(
 
   // Apply multiplier and calculate fee
   const gasUsed = response.gasInfo.gasUsed
-  const gasLimit = BigInt(Math.ceil(Number(gasUsed) * multiplier))
+  const gasLimit = mulBigIntByFloat(gasUsed, multiplier)
   const calculatedFee = calculateFee(gasLimit, gasPrice)
 
   return {
