@@ -9,6 +9,7 @@ import type { Abi } from 'abitype'
 import type { GetTxResponse } from '@buf/cosmos_cosmos-sdk.bufbuild_es/cosmos/tx/v1beta1/service_pb'
 import type { Any } from '@bufbuild/protobuf/wkt'
 import { ConnectError, Code } from '@connectrpc/connect'
+import { InitiaError } from '../errors'
 import type { Message } from '../msgs/types'
 import type { ChainType } from '../client/types'
 import type { MoveModuleAbi } from '../contracts/move/types'
@@ -28,6 +29,14 @@ export interface DecodedTxMessage {
    * Enrichment is skipped for decode-failed messages.
    */
   decodeError?: boolean
+  /**
+   * Enrichment error description (best-effort mode only).
+   * Set when ABI fetch, BCS/ABI decode, or JSON parse fails during enrichment.
+   * When set, `args`/`contractMsg` may be undefined even for VM messages.
+   * Note: For Move messages, `functionName` is extracted before enrichment and remains valid.
+   * For EVM messages, `functionName` may be undefined if ABI decode failed.
+   */
+  enrichError?: string
   /**
    * Function name for VM calls. undefined for non-VM messages.
    * - Move MsgExecute: function name (e.g., 'set_price')
@@ -186,8 +195,8 @@ export function createNoopAbiRegistry<V = never>(): AbiRegistry<V> {
 // =============================================================================
 
 /** Thrown when a transaction is not found on-chain. */
-export class TxNotFoundError extends Error {
-  constructor(hash: string) {
+export class TxNotFoundError extends InitiaError {
+  constructor(public readonly hash: string) {
     super(`Transaction not found: ${hash}`)
     this.name = 'TxNotFoundError'
   }
@@ -230,9 +239,12 @@ export async function getTx(
     throw err
   }
 
-  const txResponse = response.txResponse!
+  if (!response.txResponse) {
+    throw new InitiaError(`Malformed tx response: missing txResponse for hash ${hash}`)
+  }
+  const txResponse = response.txResponse
   if (!response.tx?.body) {
-    throw new Error(`Malformed tx response: missing tx body for hash ${hash}`)
+    throw new InitiaError(`Malformed tx response: missing tx body for hash ${hash}`)
   }
   const anyMessages: Any[] = response.tx.body.messages
 
@@ -258,7 +270,8 @@ export async function getTx(
             await enricher.enrich(msg, normalizedOptions ?? {})
           } catch (err) {
             if (normalizedOptions?.decodeArgs === 'strict') throw err
-            // Best-effort: leave functionName/args/contractMsg undefined
+            // Best-effort: leave functionName/args/contractMsg undefined, record error
+            msg.enrichError = err instanceof Error ? err.message : String(err)
           }
           break // First matching enricher handles the message
         }

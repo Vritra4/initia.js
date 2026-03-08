@@ -36,7 +36,13 @@ export function createWasmEnricher(): MessageEnricher {
       if (!msgBytes?.length) return
 
       const json = decoder.decode(msgBytes)
-      msg.contractMsg = JSON.parse(json) as unknown
+      try {
+        msg.contractMsg = JSON.parse(json) as unknown
+      } catch (cause) {
+        throw new Error(`Failed to parse Wasm contract msg as JSON: ${json.slice(0, 200)}`, {
+          cause,
+        })
+      }
     },
   }
 }

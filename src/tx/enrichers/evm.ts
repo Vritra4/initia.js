@@ -47,9 +47,16 @@ export function createEvmEnricher(registry: AbiRegistry<Abi>): MessageEnricher {
       const abi: Abi | undefined = oneTimeAbi ?? registry.get(contractAddr)
 
       if (abi) {
-        const { functionName, args } = decodeFunctionData({ abi, data: hexInput })
-        msg.functionName = functionName
-        msg.args = args as unknown[]
+        try {
+          const { functionName, args } = decodeFunctionData({ abi, data: hexInput })
+          msg.functionName = functionName
+          msg.args = args as unknown[]
+        } catch (cause) {
+          throw new Error(
+            `Failed to decode EVM calldata for contract ${contractAddr}: selector ${hexInput.slice(0, 10)}`,
+            { cause }
+          )
+        }
       } else {
         // No ABI: 4-byte selector fallback (Decision #51)
         msg.functionName = hexInput.slice(0, 10) // '0x' + 4 bytes = 10 chars

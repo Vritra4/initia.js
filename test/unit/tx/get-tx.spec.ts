@@ -7,6 +7,7 @@
 
 import { describe, it, expect, vi } from 'vitest'
 import { ConnectError, Code } from '@connectrpc/connect'
+import { InitiaError } from '../../../src/errors'
 import {
   getTx,
   createAbiRegistry,
@@ -238,7 +239,7 @@ describe('Move enricher', () => {
     expect(result.messages[0].functionName).toBe('set_price')
   })
 
-  it('13. ABI failure (best-effort) — args undefined, no throw', async () => {
+  it('13. ABI failure (best-effort) — args undefined, enrichError set', async () => {
     const any = makeMoveMsg('foo', [new Uint8Array([1])])
     const client = mockClient(mockTxResponse([any]))
 
@@ -248,6 +249,7 @@ describe('Move enricher', () => {
 
     expect(result.messages[0].functionName).toBe('foo')
     expect(result.messages[0].args).toBeUndefined()
+    expect(result.messages[0].enrichError).toBe('ABI fetch failed')
   })
 
   it('14. ABI failure (strict) — throws error', async () => {
@@ -662,5 +664,325 @@ describe('ChainContext integration', () => {
     }
     const client = mockClient(response as any)
     await expect(getTx(client, identityDecode, 'MAL1', [])).rejects.toThrow('Malformed tx response')
+  })
+
+  it('37. malformed response — missing txResponse throws InitiaError', async () => {
+    const response = {
+      tx: { body: { messages: [] } },
+      txResponse: undefined,
+    }
+    const client = mockClient(response as any)
+    await expect(getTx(client, identityDecode, 'MAL2', [])).rejects.toThrow(InitiaError)
+    await expect(getTx(client, identityDecode, 'MAL2', [])).rejects.toThrow(
+      'Malformed tx response: missing txResponse'
+    )
+  })
+
+  it('38. TxNotFoundError extends InitiaError', () => {
+    const err = new TxNotFoundError('DEADBEEF')
+    expect(err).toBeInstanceOf(InitiaError)
+    expect(err).toBeInstanceOf(Error)
+    expect(err.hash).toBe('DEADBEEF')
+    expect(err.name).toBe('TxNotFoundError')
+  })
+
+  it('39. enrichment failure (best-effort) — enrichError set, no throw', async () => {
+    const any = mockAny('/initia.move.v1.MsgExecute', {
+      moduleAddress: '0x1',
+      moduleName: 'coin',
+      functionName: 'transfer',
+      args: [new Uint8Array([1])],
+    })
+    const client = mockClient(mockTxResponse([any]))
+
+    const enricher: MessageEnricher = {
+      canEnrich: () => true,
+      enrich: async () => {
+        throw new Error('ABI fetch failed')
+      },
+    }
+    const result = await getTx(client, identityDecode, 'ERR1', [enricher])
+
+    expect(result.messages[0].enrichError).toBe('ABI fetch failed')
+    expect(result.messages[0].args).toBeUndefined()
+  })
+})
+
+// =============================================================================
+// Move enricher — bigint coercion
+// =============================================================================
+
+describe('Move enricher bigint coercion', () => {
+  const makeMoveMsg = (
+    functionName: string,
+    args: unknown[],
+    typeUrl = '/initia.move.v1.MsgExecute'
+  ) =>
+    mockAny(typeUrl, {
+      moduleAddress: '0x1',
+      moduleName: 'coin',
+      functionName,
+      args,
+    })
+
+  function makeAbi(params: string[]) {
+    return {
+      name: 'coin',
+      exposed_functions: [
+        {
+          name: 'test_fn',
+          params: ['&signer', ...params],
+          return: [],
+          is_entry: true,
+          is_view: false,
+          generic_type_params: [],
+          visibility: 'public' as const,
+        },
+      ],
+      structs: [],
+    }
+  }
+
+  it('40. u128 decoded as bigint', async () => {
+    // u128 LE: 1 (16 bytes)
+    const u128Bytes = new Uint8Array(16)
+    u128Bytes[0] = 1
+    const any = makeMoveMsg('test_fn', [u128Bytes])
+    const client = mockClient(mockTxResponse([any]))
+
+    const moveClient = { module: vi.fn() }
+    const enricher = createMoveEnricher(moveClient as any)
+    const result = await getTx(client, identityDecode, 'CAST1', [enricher], {
+      abis: { '0x1::coin': makeAbi(['u128']) },
+    })
+
+    expect(result.messages[0].args).toHaveLength(1)
+    expect(result.messages[0].args![0]).toBe(1n)
+    expect(typeof result.messages[0].args![0]).toBe('bigint')
+  })
+
+  it('41. u256 decoded as bigint', async () => {
+    // u256 LE: 42 (32 bytes)
+    const u256Bytes = new Uint8Array(32)
+    u256Bytes[0] = 42
+    const any = makeMoveMsg('test_fn', [u256Bytes])
+    const client = mockClient(mockTxResponse([any]))
+
+    const moveClient = { module: vi.fn() }
+    const enricher = createMoveEnricher(moveClient as any)
+    const result = await getTx(client, identityDecode, 'CAST2', [enricher], {
+      abis: { '0x1::coin': makeAbi(['u256']) },
+    })
+
+    expect(result.messages[0].args).toHaveLength(1)
+    expect(result.messages[0].args![0]).toBe(42n)
+  })
+
+  it('42. vector<u64> decoded as bigint array', async () => {
+    // ULEB128 length prefix (2 elements) + 2 u64 LE values
+    const buf = new Uint8Array(1 + 8 + 8)
+    buf[0] = 2 // length = 2
+    buf[1] = 10 // first u64 = 10
+    buf[9] = 20 // second u64 = 20
+    const any = makeMoveMsg('test_fn', [buf])
+    const client = mockClient(mockTxResponse([any]))
+
+    const moveClient = { module: vi.fn() }
+    const enricher = createMoveEnricher(moveClient as any)
+    const result = await getTx(client, identityDecode, 'CAST3', [enricher], {
+      abis: { '0x1::coin': makeAbi(['vector<u64>']) },
+    })
+
+    expect(result.messages[0].args).toHaveLength(1)
+    const vec = result.messages[0].args![0] as bigint[]
+    expect(vec).toHaveLength(2)
+    expect(vec[0]).toBe(10n)
+    expect(vec[1]).toBe(20n)
+  })
+
+  it('43. Option<u128> Some decoded as bigint', async () => {
+    // Option Some: 1 byte tag (1) + 16 bytes u128 LE
+    const buf = new Uint8Array(17)
+    buf[0] = 1 // Some tag
+    buf[1] = 99 // value = 99
+    const any = makeMoveMsg('test_fn', [buf])
+    const client = mockClient(mockTxResponse([any]))
+
+    const moveClient = { module: vi.fn() }
+    const enricher = createMoveEnricher(moveClient as any)
+    const result = await getTx(client, identityDecode, 'CAST4', [enricher], {
+      abis: { '0x1::coin': makeAbi(['0x1::option::Option<u128>']) },
+    })
+
+    expect(result.messages[0].args).toHaveLength(1)
+    expect(result.messages[0].args![0]).toBe(99n)
+  })
+
+  it('44. function-not-found (best-effort) — enrichError set', async () => {
+    const any = makeMoveMsg('nonexistent_fn', [new Uint8Array([1, 0, 0, 0, 0, 0, 0, 0])])
+    const client = mockClient(mockTxResponse([any]))
+
+    const abi = {
+      name: 'coin',
+      exposed_functions: [
+        {
+          name: 'transfer',
+          params: ['&signer', 'u64'],
+          return: [],
+          is_entry: true,
+          is_view: false,
+          generic_type_params: [],
+          visibility: 'public' as const,
+        },
+      ],
+      structs: [],
+    }
+    const moveClient = { module: vi.fn() }
+    const enricher = createMoveEnricher(moveClient as any)
+    const result = await getTx(client, identityDecode, 'CAST5', [enricher], {
+      abis: { '0x1::coin': abi },
+    })
+
+    expect(result.messages[0].functionName).toBe('nonexistent_fn')
+    expect(result.messages[0].args).toBeUndefined()
+    expect(result.messages[0].enrichError).toMatch(/not found in ABI/)
+  })
+
+  it('44b. function-not-found (strict) — throws', async () => {
+    const any = makeMoveMsg('nonexistent_fn', [new Uint8Array([1, 0, 0, 0, 0, 0, 0, 0])])
+    const client = mockClient(mockTxResponse([any]))
+
+    const abi = {
+      name: 'coin',
+      exposed_functions: [
+        {
+          name: 'transfer',
+          params: ['&signer', 'u64'],
+          return: [],
+          is_entry: true,
+          is_view: false,
+          generic_type_params: [],
+          visibility: 'public' as const,
+        },
+      ],
+      structs: [],
+    }
+    const moveClient = { module: vi.fn() }
+    const enricher = createMoveEnricher(moveClient as any)
+
+    await expect(
+      getTx(client, identityDecode, 'CAST5S', [enricher], {
+        decodeArgs: 'strict',
+        abis: { '0x1::coin': abi },
+      })
+    ).rejects.toThrow(/not found in ABI/)
+  })
+
+  it('45. invalid JSON arg (best-effort) — enrichError set', async () => {
+    const any = makeMoveMsg('transfer', ['not{json}'], '/initia.move.v1.MsgExecuteJSON')
+    const client = mockClient(mockTxResponse([any]))
+
+    const enricher = createMoveEnricher({ module: vi.fn() } as any)
+    const result = await getTx(client, identityDecode, 'CAST6', [enricher])
+
+    expect(result.messages[0].enrichError).toMatch(/Failed to parse JSON arg/)
+  })
+})
+
+// =============================================================================
+// Wasm enricher — error handling
+// =============================================================================
+
+describe('Wasm enricher error handling', () => {
+  const encoder = new TextEncoder()
+
+  it('46. invalid JSON (best-effort) — enrichError set', async () => {
+    const any = mockAny('/cosmwasm.wasm.v1.MsgExecuteContract', {
+      msg: encoder.encode('not valid json{'),
+    })
+    const client = mockClient(mockTxResponse([any]))
+
+    const enricher = createWasmEnricher()
+    const result = await getTx(client, identityDecode, 'WASM_ERR1', [enricher])
+
+    expect(result.messages[0].contractMsg).toBeUndefined()
+    expect(result.messages[0].enrichError).toMatch(/Failed to parse Wasm contract msg/)
+  })
+
+  it('47. invalid JSON (strict) — throws', async () => {
+    const any = mockAny('/cosmwasm.wasm.v1.MsgExecuteContract', {
+      msg: encoder.encode('not valid json{'),
+    })
+    const client = mockClient(mockTxResponse([any]))
+
+    const enricher = createWasmEnricher()
+    await expect(
+      getTx(client, identityDecode, 'WASM_ERR2', [enricher], { decodeArgs: 'strict' })
+    ).rejects.toThrow(/Failed to parse Wasm contract msg/)
+  })
+})
+
+// =============================================================================
+// EVM enricher — error handling
+// =============================================================================
+
+describe('EVM enricher error handling', () => {
+  it('48. ABI decode failure (best-effort) — enrichError with context', async () => {
+    // Truncated calldata — valid selector but incomplete args
+    const truncated = new Uint8Array([0xa9, 0x05, 0x9c, 0xbb, 0x00, 0x01])
+    const any = mockAny('/minievm.evm.v1.MsgCall', {
+      contractAddr: '0xABCD',
+      input: truncated,
+    })
+    const client = mockClient(mockTxResponse([any]))
+
+    const erc20Abi: Abi = [
+      {
+        type: 'function',
+        name: 'transfer',
+        inputs: [
+          { name: 'to', type: 'address', internalType: 'address' },
+          { name: 'amount', type: 'uint256', internalType: 'uint256' },
+        ],
+        outputs: [{ name: '', type: 'bool', internalType: 'bool' }],
+        stateMutability: 'nonpayable',
+      },
+    ]
+    const registry = createAbiRegistry<Abi>()
+    registry.set('0xABCD', erc20Abi)
+    const enricher = createEvmEnricher(registry)
+    const result = await getTx(client, identityDecode, 'EVM_ERR1', [enricher])
+
+    expect(result.messages[0].enrichError).toMatch(/Failed to decode EVM calldata/)
+    expect(result.messages[0].enrichError).toMatch(/0xa9059cbb/)
+  })
+
+  it('49. ABI decode failure (strict) — throws with context', async () => {
+    const truncated = new Uint8Array([0xa9, 0x05, 0x9c, 0xbb, 0x00, 0x01])
+    const any = mockAny('/minievm.evm.v1.MsgCall', {
+      contractAddr: '0xABCD',
+      input: truncated,
+    })
+    const client = mockClient(mockTxResponse([any]))
+
+    const erc20Abi: Abi = [
+      {
+        type: 'function',
+        name: 'transfer',
+        inputs: [
+          { name: 'to', type: 'address', internalType: 'address' },
+          { name: 'amount', type: 'uint256', internalType: 'uint256' },
+        ],
+        outputs: [{ name: '', type: 'bool', internalType: 'bool' }],
+        stateMutability: 'nonpayable',
+      },
+    ]
+    const registry = createAbiRegistry<Abi>()
+    registry.set('0xABCD', erc20Abi)
+    const enricher = createEvmEnricher(registry)
+
+    await expect(
+      getTx(client, identityDecode, 'EVM_ERR2', [enricher], { decodeArgs: 'strict' })
+    ).rejects.toThrow(/Failed to decode EVM calldata/)
   })
 })

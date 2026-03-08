@@ -10,6 +10,7 @@ TypeScript SDK for Initia and its rollup ecosystem.
 - VM-agnostic token abstraction (Fungible Asset, ERC20, CW20)
 - OP Bridge and Router API for L1/L2 cross-chain transfers
 - Automatic Amino conversion via proto schema options
+- Transaction decoding with VM-aware arg enrichment (`ctx.getTx()`)
 - ABI-driven contracts: BCS (Move), `abitype` (EVM), JSON schema (CosmWasm)
 - CometBFT HTTP RPC client (23 endpoints) and EVM JSON-RPC client
 - Signer bridge adapters for viem and ethers.js interop
@@ -66,7 +67,11 @@ const key = new MnemonicKey({ mnemonic: 'your mnemonic ...' })
 const ctx = await createInitiaContext({ network: 'mainnet', signer: key })
 
 const result = await ctx.signAndBroadcast([
-  ctx.msgs.send(ctx.address, 'init1recipient...', [coin('uinit', '1000000')]),
+  ctx.msgs.bank.send({
+    fromAddress: ctx.address,
+    toAddress: 'init1recipient...',
+    amount: [coin('uinit', '1000000')],
+  }),
 ])
 console.log(result.txHash)
 ```
@@ -155,7 +160,7 @@ Domain-specific APIs are available via subpath exports:
 | `initia.js` | Core types, keys, wallet, typed context factories |
 | `initia.js/client` | gRPC client, transport, interceptors |
 | `initia.js/tx` | Signing, serialization, Amino conversion |
-| `initia.js/msgs` | Message builders (`baseMsgs`, `initiaMsgs`, ...) |
+| `initia.js/msgs` | Module-namespaced message builders and decode |
 | `initia.js/move` | Move contracts, BCS encoding, ABI |
 | `initia.js/evm` | EVM contracts, ABI encoding, JSON-RPC client |
 | `initia.js/wasm` | CosmWasm contracts, JSON schema |
@@ -178,6 +183,7 @@ See the [examples/](./examples) directory for runnable scripts:
 - [query.ts](./examples/query.ts) -- Read-only gRPC queries
 - [send.ts](./examples/send.ts) -- Send tokens with high-level API
 - [staking.ts](./examples/staking.ts) -- Delegate, redelegate, undelegate, claim rewards
+- [get-tx.ts](./examples/get-tx.ts) -- Decode transactions with VM-aware arg enrichment
 
 **Smart contracts**
 

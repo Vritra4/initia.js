@@ -51,7 +51,14 @@ function castValue(value: unknown, parsed: ParsedMoveType): unknown {
   if (value === null || value === undefined) return value
 
   if (BIGINT_TYPES.has(parsed.base)) {
-    return BigInt(value as string)
+    try {
+      return BigInt(value as string)
+    } catch (cause) {
+      throw new Error(
+        `Failed to convert ${parsed.base} value to bigint: ${JSON.stringify(value)}`,
+        { cause }
+      )
+    }
   }
 
   if (parsed.base === 'vector' && Array.isArray(value) && parsed.typeArgs.length === 1) {
@@ -94,7 +101,16 @@ export function createMoveEnricher(
 
       // JSON execute: args are JSON strings, not BCS bytes (Decision #63)
       if (JSON_EXECUTE_TYPES.has(msg.typeUrl)) {
-        msg.args = (args as string[]).map(a => JSON.parse(a) as unknown)
+        msg.args = (args as string[]).map((a, i) => {
+          try {
+            return JSON.parse(a) as unknown
+          } catch (cause) {
+            throw new Error(
+              `Failed to parse JSON arg[${i}] for ${moduleAddress}::${moduleName}::${functionName}: ${a}`,
+              { cause }
+            )
+          }
+        })
         return
       }
 
@@ -104,11 +120,14 @@ export function createMoveEnricher(
         (options?.abis?.[abiKey.toLowerCase()] as MoveModuleAbi | undefined) ?? abis?.get(abiKey)
       const abi = offlineAbi ?? (await getModuleAbi(moveContext, moduleAddress, moduleName))
       const fn = findFunction(abi, functionName)
-      if (fn) {
-        const paramTypes = getNonSignerParams(fn)
-        const decoded = decodeMoveResults(args as Uint8Array[], paramTypes)
-        msg.args = castArgs(decoded, paramTypes)
+      if (!fn) {
+        throw new Error(
+          `Function '${functionName}' not found in ABI for ${moduleAddress}::${moduleName}`
+        )
       }
+      const paramTypes = getNonSignerParams(fn)
+      const decoded = decodeMoveResults(args as Uint8Array[], paramTypes)
+      msg.args = castArgs(decoded, paramTypes)
     },
   }
 }
