@@ -7,7 +7,7 @@
 
 import type { Abi } from 'abitype'
 import type { MessageEnricher, DecodedTxMessage, GetTxOptions, AbiRegistry } from '../get-tx'
-import { decodeFunctionData, bytesToHex } from 'viem'
+import { decodeFunctionData, bytesToHex, getAbiItem } from 'viem'
 
 const EVM_MSG_CALL_TYPE = '/minievm.evm.v1.MsgCall'
 const EVM_MSG_CREATE_TYPE = '/minievm.evm.v1.MsgCreate'
@@ -51,6 +51,21 @@ export function createEvmEnricher(registry: AbiRegistry<Abi>): MessageEnricher {
           const { functionName, args } = decodeFunctionData({ abi, data: hexInput })
           msg.functionName = functionName
           msg.args = args as unknown[]
+
+          // Map positional args to ABI parameter names (if function has named inputs)
+          if (args) {
+            const abiItem = getAbiItem({ abi, name: functionName, args: args })
+            if (
+              abiItem &&
+              'inputs' in abiItem &&
+              abiItem.inputs.length > 0 &&
+              abiItem.inputs.every(i => i.name)
+            ) {
+              msg.namedArgs = Object.fromEntries(
+                abiItem.inputs.map((input, i) => [input.name, (args as unknown[])[i]])
+              ) as Record<string, unknown>
+            }
+          }
         } catch (cause) {
           throw new Error(
             `Failed to decode EVM calldata for contract ${contractAddr}: selector ${hexInput.slice(0, 10)}`,

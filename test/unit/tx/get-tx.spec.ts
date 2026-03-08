@@ -227,6 +227,7 @@ describe('Move enricher', () => {
 
     expect(result.messages[0].functionName).toBe('transfer')
     expect(result.messages[0].args).toEqual(['hello', 42])
+    expect(result.messages[0].namedArgs).toBeUndefined()
   })
 
   it('12. MsgGovExecute — same as MsgExecute', async () => {
@@ -481,6 +482,91 @@ describe('EVM enricher', () => {
     expect(result.messages[0].args).toBeUndefined()
   })
 
+  it('50. namedArgs populated from ABI input names', async () => {
+    const any = makeEvmCall('0xABCD', transferCalldata)
+    const client = mockClient(mockTxResponse([any]))
+
+    const registry = createAbiRegistry<Abi>()
+    registry.set('0xABCD', erc20Abi)
+    const enricher = createEvmEnricher(registry)
+    const result = await getTx(client, identityDecode, 'EVM_NA1', [enricher])
+
+    expect(result.messages[0].namedArgs).toEqual({
+      to: expect.any(String),
+      amount: 100n,
+    })
+  })
+
+  it('51. namedArgs undefined when ABI has unnamed inputs', async () => {
+    const unnamedAbi: Abi = [
+      {
+        type: 'function',
+        name: 'transfer',
+        inputs: [
+          { name: '', type: 'address', internalType: 'address' },
+          { name: 'amount', type: 'uint256', internalType: 'uint256' },
+        ],
+        outputs: [{ name: '', type: 'bool', internalType: 'bool' }],
+        stateMutability: 'nonpayable',
+      },
+    ]
+    const any = makeEvmCall('0xABCD', transferCalldata)
+    const client = mockClient(mockTxResponse([any]))
+
+    const registry = createAbiRegistry<Abi>()
+    registry.set('0xABCD', unnamedAbi)
+    const enricher = createEvmEnricher(registry)
+    const result = await getTx(client, identityDecode, 'EVM_NA2', [enricher])
+
+    expect(result.messages[0].functionName).toBe('transfer')
+    expect(result.messages[0].args).toBeDefined()
+    expect(result.messages[0].namedArgs).toBeUndefined()
+  })
+
+  it('52. namedArgs undefined without ABI', async () => {
+    const any = makeEvmCall('0xABCD', transferCalldata)
+    const client = mockClient(mockTxResponse([any]))
+
+    const enricher = createEvmEnricher(createAbiRegistry<Abi>())
+    const result = await getTx(client, identityDecode, 'EVM_NA3', [enricher])
+
+    expect(result.messages[0].namedArgs).toBeUndefined()
+  })
+
+  it('53. namedArgs undefined for MsgCreate', async () => {
+    const any = mockAny('/minievm.evm.v1.MsgCreate', { code: new Uint8Array([1, 2, 3]) })
+    const client = mockClient(mockTxResponse([any]))
+
+    const enricher = createEvmEnricher(createAbiRegistry<Abi>())
+    const result = await getTx(client, identityDecode, 'EVM_NA4', [enricher])
+
+    expect(result.messages[0].namedArgs).toBeUndefined()
+  })
+
+  it('54. namedArgs undefined for zero-arg function', async () => {
+    const nameAbi: Abi = [
+      {
+        type: 'function',
+        name: 'name',
+        inputs: [],
+        outputs: [{ name: '', type: 'string', internalType: 'string' }],
+        stateMutability: 'view',
+      },
+    ]
+    // selector for name() = 0x06fdde03
+    const nameCalldata = new Uint8Array([0x06, 0xfd, 0xde, 0x03])
+    const any = makeEvmCall('0xABCD', nameCalldata)
+    const client = mockClient(mockTxResponse([any]))
+
+    const registry = createAbiRegistry<Abi>()
+    registry.set('0xABCD', nameAbi)
+    const enricher = createEvmEnricher(registry)
+    const result = await getTx(client, identityDecode, 'EVM_NA5', [enricher])
+
+    expect(result.messages[0].functionName).toBe('name')
+    expect(result.messages[0].namedArgs).toBeUndefined()
+  })
+
   it('25. mixed-case options.abis keys normalized to lowercase', async () => {
     const any = makeEvmCall('0xAbCd', transferCalldata)
     const client = mockClient(mockTxResponse([any]))
@@ -512,6 +598,7 @@ describe('Wasm enricher', () => {
     const result = await getTx(client, identityDecode, 'WASM1', [enricher])
 
     expect(result.messages[0].contractMsg).toEqual(jsonMsg)
+    expect(result.messages[0].namedArgs).toBeUndefined()
   })
 
   it('27. MsgStoreAndInstantiateContract — contractMsg = parsed JSON', async () => {

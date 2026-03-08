@@ -66,6 +66,7 @@ function printMessage(index: number, msg: DecodedTxMessage) {
 
   if (msg.functionName) console.log('Function:', msg.functionName)
   if (msg.args) console.log('Args:', msg.args)
+  if (msg.namedArgs) console.log('Named args:', msg.namedArgs)
   if (msg.contractMsg) console.log('Contract msg:', msg.contractMsg)
 }
 

@@ -59,6 +59,17 @@ export interface DecodedTxMessage {
    */
   args?: unknown[]
   /**
+   * Named arguments mapped from ABI parameter names. undefined when:
+   * - No ABI available (EVM without registered/one-time ABI)
+   * - ABI has unnamed parameters
+   * - Function takes no arguments (zero-input ABI functions)
+   * - Non-EVM messages (Move ABI lacks param names; Wasm uses contractMsg)
+   *
+   * Currently populated for EVM MsgCall only.
+   * @example { to: '0x1234...', amount: 100n }
+   */
+  namedArgs?: Record<string, unknown>
+  /**
    * Parsed JSON msg body. undefined for non-Wasm messages.
    * Set for: MsgExecuteContract, MsgInstantiateContract,
    * MsgInstantiateContract2, MsgMigrateContract
