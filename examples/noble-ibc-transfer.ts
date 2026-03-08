@@ -4,7 +4,7 @@
  * This example demonstrates how to:
  * 1. Use CosmosRegistryProvider to access Noble chain (no manual config needed)
  * 2. Query USDC balance using ChainContext high-level API
- * 3. Create IBC transfer message using ctx.msgs.transfer()
+ * 3. Create IBC transfer message using ctx.msgs.ibc.transfer()
  * 4. Transfer USDC from Noble to Osmosis
  *
  * Noble is the native issuance chain for USDC in the Cosmos ecosystem.
@@ -140,15 +140,13 @@ async function ibcTransfer(
   console.log()
 
   // Create IBC transfer message
-  const msg = ctx.msgs.transfer(
-    ctx.address!, // sender on Noble
-    receiverAddress, // receiver on Osmosis
-    coin('uusdc', amount), // Native USDC
-    channel, // IBC channel
-    {
-      memo: 'USDC transfer via initia.js SDK',
-    }
-  )
+  const msg = ctx.msgs.ibc.transfer({
+    sender: ctx.address!, // sender on Noble
+    receiver: receiverAddress, // receiver on Osmosis
+    token: coin('uusdc', amount), // Native USDC
+    sourceChannel: channel, // IBC channel
+    memo: 'USDC transfer via initia.js SDK',
+  })
 
   console.log(`Message Type: ${msg.typeUrl}`)
   console.log()

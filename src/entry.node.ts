@@ -44,6 +44,12 @@ import {
 import { createErc20Token } from './token/erc20'
 import { createCw20Token } from './token/cw20'
 import { createFungibleAssetToken } from './token/fungible-asset'
+import type { AbiRegistry } from './tx/get-tx'
+import type { Abi } from 'abitype'
+import type { MoveModuleAbi } from './contracts/move/types'
+import { createMoveEnricher } from './tx/enrichers/move'
+import { createEvmEnricher } from './tx/enrichers/evm'
+import { createWasmEnricher } from './tx/enrichers/wasm'
 
 export { createTransport }
 
@@ -91,6 +97,12 @@ export const createInitiaContext = /* @__PURE__ */ buildTypedFactory(
     getDefaultChainId: n => L1_CHAIN_IDS[n],
     tokenResolver: (_client, _ct, token) =>
       createFungibleAssetToken((_client as MoveEnabled).move, token),
+    enricherFactory: (client, abis) => [
+      createMoveEnricher(
+        (client as unknown as MoveEnabled).move,
+        abis as AbiRegistry<MoveModuleAbi>
+      ),
+    ],
   }
 )
 export const createMinievmContext = /* @__PURE__ */ buildTypedFactory(
@@ -101,6 +113,7 @@ export const createMinievmContext = /* @__PURE__ */ buildTypedFactory(
   {
     tokenResolver: (_client, _ct, token, sender) =>
       createErc20Token((_client as EvmEnabled).evm, token, sender),
+    enricherFactory: (_client, abis) => [createEvmEnricher(abis as AbiRegistry<Abi>)],
   }
 )
 export const createMiniwasmContext = /* @__PURE__ */ buildTypedFactory(
@@ -110,6 +123,7 @@ export const createMiniwasmContext = /* @__PURE__ */ buildTypedFactory(
   miniwasmMsgs,
   {
     tokenResolver: (_client, _ct, token) => createCw20Token((_client as WasmEnabled).wasm, token),
+    enricherFactory: () => [createWasmEnricher()],
   }
 )
 export const createMinimoveContext = /* @__PURE__ */ buildTypedFactory(
@@ -120,6 +134,12 @@ export const createMinimoveContext = /* @__PURE__ */ buildTypedFactory(
   {
     tokenResolver: (_client, _ct, token) =>
       createFungibleAssetToken((_client as MoveEnabled).move, token),
+    enricherFactory: (client, abis) => [
+      createMoveEnricher(
+        (client as unknown as MoveEnabled).move,
+        abis as AbiRegistry<MoveModuleAbi>
+      ),
+    ],
   }
 )
 

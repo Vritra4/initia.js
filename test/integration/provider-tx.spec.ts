@@ -67,9 +67,13 @@ describe.skipIf(SKIP || !TEST_MNEMONIC)('Provider Wallet Queries (Initia Testnet
   })
 
   describe('message creation', () => {
-    it('should create a MsgSend via ctx.msgs.send', () => {
+    it('should create a MsgSend via ctx.msgs.bank.send', () => {
       const ctx = wallet.chain('initiation-2')
-      const msg = ctx.msgs.send(wallet.address!, wallet.address!, coin('uinit', '1000'))
+      const msg = ctx.msgs.bank.send({
+        fromAddress: wallet.address!,
+        toAddress: wallet.address!,
+        amount: [coin('uinit', '1000')],
+      })
       expect(msg.toAny().typeUrl).toContain('MsgSend')
       expect(msg.toAny().value).toBeInstanceOf(Uint8Array)
       expect(msg.toAny().value.length).toBeGreaterThan(0)
@@ -77,12 +81,12 @@ describe.skipIf(SKIP || !TEST_MNEMONIC)('Provider Wallet Queries (Initia Testnet
 
     it('should create an IBC transfer message', () => {
       const ctx = wallet.chain('initiation-2')
-      const msg = ctx.msgs.transfer(
-        wallet.address!,
-        wallet.address!,
-        coin('uinit', '1000'),
-        'channel-0'
-      )
+      const msg = ctx.msgs.ibc.transfer({
+        sender: wallet.address!,
+        receiver: wallet.address!,
+        token: coin('uinit', '1000'),
+        sourceChannel: 'channel-0',
+      })
       expect(msg.toAny().typeUrl).toContain('MsgTransfer')
       expect(msg.toAny().value.length).toBeGreaterThan(0)
     })
@@ -116,7 +120,11 @@ describe.skipIf(SKIP || !TEST_MNEMONIC)('Provider TX Tests (Initia Testnet)', ()
   }, 30000)
 
   it('should send uinit to self (direct mode)', async () => {
-    const msg = ctx.msgs.send(wallet.address!, wallet.address!, coin('uinit', '1'))
+    const msg = ctx.msgs.bank.send({
+      fromAddress: wallet.address!,
+      toAddress: wallet.address!,
+      amount: [coin('uinit', '1')],
+    })
 
     const result = await ctx.signAndBroadcast([msg], {
       fee: [{ denom: 'uinit', amount: '10000' }],
@@ -132,7 +140,11 @@ describe.skipIf(SKIP || !TEST_MNEMONIC)('Provider TX Tests (Initia Testnet)', ()
   }, 120000)
 
   it('should send uinit to self (amino mode)', async () => {
-    const msg = ctx.msgs.send(wallet.address!, wallet.address!, coin('uinit', '1'))
+    const msg = ctx.msgs.bank.send({
+      fromAddress: wallet.address!,
+      toAddress: wallet.address!,
+      amount: [coin('uinit', '1')],
+    })
 
     const result = await ctx.signAndBroadcast([msg], {
       fee: [{ denom: 'uinit', amount: '10000' }],
@@ -148,7 +160,11 @@ describe.skipIf(SKIP || !TEST_MNEMONIC)('Provider TX Tests (Initia Testnet)', ()
   }, 120000)
 
   it('should send uinit to self (eip191 mode)', async () => {
-    const msg = ctx.msgs.send(wallet.address!, wallet.address!, coin('uinit', '1'))
+    const msg = ctx.msgs.bank.send({
+      fromAddress: wallet.address!,
+      toAddress: wallet.address!,
+      amount: [coin('uinit', '1')],
+    })
 
     const result = await ctx.signAndBroadcast([msg], {
       fee: [{ denom: 'uinit', amount: '10000' }],
@@ -164,7 +180,11 @@ describe.skipIf(SKIP || !TEST_MNEMONIC)('Provider TX Tests (Initia Testnet)', ()
   }, 120000)
 
   it('should estimate gas before sending', async () => {
-    const msg = ctx.msgs.send(wallet.address!, wallet.address!, coin('uinit', '1'))
+    const msg = ctx.msgs.bank.send({
+      fromAddress: wallet.address!,
+      toAddress: wallet.address!,
+      amount: [coin('uinit', '1')],
+    })
 
     const gas = await ctx.estimateGas([msg])
     expect(gas.gasLimit).toBeTypeOf('bigint')

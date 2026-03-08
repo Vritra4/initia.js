@@ -137,7 +137,7 @@ describe('Message.fromAny()', () => {
 
   it('should throw on toAmino()', () => {
     const msg = Message.fromAny(testAny)
-    expect(() => msg.toAmino()).toThrow('Cannot convert pre-packed Any to Amino format')
+    expect(() => msg.toAmino()).toThrow('Cannot convert to Amino on a pre-packed Any')
   })
 })
 
@@ -201,7 +201,7 @@ describe('Any input with amino signing', () => {
     })
 
     const msg = normalizeMsg(any)
-    expect(() => msg.toAmino()).toThrow('Cannot convert pre-packed Any to Amino format')
-    expect(() => msg.toAmino()).toThrow('Provide a schema via new Message(schema, init)')
+    expect(() => msg.toAmino()).toThrow('Cannot convert to Amino on a pre-packed Any')
+    expect(() => msg.toAmino()).toThrow('Use Message.fromAny(schema, any) to decode')
   })
 })

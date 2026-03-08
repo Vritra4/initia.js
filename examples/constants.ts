@@ -34,6 +34,7 @@ export const SENDER = {
 export const RECIPIENT = {
   bech32: recipientKey.address,
   evm: recipientKey.evmAddress,
+  valoper: recipientKey.valAddress,
 }
 
 // ---------------------------------------------------------------------------

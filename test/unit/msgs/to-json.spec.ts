@@ -12,7 +12,11 @@ import { AnySchema } from '@bufbuild/protobuf/wkt'
 
 describe('Message.toJson', () => {
   it('should return typeUrl and value for MsgSend', () => {
-    const msg = baseMsgs.send('init1from...', 'init1to...', coin('uinit', '1000000'))
+    const msg = baseMsgs.bank.send({
+      fromAddress: 'init1from...',
+      toAddress: 'init1to...',
+      amount: coin('uinit', '1000000'),
+    })
     const json = msg.toJson()
 
     expect(json.typeUrl).toBe('/cosmos.bank.v1beta1.MsgSend')
@@ -24,7 +28,11 @@ describe('Message.toJson', () => {
   })
 
   it('should return typeUrl and value for MsgDelegate', () => {
-    const msg = initiaMsgs.delegate('init1del...', 'initvaloper1val...', coin('uinit', '5000000'))
+    const msg = initiaMsgs.mstaking.delegate({
+      delegatorAddress: 'init1del...',
+      validatorAddress: 'initvaloper1val...',
+      amount: [coin('uinit', '5000000')],
+    })
     const json = msg.toJson()
 
     expect(json.typeUrl).toBe('/initia.mstaking.v1.MsgDelegate')
@@ -33,14 +41,14 @@ describe('Message.toJson', () => {
   })
 
   it('should return typeUrl and value for Move execute', () => {
-    const msg = initiaMsgs.execute(
-      'init1sender...',
-      'init1module...',
-      'my_module',
-      'my_function',
-      [],
-      []
-    )
+    const msg = initiaMsgs.move.execute({
+      sender: 'init1sender...',
+      moduleAddress: 'init1module...',
+      moduleName: 'my_module',
+      functionName: 'my_function',
+      typeArgs: [],
+      args: [],
+    })
     const json = msg.toJson()
 
     expect(json.typeUrl).toBe('/initia.move.v1.MsgExecute')
@@ -50,10 +58,11 @@ describe('Message.toJson', () => {
   })
 
   it('should work with multiple coins', () => {
-    const msg = baseMsgs.send('init1from...', 'init1to...', [
-      coin('uinit', '100'),
-      coin('uusdc', '200'),
-    ])
+    const msg = baseMsgs.bank.send({
+      fromAddress: 'init1from...',
+      toAddress: 'init1to...',
+      amount: [coin('uinit', '100'), coin('uusdc', '200')],
+    })
     const json = msg.toJson()
 
     expect(json.value.amount).toEqual([
@@ -69,13 +78,21 @@ describe('Message.toJson', () => {
     })
     const msg = Message.fromAny(any)
 
-    expect(() => msg.toJson()).toThrow('Cannot convert pre-packed Any to JSON')
+    expect(() => msg.toJson()).toThrow('Cannot convert to JSON on a pre-packed Any')
   })
 
   it('should be usable with map for multiple messages', () => {
     const msgs = [
-      baseMsgs.send('init1a...', 'init1b...', coin('uinit', '100')),
-      initiaMsgs.delegate('init1a...', 'initvaloper1v...', coin('uinit', '200')),
+      baseMsgs.bank.send({
+        fromAddress: 'init1a...',
+        toAddress: 'init1b...',
+        amount: coin('uinit', '100'),
+      }),
+      initiaMsgs.mstaking.delegate({
+        delegatorAddress: 'init1a...',
+        validatorAddress: 'initvaloper1v...',
+        amount: [coin('uinit', '200')],
+      }),
     ]
 
     const descriptions = msgs.map(m => m.toJson())

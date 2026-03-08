@@ -1,70 +1,24 @@
 /**
- * Minievm rollup message builders.
- *
- * Includes EVM contract operations.
+ * Minievm rollup message composition.
  */
 
-import {
-  MsgCreateSchema,
-  MsgCallSchema,
-} from '@buf/initia-labs_minievm.bufbuild_es/minievm/evm/v1/tx_pb'
+import type { MinievmMsgs, WithSchemas } from './types'
+import { msgCustom } from './types'
+import { createDecode } from './decode'
 
-import { bytesToHex } from '@noble/hashes/utils.js'
-import { Message, type MinievmMsgs } from './types'
-import { baseMsgs } from './base'
+import { bankModule, bankSchemas } from './modules/bank'
+import { ibcModule, ibcSchemas } from './modules/ibc'
+import { evmModule, evmSchemas } from './modules/evm'
+import { opchildModule, opchildSchemas } from './modules/opchild'
 
-/**
- * Deploy a new EVM contract.
- *
- * @param sender - Sender address
- * @param code - Contract bytecode
- * @param value - Optional value to send (in wei, as string)
- * @returns Packed Any message
- */
-function create_(
-  sender: string,
-  code: Uint8Array,
-  value?: string
-): Message<typeof MsgCreateSchema> {
-  return new Message(MsgCreateSchema, {
-    sender,
-    code: bytesToHex(code),
-    value: value ?? '0',
-  })
-}
+const allSchemas = [...bankSchemas, ...ibcSchemas, ...evmSchemas, ...opchildSchemas]
 
-/**
- * Call an EVM contract method.
- *
- * @param sender - Sender address
- * @param contractAddr - Contract address to call
- * @param input - ABI-encoded call data
- * @param value - Optional value to send (in wei, as string)
- * @returns Packed Any message
- */
-function call(
-  sender: string,
-  contractAddr: string,
-  input: Uint8Array,
-  value?: string
-): Message<typeof MsgCallSchema> {
-  return new Message(MsgCallSchema, {
-    sender,
-    contractAddr,
-    input: bytesToHex(input),
-    value: value ?? '0',
-  })
-}
-
-/**
- * Minievm rollup message builders instance.
- * Extends base messages with EVM operations.
- */
-export const minievmMsgs: MinievmMsgs = {
-  // Base messages
-  ...baseMsgs,
-
-  // EVM
-  create: create_,
-  call,
+export const minievmMsgs: WithSchemas<MinievmMsgs> = {
+  bank: bankModule,
+  ibc: ibcModule,
+  evm: evmModule,
+  opchild: opchildModule,
+  custom: msgCustom,
+  decode: createDecode(allSchemas),
+  _schemas: allSchemas,
 }
