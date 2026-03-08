@@ -3,7 +3,7 @@
  *
  * This example demonstrates cross-chain token transfers:
  * 1. Create key and context
- * 2. Use ctx.msgs.transfer() to build IBC MsgTransfer
+ * 2. Use ctx.msgs.ibc.transfer() to build IBC MsgTransfer
  * 3. Use ctx.signAndBroadcast() for one-call transaction
  *
  * For Noble/Cosmos cross-chain transfers, see noble-ibc-transfer.ts.
@@ -24,20 +24,18 @@ async function main() {
   console.log('Chain:', ctx.chainId)
   console.log('Sender:', ctx.address)
 
-  // 3. Build IBC transfer message
-  const msg = ctx.msgs.transfer(
-    ctx.address, // sender on source chain
-    'cosmos1receiver...', // recipient on destination chain
-    coin('uinit', '1000000'), // 1 INIT
-    'channel-0', // IBC channel to destination
-    {
-      memo: 'IBC transfer from Initia',
-      // Optional: custom timeout (default is 10 minutes)
-      // timeoutTimestamp: BigInt(Date.now() + 30 * 60 * 1000) * 1_000_000n,
-    }
-  )
+  // 2. Build IBC transfer message
+  const msg = ctx.msgs.ibc.transfer({
+    sender: ctx.address, // sender on source chain
+    receiver: 'cosmos1receiver...', // recipient on destination chain
+    token: coin('uinit', '1000000'), // 1 INIT
+    sourceChannel: 'channel-0', // IBC channel to destination
+    memo: 'IBC transfer from Initia',
+    // Optional: custom timeout (default is 10 minutes)
+    // timeoutTimestamp: BigInt(Date.now() + 30 * 60 * 1000) * 1_000_000n,
+  })
 
-  // 4. Sign and broadcast
+  // 3. Sign and broadcast
   const result = await ctx.signAndBroadcast([msg], {
     memo: 'IBC Transfer',
     fee: [coin('uinit', '25000')],

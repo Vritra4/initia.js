@@ -27,6 +27,7 @@ import {
   type ChainContext,
   type ChainContextOptions,
   type TokenResolver,
+  type EnricherFactory,
 } from './chain-context'
 
 // =============================================================================
@@ -94,6 +95,8 @@ export interface TypedFactoryOptions {
   getDefaultChainId?: (network: string) => string | undefined
   /** Token resolver injected into ChainContext for getTokenContract(). */
   tokenResolver?: TokenResolver
+  /** Enricher factory for VM-aware tx decoding (injected per chain type). */
+  enricherFactory?: EnricherFactory
 }
 
 // =============================================================================
@@ -135,11 +138,14 @@ export function buildTypedFactory<T extends ChainType>(
   const getDefaultChainId = options?.getDefaultChainId
 
   // Create a chain-specific createChainContext (only imports this chain's services/msgs)
+  const factoryOpts: { tokenResolver?: TokenResolver; enricherFactory?: EnricherFactory } = {}
+  if (options?.tokenResolver) factoryOpts.tokenResolver = options.tokenResolver
+  if (options?.enricherFactory) factoryOpts.enricherFactory = options.enricherFactory
   const create = buildChainContextFactory(
     createTransport,
     chainInfo => services.getServices(chainInfo.network),
     () => msgs as MsgsForChain<ChainType>,
-    options?.tokenResolver ? { tokenResolver: options.tokenResolver } : undefined
+    Object.keys(factoryOpts).length > 0 ? factoryOpts : undefined
   )
 
   function resolveChainId(network?: string, chainId?: string): string {

@@ -17,6 +17,8 @@
  * - `initia.js/util`      — Hash, address, denom, formatting
  * - `initia.js/usernames` — .init domain resolution
  * - `initia.js/cosmos`    — CosmosRegistryProvider
+ * - `initia.js/modules`  — Individual module definitions for custom chains
+ * - `initia.js/codegen`  — ABI codegen CLI
  * - `initia.js/vip`      — VIP lock staking, gauge voting, rewards
  *
  * @packageDocumentation
@@ -47,6 +49,16 @@ export {
   SimulationError,
   TimeoutError,
 } from './errors'
+
+export { TxNotFoundError } from './tx/get-tx'
+export type {
+  DecodedTx,
+  DecodedTxMessage,
+  GetTxOptions,
+  GetTxOptionsFor,
+  AbiRegistry,
+  AbiRegistryFor,
+} from './tx/get-tx'
 
 // =============================================================================
 // Key Management

@@ -4,7 +4,7 @@
  * This example demonstrates the simplified high-level API:
  * 1. Create provider and get chain info
  * 2. Create ChainContext from chain info and key
- * 3. Use ctx.msgs.send() builder
+ * 3. Use ctx.msgs.bank.send() builder
  * 4. Use ctx.signAndBroadcast() for one-call transaction
  *
  * Compare with raw-send.ts to see the difference between low-level and high-level APIs.
@@ -25,22 +25,26 @@ async function main() {
   }
   console.log('Address:', ctx.address)
 
-  // 3. Check balance (optional)
+  // 2. Check balance (optional)
   const balances = await ctx.getBalance()
   console.log(
     'Balances:',
     balances.map(b => b.toString())
   )
 
-  // 4. Build message using high-level builder
+  // 3. Build message using high-level builder
   // Compare: Low-level requires create(MsgSendSchema, {...}) + anyPack()
   const recipient = RECIPIENT.bech32
-  const msg = ctx.msgs.send(ctx.address, recipient, [coin('uinit', '1000000')])
+  const msg = ctx.msgs.bank.send({
+    fromAddress: ctx.address,
+    toAddress: recipient,
+    amount: [coin('uinit', '1000000')],
+  })
   console.log('Message type:', msg.typeUrl)
   console.log('From:', msg.value.fromAddress)
   console.log('To:', msg.value.toAddress)
 
-  // 5. Sign and broadcast in one call
+  // 4. Sign and broadcast in one call
   // Compare: Low-level requires manual account fetch, sign, broadcast
   const result = await ctx.signAndBroadcast([msg], {
     memo: 'Send 1 INIT via high-level API',

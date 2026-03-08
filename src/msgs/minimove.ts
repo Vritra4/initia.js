@@ -1,20 +1,24 @@
 /**
- * Minimove rollup message builders.
- *
- * Includes Move VM execution messages only.
- * Minimove uses the same Move VM as Initia L1.
+ * Minimove rollup message composition.
  */
 
-import type { MinimoveMsgs } from './types'
-import { baseMsgs } from './base'
-import { execute, script } from './move'
+import type { MinimoveMsgs, WithSchemas } from './types'
+import { msgCustom } from './types'
+import { createDecode } from './decode'
 
-/**
- * Minimove rollup message builders instance.
- * Extends base messages with Move VM execution.
- */
-export const minimoveMsgs: MinimoveMsgs = {
-  ...baseMsgs,
-  execute,
-  script,
+import { bankModule, bankSchemas } from './modules/bank'
+import { ibcModule, ibcSchemas } from './modules/ibc'
+import { moveModule, moveSchemas } from './modules/move'
+import { opchildModule, opchildSchemas } from './modules/opchild'
+
+const allSchemas = [...bankSchemas, ...ibcSchemas, ...moveSchemas, ...opchildSchemas]
+
+export const minimoveMsgs: WithSchemas<MinimoveMsgs> = {
+  bank: bankModule,
+  ibc: ibcModule,
+  move: moveModule,
+  opchild: opchildModule,
+  custom: msgCustom,
+  decode: createDecode(allSchemas),
+  _schemas: allSchemas,
 }

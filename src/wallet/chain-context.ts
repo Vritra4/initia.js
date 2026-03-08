@@ -105,11 +105,24 @@ import {
   createUnsupportedUsernameService,
   isUsernameServiceSupported,
 } from '../client/usernames'
+import {
+  getTx,
+  createAbiRegistry,
+  createNoopAbiRegistry,
+  type AbiRegistry,
+  type AbiRegistryFor,
+  type MessageEnricher,
+  type GetTxOptionsFor,
+  type DecodedTx,
+} from '../tx/get-tx'
 
 // Re-export types for convenience
 export type { Subscription, TxResult, WaitForTxOptions, EventFilter, WaitForEventOptions }
 export type { BroadcastResultWithWait, SignBroadcastOptions }
 export { WebSocketSession }
+
+/** Factory that creates enrichers for a specific chain's VM capabilities. */
+export type EnricherFactory = (client: Client, abis: AbiRegistry) => MessageEnricher[]
 
 // =============================================================================
 // Token Resolver
@@ -381,6 +394,25 @@ interface BaseChainContext<T extends ChainType = ChainType> {
 
   readonly usernames: UsernameService
 
+  // ============= ABI Registry =============
+
+  /**
+   * ABI registry for VM-aware tx decoding. Call `set(key, abi)` to register.
+   * Shared by reference across `withSigner()`/`forAddress()` — mutations
+   * on a derived context are visible to the parent and vice versa.
+   */
+  readonly abis: AbiRegistryFor<T>
+
+  /**
+   * Decode a transaction with VM-aware arg enrichment.
+   *
+   * **Note**: `createChainContext()` (generic factory) provides protobuf decode only —
+   * no VM enrichment (functionName, args, contractMsg will be undefined).
+   * Use typed factories (`createInitiaContext`, `createMinievmContext`, etc.)
+   * for full VM-aware arg decoding.
+   */
+  getTx(hash: string, options?: GetTxOptionsFor<T>): Promise<DecodedTx>
+
   // ============= Token Utilities =============
 
   /**
@@ -541,11 +573,14 @@ interface ContextCarryover {
   }
   evmRpc?: EvmRpcClient
   rpc?: RpcClient
+  abis?: AbiRegistry
+  enricherFactory?: EnricherFactory
 }
 
 class ChainContextImpl<T extends ChainType> implements BaseChainContext<T> {
   readonly client: ClientFor<T>
   readonly msgs: MsgsForChain<T>
+  readonly abis: AbiRegistryFor<T>
   private readonly _signer: DirectSigner | AminoSigner | undefined
   readonly chainInfo: ChainInfo
   readonly usernames: UsernameService
@@ -555,6 +590,8 @@ class ChainContextImpl<T extends ChainType> implements BaseChainContext<T> {
   private readonly _evmTransport: 'grpc' | 'jsonrpc' | undefined
   private _rpc: RpcClient | undefined
   private readonly _tokenResolver: TokenResolver | undefined
+  private readonly _enricherFactory: EnricherFactory | undefined
+  private readonly _enrichers: MessageEnricher[]
   private readonly _rpcOptions: {
     auth?: AuthConfig
     headers?: Record<string, string>
@@ -585,9 +622,19 @@ class ChainContextImpl<T extends ChainType> implements BaseChainContext<T> {
 
     this._evmTransport = options?.evmTransport
     this._tokenResolver = options?.tokenResolver
+    this._enricherFactory = options?.enricherFactory
     this._rpcOptions = options?.rpcOptions ?? {}
     if (options?.evmRpc) this._evmRpc = options.evmRpc
     if (options?.rpc) this._rpc = options.rpc
+
+    // ABI registry: reuse from carryover (shared by reference) or create new
+    this.abis = (options?.abis ??
+      (options?.enricherFactory
+        ? createAbiRegistry()
+        : createNoopAbiRegistry())) as AbiRegistryFor<T>
+    this._enrichers = options?.enricherFactory
+      ? options.enricherFactory(client as unknown as Client, this.abis)
+      : []
 
     // Usernames: real service for Initia L1 mainnet/testnet, stub for others
     this.usernames =
@@ -723,6 +770,8 @@ class ChainContextImpl<T extends ChainType> implements BaseChainContext<T> {
       rpcOptions: this._rpcOptions,
       evmRpc: this._evmRpc,
       rpc: this._rpc,
+      abis: this.abis,
+      enricherFactory: this._enricherFactory,
     }
   }
 
@@ -1054,6 +1103,10 @@ class ChainContextImpl<T extends ChainType> implements BaseChainContext<T> {
     return contract.getInfo()
   }
 
+  async getTx(hash: string, options?: GetTxOptionsFor<T>): Promise<DecodedTx> {
+    return getTx(this.client, packed => this.msgs.decode(packed), hash, this._enrichers, options)
+  }
+
   getTokenContract(token: string): TokenContract {
     if (!this._tokenResolver) {
       throw new Error(
@@ -1089,7 +1142,7 @@ export function buildChainContextFactory(
   createTransport: (chainInfo: ChainInfo, options?: TransportOptions) => Transport,
   getServices: (chainInfo: ChainInfo) => Record<string, DescService>,
   getMsgs: (chainType: ChainType) => MsgsForChain<ChainType>,
-  factoryOptions?: { tokenResolver?: TokenResolver }
+  factoryOptions?: { tokenResolver?: TokenResolver; enricherFactory?: EnricherFactory }
 ) {
   return function createChainContext<T extends ChainType>(
     chainInfo: ChainInfo & { chainType: T },
@@ -1128,6 +1181,7 @@ export function buildChainContextFactory(
       address: options?.address,
       evmTransport: options?.evmTransport,
       tokenResolver: factoryOptions?.tokenResolver,
+      enricherFactory: factoryOptions?.enricherFactory,
       rpcOptions: {
         auth: options?.auth,
         headers: options?.headers,

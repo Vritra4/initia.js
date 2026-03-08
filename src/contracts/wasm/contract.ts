@@ -27,7 +27,7 @@ import {
 } from '@buf/cosmwasm_wasmd.bufbuild_es/cosmwasm/wasm/v1/tx_pb'
 
 import { Message } from '../../msgs/types'
-import { toProtoCoins } from '../../msgs/base'
+import { toProtoCoins } from '../../msgs/types'
 import type { HasWasmService } from '../../client/types'
 import type { Coin } from '../../core/coin'
 import type { TokenInfo, NftInfo, OwnerOfResponse, NftApproval } from '../types'

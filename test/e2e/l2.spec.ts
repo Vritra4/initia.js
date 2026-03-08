@@ -338,9 +338,11 @@ describe.skipIf(SKIP)('L2 E2E: Deposit -> Transact -> Withdraw', () => {
           )
 
           try {
-            const msg = ctx.msgs.send(sender, recipientAddress, [
-              coin(nativeDenom, SEND_AMOUNT.toString()),
-            ])
+            const msg = ctx.msgs.bank.send({
+              fromAddress: sender,
+              toAddress: recipientAddress,
+              amount: [coin(nativeDenom, SEND_AMOUNT.toString())],
+            })
             const result = await ctx.signAndBroadcast([msg], { waitForConfirmation: true })
 
             expect(result.code).toBe(0)
@@ -518,7 +520,9 @@ describe.skipIf(SKIP)('L2 E2E: Deposit -> Transact -> Withdraw', () => {
         })
 
         expect(result).toBeDefined()
-        log(`[move-1] coin::balance result: ${JSON.stringify(result, (_, v) => typeof v === 'bigint' ? v.toString() : v)} (metadata: ${metadata})`)
+        log(
+          `[move-1] coin::balance result: ${JSON.stringify(result, (_, v) => (typeof v === 'bigint' ? v.toString() : v))} (metadata: ${metadata})`
+        )
       }, 60_000)
 
       it('should get token info via coin view functions', async () => {
@@ -774,7 +778,11 @@ describe.skipIf(SKIP)('L2 E2E: Deposit -> Transact -> Withdraw', () => {
           )
             return
 
-          const msg = ctx.msgs.send(sender, recipientAddress, [coin(nativeDenom, '1000')])
+          const msg = ctx.msgs.bank.send({
+            fromAddress: sender,
+            toAddress: recipientAddress,
+            amount: [coin(nativeDenom, '1000')],
+          })
           const estimate = await ctx.estimateGas([msg])
 
           expect(estimate.gasLimit).toBeGreaterThan(0n)
@@ -821,9 +829,11 @@ describe.skipIf(SKIP)('L2 E2E: Deposit -> Transact -> Withdraw', () => {
 
         try {
           const ctx = recipientWallet.chain(l2)
-          const msg = ctx.msgs.send(recipientAddress, senderAddress, [
-            coin(nativeDenom, sendBack.toString()),
-          ])
+          const msg = ctx.msgs.bank.send({
+            fromAddress: recipientAddress,
+            toAddress: senderAddress,
+            amount: [coin(nativeDenom, sendBack.toString())],
+          })
           const result = await ctx.signAndBroadcast([msg], { waitForConfirmation: true })
 
           expect(result.code).toBe(0)

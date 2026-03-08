@@ -746,7 +746,7 @@ describe('Known limitations for amino conversion', () => {
       value: new Uint8Array([10, 5]),
     })
     const msg = Message.fromAny(anyMsg)
-    expect(() => msg.toAmino()).toThrow('Cannot convert pre-packed Any')
+    expect(() => msg.toAmino()).toThrow('Cannot convert to Amino on a pre-packed Any')
   })
 
   it('Custom amino override allows manual conversion', () => {

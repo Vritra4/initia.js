@@ -1,110 +1,62 @@
 /**
  * Message builder type definitions.
  *
- * Each chain type has its own message interface with chain-specific methods.
- *
- * ## Supported Messages
- *
- * This SDK provides builders for commonly used messages:
- *
- * | Module       | Messages                                    | Use Case           |
- * |--------------|---------------------------------------------|--------------------|
- * | bank         | send                                        | Token transfers    |
- * | staking      | delegate, undelegate, redelegate            | Staking operations |
- * | distribution | withdrawRewards                             | Claim rewards      |
- * | gov          | vote, deposit                               | Governance         |
- * | ibc          | transfer                                    | Cross-chain        |
- * | authz        | grant, exec, revoke                         | Authorization      |
- * | feegrant     | grantAllowance, revokeAllowance             | Fee delegation     |
- * | group        | createGroup, vote                           | Group governance   |
- * | move         | execute, script                             | Move contracts     |
- * | wasm         | instantiate, executeContract, migrate       | CosmWasm contracts |
- * | evm          | call, create                                | EVM contracts      |
- *
- * ## Unsupported Messages
- *
- * Some Cosmos SDK messages are intentionally not included because they are
- * rarely used by typical SDK consumers:
- *
- * | Module   | Messages         | Reason                                    |
- * |----------|------------------|-------------------------------------------|
- * | slashing | MsgUnjail        | Validator operators only                  |
- * | evidence | MsgSubmitEvidence| Very rare, security-critical              |
- * | upgrade  | MsgSoftwareUpgrade| Governance proposals only                |
- * | crisis   | MsgVerifyInvariant| Emergency use only                       |
- * | params   | MsgUpdateParams  | Governance proposals only                 |
- *
- * ## Using Custom Messages
- *
- * For any message not directly supported, use `msgs.custom()`:
+ * Each chain type has its own message interface with chain-specific module namespaces.
+ * All Cosmos SDK, IBC, Initia-specific, and VM-specific modules are available as
+ * first-class builders. For any message not covered by your chain's modules,
+ * use `msgs.custom()`. To decode a protobuf Any from on-chain data,
+ * use `msgs.decode(any)`.
  *
  * @example
  * ```typescript
- * import { MsgUnjailSchema } from '@buf/cosmos_cosmos-sdk.bufbuild_es/cosmos/slashing/v1beta1/tx_pb'
+ * // Use a module builder (recommended)
+ * const msg = msgs.bank.send({ fromAddress, toAddress, amount })
  *
- * // Create any Cosmos SDK message
- * const unjailMsg = msgs.custom(MsgUnjailSchema, {
- *   validatorAddr: 'initvaloper1...'
- * })
- *
- * // Use it like any other message
- * await ctx.signAndBroadcast([unjailMsg])
+ * // Use custom() for any proto schema
+ * const msg = msgs.custom(SomeSchema, { field: '...' })
  * ```
- *
- * This approach provides:
- * - Full type safety from BSR protobuf schemas
- * - Automatic Any packing
- * - Compatibility with all SDK features (signing, broadcasting, etc.)
  */
 
-import type { Numeric } from '../types'
-import type { DescMessage, MessageInitShape, MessageShape } from '@bufbuild/protobuf'
-import { type Any, anyUnpack } from '@bufbuild/protobuf/wkt'
-import type { MsgSendSchema } from '@buf/cosmos_cosmos-sdk.bufbuild_es/cosmos/bank/v1beta1/tx_pb'
-import type { MsgTransferSchema } from '@buf/cosmos_ibc.bufbuild_es/ibc/applications/transfer/v1/tx_pb'
-import type {
-  MsgDelegateSchema,
-  MsgUndelegateSchema,
-  MsgBeginRedelegateSchema,
-} from '@buf/initia-labs_initia.bufbuild_es/initia/mstaking/v1/tx_pb'
-import type { MsgWithdrawDelegatorRewardSchema } from '@buf/cosmos_cosmos-sdk.bufbuild_es/cosmos/distribution/v1beta1/tx_pb'
-import type {
-  MsgExecuteSchema,
-  MsgScriptSchema,
-} from '@buf/initia-labs_initia.bufbuild_es/initia/move/v1/tx_pb'
-import type {
-  MsgVoteSchema,
-  MsgDepositSchema,
-} from '@buf/cosmos_cosmos-sdk.bufbuild_es/cosmos/gov/v1/tx_pb'
-import type {
-  MsgGrantSchema,
-  MsgExecSchema,
-  MsgRevokeSchema,
-} from '@buf/cosmos_cosmos-sdk.bufbuild_es/cosmos/authz/v1beta1/tx_pb'
-import type {
-  MsgGrantAllowanceSchema,
-  MsgRevokeAllowanceSchema,
-} from '@buf/cosmos_cosmos-sdk.bufbuild_es/cosmos/feegrant/v1beta1/tx_pb'
-import type {
-  MsgCreateGroupSchema,
-  MsgVoteSchema as MsgGroupVoteSchema,
-} from '@buf/cosmos_cosmos-sdk.bufbuild_es/cosmos/group/v1/tx_pb'
-import type {
-  MsgStoreCodeSchema,
-  MsgInstantiateContractSchema,
-  MsgExecuteContractSchema,
-  MsgMigrateContractSchema,
-} from '@buf/cosmwasm_wasmd.bufbuild_es/cosmwasm/wasm/v1/tx_pb'
-import type {
-  MsgCallSchema,
-  MsgCreateSchema,
-} from '@buf/initia-labs_minievm.bufbuild_es/minievm/evm/v1/tx_pb'
-import { create, toJson as msgToJson } from '@bufbuild/protobuf'
+import type { DescMessage, DescField, MessageInitShape, MessageShape } from '@bufbuild/protobuf'
+import { type Any, anyUnpack, timestampFromDate } from '@bufbuild/protobuf/wkt'
+import { ScalarType, create, toJson as msgToJson } from '@bufbuild/protobuf'
 import { anyPack } from '../util/any'
+import { hexToBytes } from '../util/hex'
 import { toAmino as protoToAmino, type AminoMsg } from '../tx/amino'
-import { InitiaError } from '../errors'
+import { InitiaError, ValidationError, ParseError } from '../errors'
 import type { Coin } from '../core/coin'
 import type { ChainType } from '../client/types'
+import { CoinSchema } from '@buf/cosmos_cosmos-sdk.bufbuild_es/cosmos/base/v1beta1/coin_pb'
+
+import type { BankModule } from './modules/bank'
+import type { IbcModule } from './modules/ibc'
+import type { IbcCoreModule } from './modules/ibc-core'
+import type { IbcFeeModule } from './modules/ibc-fee'
+import type { IbcIcaModule } from './modules/ibc-ica'
+import type { MstakingModule } from './modules/mstaking'
+import type { DistributionModule } from './modules/distribution'
+import type { MoveModule } from './modules/move'
+import type { GovModule } from './modules/gov'
+import type { AuthzModule } from './modules/authz'
+import type { FeegrantModule } from './modules/feegrant'
+import type { GroupModule } from './modules/group'
+import type { OphostModule } from './modules/ophost'
+import type { OpchildModule } from './modules/opchild'
+import type { EvmModule } from './modules/evm'
+import type { WasmModule } from './modules/wasm'
+import type { SlashingModule } from './modules/slashing'
+import type { EvidenceModule } from './modules/evidence'
+import type { UpgradeModule } from './modules/upgrade'
+import type { CrisisModule } from './modules/crisis'
+import type { AuthModule } from './modules/auth'
+import type { ConsensusModule } from './modules/consensus'
+import type { InitiaBankModule } from './modules/initia-bank'
+import type { InitiaDistributionModule } from './modules/initia-distribution'
+import type { InitiaGovModule } from './modules/initia-gov'
+import type { IbcHooksModule } from './modules/ibchooks'
+import type { InterTxModule } from './modules/intertx'
+import type { DynamicFeeModule } from './modules/dynamicfee'
+import type { RewardModule } from './modules/reward'
 
 /**
  * Human-readable JSON representation of a message.
@@ -124,9 +76,9 @@ export interface JsonMsg {
  * @example
  * ```typescript
  * // High-level (via msg builders — no schema knowledge needed)
- * const msg = msgs.send(from, to, amount)
+ * const msg = msgs.bank.send({ fromAddress: from, toAddress: to, amount })
  *
- * // Mid-level (custom messages)
+ * // Mid-level (raw proto init — no Coin/Date/hex transforms applied)
  * const msg = new Message(MsgUnjailSchema, { validatorAddr: '...' })
  *
  * // Low-level (custom amino conversion)
@@ -136,8 +88,10 @@ export interface JsonMsg {
  * ```
  */
 export class Message<T extends DescMessage = DescMessage> {
-  readonly schema: T
-  readonly value: MessageShape<T>
+  // _schema and _value are undefined for rawAny messages (created via fromAny(Any) single-arg).
+  // Accessors that depend on schema/value must call assertDecoded() first.
+  private _schema?: T
+  private _value?: MessageShape<T>
   private _rawAny?: Any
   private _aminoOverride?: (value: MessageShape<T>) => AminoMsg
 
@@ -146,21 +100,42 @@ export class Message<T extends DescMessage = DescMessage> {
     init: MessageInitShape<T>,
     options?: { toAmino?: (value: MessageShape<T>) => AminoMsg }
   ) {
-    this.schema = schema
-    this.value = create(schema, init)
+    this._schema = schema
+    this._value = create(schema, init)
     if (options?.toAmino) this._aminoOverride = options.toAmino
+  }
+
+  /** Whether this message has decoded schema and value accessible (not a pre-packed Any). */
+  get isDecoded(): boolean {
+    return !this._rawAny
+  }
+
+  private assertDecoded(operation: string): void {
+    if (this._rawAny) {
+      throw new InitiaError(
+        `Cannot ${operation} on a pre-packed Any message. ` +
+          'Use Message.fromAny(schema, any) to decode with a specific schema.'
+      )
+    }
+  }
+
+  /** Protobuf schema descriptor. Throws on pre-packed Any messages. */
+  get schema(): T {
+    this.assertDecoded('access schema')
+    return this._schema as T
+  }
+
+  /** Decoded message value. Throws on pre-packed Any messages. */
+  get value(): MessageShape<T> {
+    this.assertDecoded('access value')
+    return this._value as MessageShape<T>
   }
 
   /** Convert to Amino format for amino/eip191 signing. */
   toAmino(): AminoMsg {
-    if (this._rawAny) {
-      throw new InitiaError(
-        'Cannot convert pre-packed Any to Amino format. ' +
-          'Provide a schema via new Message(schema, init) for amino signing support.'
-      )
-    }
-    if (this._aminoOverride) return this._aminoOverride(this.value)
-    return protoToAmino(this.schema, this.value)
+    this.assertDecoded('convert to Amino')
+    if (this._aminoOverride) return this._aminoOverride(this._value!)
+    return protoToAmino(this._schema!, this._value!)
   }
 
   /**
@@ -168,42 +143,41 @@ export class Message<T extends DescMessage = DescMessage> {
    *
    * @example
    * ```typescript
-   * const msg = msgs.send('init1from...', 'init1to...', coin('uinit', '1000000'))
+   * const msg = msgs.bank.send({ fromAddress: 'init1from...', toAddress: 'init1to...', amount: coin('uinit', '1000000') })
    * msg.toJson()
    * // → { typeUrl: "/cosmos.bank.v1beta1.MsgSend",
    * //     value: { fromAddress: "init1from...", toAddress: "init1to...", amount: [...] } }
    * ```
    */
   toJson(): JsonMsg {
-    if (this._rawAny) {
-      throw new InitiaError(
-        'Cannot convert pre-packed Any to JSON. ' +
-          'Provide a schema via new Message(schema, init) for JSON support.'
-      )
-    }
+    this.assertDecoded('convert to JSON')
     return {
-      typeUrl: '/' + this.schema.typeName,
-      value: msgToJson(this.schema, this.value) as Record<string, unknown>,
+      typeUrl: '/' + this._schema!.typeName,
+      value: msgToJson(this._schema!, this._value!) as Record<string, unknown>,
     }
   }
 
   /** Pack as protobuf Any for direct signing / TxBody. */
   toAny(): Any {
     if (this._rawAny) return this._rawAny
-    return anyPack(this.schema, this.value)
+    return anyPack(this._schema!, this._value!)
   }
 
   /** Type URL for this message (e.g., '/cosmos.bank.v1beta1.MsgSend'). */
   get typeUrl(): string {
     if (this._rawAny) return this._rawAny.typeUrl
-    return '/' + this.schema.typeName
+    return '/' + this._schema!.typeName
   }
 
   /**
-   * Wrap a pre-packed Any as a DIRECT-only Message.
-   * toAny() returns the original Any; toAmino() throws.
+   * Create a Message from a protobuf Any.
    *
-   * Used for opaque messages from external systems (e.g., Router API).
+   * Two modes:
+   * - `fromAny(any)` — wraps as DIRECT-only Message. toAny()/typeUrl work;
+   *   toAmino()/toJson()/schema/value throw. Used for opaque messages from
+   *   external systems (e.g., Router API).
+   * - `fromAny(schema, any)` — decodes into a full Message with all features.
+   *   Throws ParseError if the Any typeUrl doesn't match the schema.
    */
   static fromAny(any: Any): Message
   static fromAny<T extends DescMessage>(schema: T, any: Any): Message<T>
@@ -212,14 +186,28 @@ export class Message<T extends DescMessage = DescMessage> {
       const schema = first as T
       const value = anyUnpack(second, schema)
       if (!value) {
-        throw new InitiaError(
+        throw new ParseError(
+          'message',
           `fromAny type mismatch: expected /${schema.typeName}, got ${second.typeUrl}`
         )
       }
       return new Message(schema, value)
     }
+    const packed = first as Any
+    if (!packed.typeUrl || typeof packed.typeUrl !== 'string') {
+      throw new ValidationError(
+        'Any',
+        `fromAny() requires an Any object with a valid typeUrl string, got: ${String(packed.typeUrl)}`
+      )
+    }
+    if (!(packed.value instanceof Uint8Array)) {
+      throw new ValidationError(
+        'Any',
+        `fromAny() requires Any.value to be a Uint8Array, got: ${typeof packed.value}`
+      )
+    }
     const msg = Object.create(Message.prototype) as Message
-    msg._rawAny = first as Any
+    msg._rawAny = packed
     return msg
   }
 }
@@ -238,339 +226,83 @@ export type MsgInput = Message | Any
  */
 export function normalizeMsg(input: MsgInput): Message {
   if (input instanceof Message) return input
+  if (typeof input !== 'object' || input === null) {
+    throw new ValidationError(
+      'MsgInput',
+      `Expected a Message instance or an Any object, got: ${String(input)}`
+    )
+  }
+  // Message.fromAny validates typeUrl (string, non-empty) and value (Uint8Array)
   return Message.fromAny(input)
 }
 
-/**
- * Feegrant allowance options for BasicAllowance.
- */
-export interface AllowanceOptions {
-  /** Maximum spend limit (optional - unlimited if not set) */
-  spendLimit?: Coin[]
-  /** Expiration time (optional - never expires if not set) */
-  expiration?: Date
-}
-
-/**
- * Group member definition.
- */
-export interface GroupMember {
-  /** Member address */
-  address: string
-  /** Voting weight (as string for precision) */
-  weight: string
-  /** Optional metadata */
-  metadata?: string
-}
-
-/**
- * IBC transfer options.
- */
-export interface IbcTransferOptions {
-  /** Source port (default: 'transfer') */
-  sourcePort?: string
-  /** Timeout height */
-  timeoutHeight?: { revisionNumber: Numeric; revisionHeight: Numeric }
-  /** Timeout timestamp in nanoseconds */
-  timeoutTimestamp?: Numeric
-  /** Optional memo */
-  memo?: string
-}
-
 // =============================================================================
-// Object syntax input types
+// Module-based chain composition interfaces
 // =============================================================================
 
-/** Object input for {@link BaseMsgs.send}. */
-export interface SendInput {
-  from: string
-  to: string
-  amount: Coin | Coin[]
+interface CoreModules {
+  bank: BankModule
+  ibc: IbcModule
+  /**
+   * Create a message from any protobuf schema.
+   *
+   * Uses FriendlyCustomInit which preserves proto-optional fields as `?:`
+   * (unlike module builders where FriendlyInit + WithDefaults controls optionality).
+   * DeepFriendly transforms still apply: SDK Coin, Date, hex strings, etc.
+   */
+  custom<T extends DescMessage>(schema: T, data: FriendlyCustomInit<T>): Message<T>
+  /**
+   * Decode a protobuf Any into a typed Message using this chain's registered schemas.
+   * @throws {ParseError} if the typeUrl is not registered in the decode schema map.
+   */
+  decode(any: Any): Message
 }
 
-/** Object input for {@link BaseMsgs.transfer}. */
-export interface TransferInput extends IbcTransferOptions {
-  sender: string
-  receiver: string
-  token: Coin
-  channel: string
+export interface InitiaMsgs extends CoreModules {
+  ibcCore: IbcCoreModule
+  ibcFee: IbcFeeModule
+  ibcIca: IbcIcaModule
+  mstaking: MstakingModule
+  distribution: DistributionModule
+  move: MoveModule
+  gov: GovModule
+  authz: AuthzModule
+  feegrant: FeegrantModule
+  group: GroupModule
+  ophost: OphostModule
+  slashing: SlashingModule
+  evidence: EvidenceModule
+  upgrade: UpgradeModule
+  crisis: CrisisModule
+  auth: AuthModule
+  consensus: ConsensusModule
+  initiaBank: InitiaBankModule
+  initiaDistribution: InitiaDistributionModule
+  initiaGov: InitiaGovModule
+  ibcHooks: IbcHooksModule
+  interTx: InterTxModule
+  dynamicFee: DynamicFeeModule
+  reward: RewardModule
 }
 
-/** Object input for delegate / undelegate. */
-export interface DelegateInput {
-  delegator: string
-  validator: string
-  amount: Coin | Coin[]
+export interface MinievmMsgs extends CoreModules {
+  evm: EvmModule
+  opchild: OpchildModule
 }
 
-/** Object input for {@link InitiaMsgs.redelegate}. */
-export interface RedelegateInput {
-  delegator: string
-  srcValidator: string
-  dstValidator: string
-  amount: Coin | Coin[]
+export interface MinimoveMsgs extends CoreModules {
+  move: MoveModule
+  opchild: OpchildModule
 }
 
-/** Object input for Move execute. */
-export interface MoveExecuteInput {
-  sender: string
-  moduleAddress: string
-  moduleName: string
-  functionName: string
-  typeArgs: string[]
-  args: Uint8Array[]
+export interface MiniwasmMsgs extends CoreModules {
+  wasm: WasmModule
+  opchild: OpchildModule
 }
 
-/**
- * Base message builders available on all chains.
- */
-export interface BaseMsgs {
-  /**
-   * Send tokens to another address.
-   */
-  send(from: string, to: string, amount: Coin | Coin[]): Message<typeof MsgSendSchema>
-  send(input: SendInput): Message<typeof MsgSendSchema>
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+export interface BaseMsgs extends CoreModules {}
 
-  /**
-   * IBC transfer tokens to another chain.
-   */
-  transfer(
-    sender: string,
-    receiver: string,
-    token: Coin,
-    channel: string,
-    options?: IbcTransferOptions
-  ): Message<typeof MsgTransferSchema>
-  transfer(input: TransferInput): Message<typeof MsgTransferSchema>
-
-  /**
-   * Create a custom message from any protobuf schema.
-   */
-  custom<T extends DescMessage>(schema: T, data: MessageInitShape<T>): Message<T>
-}
-
-/**
- * Initia L1 message builders.
- * Includes staking, Move, and governance.
- */
-export interface InitiaMsgs extends BaseMsgs {
-  /** Delegate tokens to a validator */
-  delegate(
-    delegator: string,
-    validator: string,
-    amount: Coin | Coin[]
-  ): Message<typeof MsgDelegateSchema>
-  delegate(input: DelegateInput): Message<typeof MsgDelegateSchema>
-
-  /** Undelegate tokens from a validator */
-  undelegate(
-    delegator: string,
-    validator: string,
-    amount: Coin | Coin[]
-  ): Message<typeof MsgUndelegateSchema>
-  undelegate(input: DelegateInput): Message<typeof MsgUndelegateSchema>
-
-  /** Redelegate tokens between validators */
-  redelegate(
-    delegator: string,
-    srcValidator: string,
-    dstValidator: string,
-    amount: Coin | Coin[]
-  ): Message<typeof MsgBeginRedelegateSchema>
-  redelegate(input: RedelegateInput): Message<typeof MsgBeginRedelegateSchema>
-
-  /** Withdraw staking rewards */
-  withdrawRewards(
-    delegator: string,
-    validator: string
-  ): Message<typeof MsgWithdrawDelegatorRewardSchema>
-
-  /** Execute a Move function */
-  execute(
-    sender: string,
-    moduleAddress: string,
-    moduleName: string,
-    functionName: string,
-    typeArgs: string[],
-    args: Uint8Array[]
-  ): Message<typeof MsgExecuteSchema>
-  execute(input: MoveExecuteInput): Message<typeof MsgExecuteSchema>
-
-  /** Execute a Move script */
-  script(
-    sender: string,
-    codeBytes: Uint8Array,
-    typeArgs: string[],
-    args: Uint8Array[]
-  ): Message<typeof MsgScriptSchema>
-
-  /** Vote on a governance proposal (1=yes, 2=abstain, 3=no, 4=no_with_veto) */
-  vote(proposalId: Numeric, voter: string, option: number): Message<typeof MsgVoteSchema>
-
-  /** Deposit tokens to a governance proposal */
-  deposit(proposalId: Numeric, depositor: string, amount: Coin[]): Message<typeof MsgDepositSchema>
-
-  // ============= Authz =============
-
-  /**
-   * Grant authorization to another account.
-   * @param granter - Address granting the authorization
-   * @param grantee - Address receiving the authorization
-   * @param authorization - The authorization message (as Message)
-   * @param expiration - Optional expiration time
-   */
-  authzGrant(
-    granter: string,
-    grantee: string,
-    authorization: Message,
-    expiration?: Date
-  ): Message<typeof MsgGrantSchema>
-
-  /**
-   * Execute messages on behalf of the granter.
-   * @param grantee - Address executing the authorization
-   * @param msgs - Messages to execute
-   */
-  authzExec(grantee: string, msgs: Message[]): Message<typeof MsgExecSchema>
-
-  /**
-   * Revoke a previously granted authorization.
-   * @param granter - Address that granted the authorization
-   * @param grantee - Address that received the authorization
-   * @param msgTypeUrl - Type URL of the message to revoke
-   */
-  authzRevoke(granter: string, grantee: string, msgTypeUrl: string): Message<typeof MsgRevokeSchema>
-
-  // ============= Feegrant =============
-
-  /**
-   * Grant fee allowance to another account.
-   * Creates a BasicAllowance with optional spend limit and expiration.
-   * @param granter - Address granting the allowance
-   * @param grantee - Address receiving the allowance
-   * @param options - Allowance options (spendLimit, expiration)
-   */
-  grantAllowance(
-    granter: string,
-    grantee: string,
-    options?: AllowanceOptions
-  ): Message<typeof MsgGrantAllowanceSchema>
-
-  /**
-   * Revoke fee allowance from another account.
-   * @param granter - Address that granted the allowance
-   * @param grantee - Address that received the allowance
-   */
-  revokeAllowance(granter: string, grantee: string): Message<typeof MsgRevokeAllowanceSchema>
-
-  // ============= Group =============
-
-  /**
-   * Create a new group.
-   * @param admin - Admin address for the group
-   * @param members - List of group members with weights
-   * @param metadata - Optional group metadata
-   */
-  createGroup(
-    admin: string,
-    members: GroupMember[],
-    metadata?: string
-  ): Message<typeof MsgCreateGroupSchema>
-
-  /**
-   * Vote on a group proposal.
-   * @param proposalId - ID of the proposal
-   * @param voter - Voter address
-   * @param option - Vote option (1=yes, 2=abstain, 3=no, 4=no_with_veto)
-   * @param metadata - Optional vote metadata
-   */
-  groupVote(
-    proposalId: Numeric,
-    voter: string,
-    option: number,
-    metadata?: string
-  ): Message<typeof MsgGroupVoteSchema>
-}
-
-/**
- * Minimove rollup message builders.
- * Includes Move execution.
- */
-export interface MinimoveMsgs extends BaseMsgs {
-  /** Execute a Move function */
-  execute(
-    sender: string,
-    moduleAddress: string,
-    moduleName: string,
-    functionName: string,
-    typeArgs: string[],
-    args: Uint8Array[]
-  ): Message<typeof MsgExecuteSchema>
-  execute(input: MoveExecuteInput): Message<typeof MsgExecuteSchema>
-
-  /** Execute a Move script */
-  script(
-    sender: string,
-    codeBytes: Uint8Array,
-    typeArgs: string[],
-    args: Uint8Array[]
-  ): Message<typeof MsgScriptSchema>
-}
-
-/**
- * Miniwasm rollup message builders.
- * Includes CosmWasm contract operations.
- */
-export interface MiniwasmMsgs extends BaseMsgs {
-  /** Store wasm bytecode on chain */
-  storeCode(sender: string, wasmByteCode: Uint8Array): Message<typeof MsgStoreCodeSchema>
-
-  /** Instantiate a new contract */
-  instantiate(
-    sender: string,
-    codeId: Numeric,
-    msg: object,
-    label: string,
-    funds?: Coin[]
-  ): Message<typeof MsgInstantiateContractSchema>
-
-  /** Execute a contract method */
-  executeContract(
-    sender: string,
-    contract: string,
-    msg: object,
-    funds?: Coin[]
-  ): Message<typeof MsgExecuteContractSchema>
-
-  /** Migrate a contract to new code */
-  migrate(
-    sender: string,
-    contract: string,
-    codeId: Numeric,
-    msg: object
-  ): Message<typeof MsgMigrateContractSchema>
-}
-
-/**
- * Minievm rollup message builders.
- * Includes EVM contract operations.
- */
-export interface MinievmMsgs extends BaseMsgs {
-  /** Call an EVM contract */
-  call(
-    sender: string,
-    contractAddr: string,
-    input: Uint8Array,
-    value?: string
-  ): Message<typeof MsgCallSchema>
-
-  /** Deploy an EVM contract */
-  create(sender: string, code: Uint8Array, value?: string): Message<typeof MsgCreateSchema>
-}
-
-/**
- * Map chain type to its message builder interface.
- */
 interface MsgsMap {
   initia: InitiaMsgs
   minimove: MinimoveMsgs
@@ -580,3 +312,396 @@ interface MsgsMap {
 }
 
 export type MsgsForChain<T extends ChainType> = MsgsMap[T]
+
+// =============================================================================
+// FriendlyInit type system and normalizeInit
+// =============================================================================
+
+type CoinInput = Coin | Coin[]
+type BytesInput = Uint8Array | string
+type AnyShape = { typeUrl: string; value: Uint8Array; $typeName: 'google.protobuf.Any' }
+type TimestampShape = { seconds: bigint; nanos: number; $typeName: 'google.protobuf.Timestamp' }
+type CoinShape = { denom: string; amount: string; $typeName: 'cosmos.base.v1beta1.Coin' }
+
+/**
+ * Recursive type transformer for ergonomic init objects.
+ *
+ * Array handling uses Extract<E, Shape> to detect element union members
+ * without triggering distributive conditionals on the full union.
+ * Singular fields use NonNullable wrapping to avoid distributive evaluation,
+ * checking the full type against shape literals.
+ * Shape types include $typeName literals to prevent false-positive structural matches
+ * against unrelated types that happen to share similar fields.
+ */
+type DeepFriendly<T> = T extends null | undefined
+  ? T
+  : NonNullable<T> extends (infer E)[]
+    ? [Extract<E, AnyShape>] extends [never]
+      ? [Extract<E, CoinShape>] extends [never]
+        ? DeepFriendly<E>[]
+        : CoinInput
+      : Message[] | T
+    : NonNullable<T> extends AnyShape
+      ? Message | T
+      : NonNullable<T> extends CoinShape
+        ? Coin | T
+        : NonNullable<T> extends TimestampShape
+          ? Date | T
+          : NonNullable<T> extends bigint
+            ? bigint | number
+            : NonNullable<T> extends Uint8Array
+              ? BytesInput
+              : // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                T extends Record<string, any>
+                ? { [K in keyof T]: DeepFriendly<T[K]> }
+                : T
+
+/**
+ * Ergonomic init type — all keys required.
+ *
+ * Proto-optional fields allow `undefined` as a value but the key must be specified.
+ * Use WithDefaults on module builders to make specific keys truly optional.
+ * This ensures core fields like amount, members are never accidentally omitted.
+ */
+export type FriendlyInit<S extends DescMessage> = {
+  [K in keyof MessageShape<S> & keyof MessageInitShape<S> as K extends '$typeName' | '$unknown'
+    ? never
+    : K]: undefined extends MessageInitShape<S>[K]
+    ? DeepFriendly<MessageInitShape<S>[K]>
+    : DeepFriendly<NonNullable<MessageInitShape<S>[K]>>
+}
+
+/** Make specific keys optional (for builders with defaults like IBC transfer). */
+export type WithDefaults<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>
+
+/**
+ * Ergonomic init type for custom() — preserves proto optionality.
+ *
+ * Unlike FriendlyInit (all fields required), this maps directly from
+ * MessageInitShape so proto-optional fields keep their `?:` marker.
+ * Still applies DeepFriendly transforms (Coin, Date, hex string, etc.).
+ *
+ * Used only by custom() where there's no module-level WithDefaults
+ * to control which fields are optional.
+ */
+export type FriendlyCustomInit<S extends DescMessage> = {
+  [K in keyof MessageInitShape<S> as K extends '$typeName' | '$unknown' ? never : K]: DeepFriendly<
+    MessageInitShape<S>[K]
+  >
+}
+
+// ---- Coin helpers ----
+
+const COIN_TYPE_NAME = 'cosmos.base.v1beta1.Coin'
+
+/** Convert an SDK {@link Coin} to a proto Coin message. Validates denom (non-empty string) and amount (non-negative integer string or safe integer). */
+export function toProtoCoin(c: Coin) {
+  if (!c || typeof c !== 'object') {
+    throw new ValidationError('coin', `Expected a Coin object, got: ${String(c)}`)
+  }
+  if (typeof c.denom !== 'string' || !c.denom) {
+    throw new ValidationError(
+      'coin',
+      `Coin must have a non-empty "denom" field, got: ${JSON.stringify(c)}`
+    )
+  }
+  if (c.amount == null) {
+    throw new ValidationError('coin', `Coin must have an "amount" field, got: ${JSON.stringify(c)}`)
+  }
+  // Runtime guard for JS consumers who may pass number instead of string
+  if (typeof c.amount === 'number') {
+    if (!Number.isSafeInteger(c.amount) || c.amount < 0) {
+      throw new ValidationError(
+        'coin',
+        `Coin amount as number must be a non-negative safe integer, got: ${String(c.amount)}`
+      )
+    }
+  }
+  const amountStr = String(c.amount)
+  if (!/^\d+$/.test(amountStr)) {
+    throw new ValidationError(
+      'coin',
+      `Coin amount must be a non-negative integer string, got: "${amountStr}"`
+    )
+  }
+  return create(CoinSchema, { denom: c.denom, amount: amountStr })
+}
+
+/** Convert one or more SDK {@link Coin}s to an array of proto Coin messages. Returns `[]` for null/undefined. */
+export function toProtoCoins(amount?: Coin | Coin[]) {
+  if (amount == null) return []
+  const arr = Array.isArray(amount) ? amount : [amount]
+  return arr.map(toProtoCoin)
+}
+
+export { hexToBytes } from '../util/hex'
+
+// ---- Schema field analysis cache ----
+
+interface FieldAnalysis {
+  coinListFields: Set<string>
+  coinSingularFields: Set<string>
+  bytesFields: Set<string>
+  bigintFields: Set<string>
+  fieldMap: Map<string, DescField>
+}
+
+const fieldAnalysisCache = new WeakMap<DescMessage, FieldAnalysis>()
+
+const BIGINT_SCALARS = new Set([
+  ScalarType.INT64,
+  ScalarType.UINT64,
+  ScalarType.SINT64,
+  ScalarType.FIXED64,
+  ScalarType.SFIXED64,
+])
+
+function analyzeFields(schema: DescMessage): FieldAnalysis {
+  let cached = fieldAnalysisCache.get(schema)
+  if (cached) return cached
+
+  const coinListFields = new Set<string>()
+  const coinSingularFields = new Set<string>()
+  const bytesFields = new Set<string>()
+  const bigintFields = new Set<string>()
+  const fieldMap = new Map<string, DescField>()
+
+  for (const field of schema.fields) {
+    fieldMap.set(field.localName, field)
+    // Map fields with Coin values are handled by the map branch in normalizeInit
+    if (field.fieldKind !== 'map' && field.message?.typeName === COIN_TYPE_NAME) {
+      if (field.fieldKind === 'list') {
+        coinListFields.add(field.localName)
+      } else {
+        coinSingularFields.add(field.localName)
+      }
+    } else if (field.fieldKind === 'scalar') {
+      if (field.scalar === ScalarType.BYTES) {
+        bytesFields.add(field.localName)
+      } else if (BIGINT_SCALARS.has(field.scalar)) {
+        bigintFields.add(field.localName)
+      }
+    }
+  }
+
+  cached = { coinListFields, coinSingularFields, bytesFields, bigintFields, fieldMap }
+  fieldAnalysisCache.set(schema, cached)
+  return cached
+}
+
+/**
+ * Runtime normalization using schema field descriptors.
+ * Recursive: nested message fields and map values are normalized at every depth.
+ * Oneof members are handled implicitly as regular fields.
+ */
+export function normalizeInit<S extends DescMessage>(
+  schema: S,
+  init: FriendlyInit<S> | FriendlyCustomInit<S>
+): MessageInitShape<S> {
+  if (init == null || typeof init !== 'object') {
+    throw new ValidationError(
+      schema.typeName,
+      `Expected an init object for ${schema.typeName}, got: ${String(init)}`
+    )
+  }
+  const { coinListFields, coinSingularFields, bytesFields, bigintFields, fieldMap } =
+    analyzeFields(schema)
+  const result: Record<string, unknown> = {}
+
+  for (const [key, value] of Object.entries(init as Record<string, unknown>)) {
+    // Skip proto metadata keys
+    if (key === '$typeName' || key === '$unknown') continue
+
+    // Validate key exists in schema (catches typos like 'froAddress')
+    if (!fieldMap.has(key)) {
+      const validKeys = [...fieldMap.keys()]
+      throw new ValidationError(
+        key,
+        `Unknown field "${key}" for ${schema.typeName}. Valid fields: ${validKeys.join(', ')}`
+      )
+    }
+
+    if (value == null) {
+      result[key] = value
+      continue
+    }
+
+    if (coinListFields.has(key)) {
+      result[key] = Array.isArray(value) ? value.map(toProtoCoin) : [toProtoCoin(value as Coin)]
+    } else if (coinSingularFields.has(key)) {
+      result[key] = toProtoCoin(value as Coin)
+    } else if (bytesFields.has(key) && typeof value === 'string') {
+      result[key] = hexToBytes(value)
+    } else if (bigintFields.has(key) && typeof value === 'number') {
+      if (!Number.isInteger(value)) {
+        throw new ValidationError(
+          key,
+          `Field "${key}" requires an integer for BigInt conversion, got: ${value}`
+        )
+      }
+      result[key] = BigInt(value)
+    } else {
+      const field = fieldMap.get(key)!
+
+      if (field.fieldKind === 'map') {
+        if (typeof value !== 'object' || value === null || Array.isArray(value)) {
+          throw new ValidationError(
+            key,
+            `Field "${key}" is a map field and expects an object, got: ${Array.isArray(value) ? 'array' : typeof value}`
+          )
+        }
+        const mapObj = value as Record<string, unknown>
+        const transformed: Record<string, unknown> = {}
+        for (const [mk, mv] of Object.entries(mapObj)) {
+          if (mv == null) {
+            transformed[mk] = mv
+          } else if (field.message) {
+            const tn = field.message.typeName
+            if (tn === COIN_TYPE_NAME) transformed[mk] = toProtoCoin(mv as Coin)
+            else if (tn === 'google.protobuf.Any')
+              transformed[mk] = mv instanceof Message ? mv.toAny() : mv
+            else if (tn === 'google.protobuf.Timestamp')
+              transformed[mk] = mv instanceof Date ? timestampFromDate(mv) : mv
+            else if (typeof mv === 'object') transformed[mk] = normalizeInit(field.message, mv)
+            else
+              throw new ValidationError(
+                key,
+                `Map value for "${key}[${mk}]" expects a ${field.message.typeName} object, got ${typeof mv}`
+              )
+          } else if (field.scalar === ScalarType.BYTES && typeof mv === 'string') {
+            transformed[mk] = hexToBytes(mv)
+          } else if (field.scalar && BIGINT_SCALARS.has(field.scalar) && typeof mv === 'number') {
+            if (!Number.isInteger(mv)) {
+              throw new ValidationError(
+                key,
+                `Map value for "${key}[${mk}]" requires an integer for BigInt conversion, got: ${mv}`
+              )
+            }
+            transformed[mk] = BigInt(mv)
+          } else {
+            transformed[mk] = mv
+          }
+        }
+        result[key] = transformed
+        continue
+      }
+
+      if (field.fieldKind === 'list' && !Array.isArray(value)) {
+        throw new ValidationError(
+          key,
+          `Field "${key}" is a repeated field and expects an array, got: ${typeof value}`
+        )
+      }
+
+      if (field.message) {
+        const typeName = field.message.typeName
+        if (typeName === 'google.protobuf.Any') {
+          result[key] = mapFieldValue(field, value, v => {
+            if (v instanceof Message) return v.toAny()
+            if (typeof v === 'object' && v !== null && 'typeUrl' in v && 'value' in v) return v
+            throw new ValidationError(
+              key,
+              `Field "${key}" expects a Message or Any object with { typeUrl, value }, got: ${typeof v}`
+            )
+          })
+        } else if (typeName === 'google.protobuf.Timestamp') {
+          result[key] = mapFieldValue(field, value, v => {
+            if (v instanceof Date) return timestampFromDate(v)
+            if (typeof v === 'object' && v !== null && 'seconds' in v) return v
+            throw new ValidationError(
+              key,
+              `Field "${key}" expects a Date or Timestamp object with { seconds, nanos }, got: ${typeof v}`
+            )
+          })
+        } else {
+          const nestedSchema = field.message
+          result[key] = mapFieldValue(field, value, v => {
+            if (typeof v !== 'object' || v === null) {
+              throw new ValidationError(
+                key,
+                `Field "${key}" expects a ${nestedSchema.typeName} object, got ${typeof v}`
+              )
+            }
+            return normalizeInit(nestedSchema, v)
+          })
+        }
+      } else if (field.fieldKind === 'list' && field.listKind === 'scalar') {
+        if (field.scalar === ScalarType.BYTES) {
+          result[key] = (value as unknown[]).map(v => (typeof v === 'string' ? hexToBytes(v) : v))
+        } else if (BIGINT_SCALARS.has(field.scalar)) {
+          result[key] = (value as unknown[]).map(v => {
+            if (typeof v === 'number') {
+              if (!Number.isInteger(v)) {
+                throw new ValidationError(
+                  key,
+                  `List element in "${key}" requires an integer for BigInt conversion, got: ${v}`
+                )
+              }
+              return BigInt(v)
+            }
+            return v
+          })
+        } else {
+          result[key] = value
+        }
+      } else {
+        result[key] = value
+      }
+    }
+  }
+  return result as MessageInitShape<S>
+}
+
+function mapFieldValue(
+  field: DescField,
+  value: unknown,
+  transform: (v: unknown) => unknown
+): unknown {
+  if (field.fieldKind === 'list') {
+    return (value as unknown[]).map(transform)
+  }
+  return transform(value)
+}
+
+/** Type guard for narrowing a Message to a specific schema type. Returns false for rawAny messages. */
+export function isMessageOf<T extends DescMessage>(msg: Message, schema: T): msg is Message<T> {
+  return msg.isDecoded && msg.typeUrl === '/' + schema.typeName
+}
+
+/** Build a Message from a schema and FriendlyInit input (with normalizeInit transforms). */
+export function msg<S extends DescMessage>(schema: S, init: FriendlyInit<S>): Message<S> {
+  return new Message(schema, normalizeInit(schema, init))
+}
+
+/** Message builder for custom() — same as msg() but accepts FriendlyCustomInit (proto-optional fields as ?:). */
+export function msgCustom<S extends DescMessage>(
+  schema: S,
+  init: FriendlyCustomInit<S>
+): Message<S> {
+  return new Message(schema, normalizeInit(schema, init))
+}
+
+/**
+ * Message builder with type-checked defaults.
+ *
+ * Centralizes a single type assertion (`as any`) so module files
+ * don't scatter type assertions. The `defaults` param is validated against
+ * `Partial<FriendlyInit<S>>`, catching mismatched default value types.
+ */
+export function msgWithDefaults<S extends DescMessage>(
+  schema: S,
+  defaults: Partial<FriendlyInit<S>>,
+  init: Partial<FriendlyInit<S>>
+): Message<S> {
+  // Type safety: module interface signatures (via WithDefaults) enforce that defaults + init cover all required keys.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-argument
+  return msg(schema, { ...defaults, ...init } as any)
+}
+
+/** Default IBC timeout: current time + 10 minutes, as Unix timestamp in nanoseconds. */
+export function defaultTimeout(): bigint {
+  return BigInt(Date.now() + 10 * 60_000) * 1_000_000n
+}
+
+/** Adds _schemas to a msgs object. Not part of the public CoreModules interface, but accessible at runtime for schema aggregation in createMsgs(). */
+export type WithSchemas<T> = T & { readonly _schemas: readonly DescMessage[] }

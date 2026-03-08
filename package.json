@@ -75,6 +75,10 @@
     "./vip": {
       "types": "./dist/entry.vip.d.mts",
       "import": "./dist/entry.vip.mjs"
+    },
+    "./modules": {
+      "types": "./dist/entry.modules.d.mts",
+      "import": "./dist/entry.modules.mjs"
     }
   },
   "bin": {
@@ -82,7 +86,7 @@
   },
   "sideEffects": false,
   "scripts": {
-    "build": "tsdown src/entry.node.ts src/entry.browser.ts src/entry.cosmos.ts src/entry.tx.ts src/entry.msgs.ts src/entry.client.ts src/entry.evm.ts src/entry.move.ts src/entry.wasm.ts src/entry.bridge.ts src/entry.provider.ts src/entry.util.ts src/entry.signer.ts src/entry.events.ts src/entry.usernames.ts src/entry.codegen.ts src/entry.vip.ts src/codegen/cli.ts --format esm --dts",
+    "build": "tsdown src/entry.node.ts src/entry.browser.ts src/entry.cosmos.ts src/entry.tx.ts src/entry.msgs.ts src/entry.client.ts src/entry.evm.ts src/entry.move.ts src/entry.wasm.ts src/entry.bridge.ts src/entry.provider.ts src/entry.util.ts src/entry.signer.ts src/entry.events.ts src/entry.usernames.ts src/entry.codegen.ts src/entry.vip.ts src/entry.modules.ts src/codegen/cli.ts --format esm --dts",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:l2": "vitest run test/e2e/l2.spec.ts --reporter verbose",

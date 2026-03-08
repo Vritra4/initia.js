@@ -47,8 +47,12 @@ async function main() {
   // createChainContext infers ChainContext<'initia'> from l1Info.chainType
   const l1 = createChainContext(l1Info, { signer: key })
 
-  // ctx.msgs is narrowed to InitiaMsgs — delegate, redelegate, vote etc.
-  const delegateMsg = l1.msgs.delegate(key.address, 'initvaloper1...', coin('uinit', 1000000))
+  // ctx.msgs is narrowed to InitiaMsgs — mstaking.delegate, gov.vote etc.
+  const delegateMsg = l1.msgs.mstaking.delegate({
+    delegatorAddress: key.address,
+    validatorAddress: 'initvaloper1...',
+    amount: [coin('uinit', '1000000')],
+  })
 
   // Message return type is narrowed: Message<typeof MsgDelegateSchema>
   // TypeScript knows the exact fields — no cast or type assertion needed

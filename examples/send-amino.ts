@@ -26,7 +26,11 @@ async function main() {
   console.log('Address:', ctx.address)
 
   // Build message — same as direct signing, no Amino-specific code
-  const msg = ctx.msgs.send(ctx.address, RECIPIENT.bech32, [coin('uinit', 1000000)])
+  const msg = ctx.msgs.bank.send({
+    fromAddress: ctx.address,
+    toAddress: RECIPIENT.bech32,
+    amount: [coin('uinit', '1000000')],
+  })
 
   // Sign and broadcast with Amino — just add signMode: 'amino'
   // The SDK calls msg.toAmino() internally; no manual conversion needed.

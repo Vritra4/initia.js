@@ -414,17 +414,7 @@ export function decodeMoveResults(bytesArray: Uint8Array[], moveTypes: string[])
 // Utility Functions
 // =============================================================================
 
-/**
- * Converts a hex string to Uint8Array.
- */
-export function hexToBytes(hex: string): Uint8Array {
-  const cleanHex = hex.replace(/^0x/, '')
-  const bytes = new Uint8Array(cleanHex.length / 2)
-  for (let i = 0; i < bytes.length; i++) {
-    bytes[i] = parseInt(cleanHex.slice(i * 2, i * 2 + 2), 16)
-  }
-  return bytes
-}
+export { hexToBytes } from '../../util/hex'
 
 /**
  * Converts Uint8Array to a hex string.
