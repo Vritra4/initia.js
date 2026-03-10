@@ -121,7 +121,7 @@
     "@scure/bip32": "^2.0.1",
     "@scure/bip39": "^2.0.1",
     "abitype": "^1.2.3",
-    "chain-registry": "^2.0.149",
+    "chain-registry": "^2.0.167",
     "tiny-lru": "^11.4.7",
     "valibot": "^1.2.0",
     "viem": "^2.45.1"
