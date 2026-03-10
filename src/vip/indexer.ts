@@ -3,17 +3,26 @@ import { VIP_API_BASE_URLS } from './constants'
 import type { VipIndexer, VipIndexerOptions, VestingPosition } from './types'
 
 // =============================================================================
-// Raw response type — snake_case from VIP API
+// Raw response types — snake_case from VIP API
 // =============================================================================
 
-interface RawVestingPosition {
+/** Top-level item: one per bridge */
+interface RawBridgeEntry {
+  bridge_id: number
+  version: number
+  data: RawVestingData[]
+}
+
+/** Nested data item: one per stage range within a bridge */
+interface RawVestingData {
   bridge_id: number
   version: number
   start_stage: number
   end_stage: number
-  reward: string
-  merkle_proofs: string[][]
-  l2_score: string
+  merkle_proofs: string[]
+  user_score: number
+  claimable_reward: number
+  claimed: boolean
 }
 
 // =============================================================================
@@ -35,8 +44,10 @@ export function createVipIndexer(options?: VipIndexerOptions): VipIndexer {
 
   return {
     async getVestingPositions(address: string): Promise<VestingPosition[]> {
-      const raw = await fetchJson<RawVestingPosition[]>(`${baseUrl}/vesting/positions/${address}`)
-      return raw.map(normalizeVestingPosition)
+      const raw = await fetchJson<RawBridgeEntry[]>(`${baseUrl}/vesting/positions/${address}`)
+      return raw.flatMap(entry =>
+        entry.data.filter(d => d.claimable_reward > 0).map(d => normalizeVestingData(d))
+      )
     },
   }
 }
@@ -45,14 +56,14 @@ export function createVipIndexer(options?: VipIndexerOptions): VipIndexer {
 // Normalization
 // =============================================================================
 
-function normalizeVestingPosition(raw: RawVestingPosition): VestingPosition {
+function normalizeVestingData(raw: RawVestingData): VestingPosition {
   return {
     bridgeId: raw.bridge_id,
     version: raw.version,
     startStage: raw.start_stage,
     endStage: raw.end_stage,
-    reward: BigInt(raw.reward),
+    reward: BigInt(raw.claimable_reward),
     merkleProofs: raw.merkle_proofs,
-    l2Score: raw.l2_score,
+    l2Score: String(raw.user_score),
   }
 }

@@ -233,7 +233,7 @@ describe('createVip', () => {
   // ===========================================================================
 
   describe('getClaimableRewards', () => {
-    it('should decode base64 merkle proofs and convert l2Score', async () => {
+    it('should decode base64 merkle proofs and replicate per stage', async () => {
       const proof1 = new Uint8Array([1, 2, 3])
       const proof2 = new Uint8Array([4, 5, 6])
 
@@ -245,11 +245,7 @@ describe('createVip', () => {
             startStage: 10,
             endStage: 12,
             reward: 5000n,
-            merkleProofs: [
-              [base64.encode(proof1), base64.encode(proof2)],
-              [base64.encode(proof1)],
-              [base64.encode(proof2)],
-            ],
+            merkleProofs: [base64.encode(proof1), base64.encode(proof2)],
             l2Score: '999',
           },
         ]),
@@ -271,10 +267,13 @@ describe('createVip', () => {
       expect(r._proof.stages).toEqual([10, 11, 12])
       expect(r._proof.l2Score).toBe(999n)
 
-      // Merkle proofs decoded from base64
+      // Merkle proof path replicated for each stage (3 stages)
       expect(r._proof.merkleProofs).toHaveLength(3)
-      expect(r._proof.merkleProofs[0][0]).toEqual(proof1)
-      expect(r._proof.merkleProofs[0][1]).toEqual(proof2)
+      // Each stage gets the same decoded proof path
+      const expectedProof = [proof1, proof2]
+      expect(r._proof.merkleProofs[0]).toEqual(expectedProof)
+      expect(r._proof.merkleProofs[1]).toEqual(expectedProof)
+      expect(r._proof.merkleProofs[2]).toEqual(expectedProof)
     })
   })
 

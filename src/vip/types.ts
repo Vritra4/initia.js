@@ -145,7 +145,8 @@ export interface VestingPosition {
   startStage: number
   endStage: number
   reward: bigint
-  merkleProofs: string[][]
+  /** Single merkle proof path (sibling hashes from leaf to root) */
+  merkleProofs: string[]
   l2Score: string
 }
 

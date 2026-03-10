@@ -175,9 +175,9 @@ export function createVip(ctx: ChainContext<'initia'>, options?: VipOptions): Vi
           (_, i) => pos.startStage + i
         )
 
-        const merkleProofs = pos.merkleProofs.map(proofPerStage =>
-          proofPerStage.map(b64 => base64.decode(b64))
-        )
+        // Single proof path decoded, then replicated for each stage
+        const decodedProof = pos.merkleProofs.map(b64 => base64.decode(b64))
+        const merkleProofs = stages.map(() => decodedProof)
 
         const l2Score = BigInt(pos.l2Score)
 
