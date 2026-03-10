@@ -54,12 +54,15 @@ export function createVip(ctx: ChainContext<'initia'>, options?: VipOptions): Vi
       network: ctx.chainInfo.network === 'testnet' ? 'testnet' : 'mainnet',
     })
 
-  // Helper: require ctx.address for operations that need it
-  function requireAddress(): string {
-    if (!ctx.address) {
-      throw new Error('VIP operations require an address. Create context with signer or address.')
+  // Helper: resolve address from explicit param or ctx.address
+  function requireAddress(addressOverride?: string): string {
+    const address = addressOverride ?? ctx.address
+    if (!address) {
+      throw new Error(
+        'VIP operations require an address. Provide an address parameter or create context with signer.'
+      )
     }
-    return ctx.address
+    return address
   }
 
   // =========================================================================
@@ -162,8 +165,8 @@ export function createVip(ctx: ChainContext<'initia'>, options?: VipOptions): Vi
     // VIP Reward Methods
     // =========================================================================
 
-    async getClaimableRewards(): Promise<ClaimableReward[]> {
-      const address = requireAddress()
+    async getClaimableRewards(addressOverride?: string): Promise<ClaimableReward[]> {
+      const address = requireAddress(addressOverride)
       const positions = await indexer.getVestingPositions(address)
 
       return positions.map(pos => {
@@ -217,8 +220,8 @@ export function createVip(ctx: ChainContext<'initia'>, options?: VipOptions): Vi
     // Query Methods
     // =========================================================================
 
-    async getPosition(params): Promise<PositionInfo | undefined> {
-      const address = requireAddress() as `0x${string}`
+    async getPosition(params, addressOverride?: string): Promise<PositionInfo | undefined> {
+      const address = requireAddress(addressOverride) as `0x${string}`
       const result = (await lockStaking.view.get_locked_delegations({
         args: [address],
       })) as Array<{
@@ -249,8 +252,8 @@ export function createVip(ctx: ChainContext<'initia'>, options?: VipOptions): Vi
       }
     },
 
-    async getPositions(): Promise<PositionInfo[]> {
-      const address = requireAddress() as `0x${string}`
+    async getPositions(addressOverride?: string): Promise<PositionInfo[]> {
+      const address = requireAddress(addressOverride) as `0x${string}`
       const result = (await lockStaking.view.get_locked_delegations({
         args: [address],
       })) as Array<{
@@ -270,8 +273,8 @@ export function createVip(ctx: ChainContext<'initia'>, options?: VipOptions): Vi
       }))
     },
 
-    async getVotingPower(): Promise<bigint> {
-      const address = requireAddress() as `0x${string}`
+    async getVotingPower(addressOverride?: string): Promise<bigint> {
+      const address = requireAddress(addressOverride) as `0x${string}`
       return await weightVote.view.get_voting_power({ args: [address] })
     },
 
@@ -290,8 +293,8 @@ export function createVip(ctx: ChainContext<'initia'>, options?: VipOptions): Vi
       }
     },
 
-    async getVoteInfo(cycle?: number): Promise<VoteInfo> {
-      const address = requireAddress() as `0x${string}`
+    async getVoteInfo(cycle?: number, addressOverride?: string): Promise<VoteInfo> {
+      const address = requireAddress(addressOverride) as `0x${string}`
 
       let resolvedCycle = cycle
       if (resolvedCycle === undefined) {

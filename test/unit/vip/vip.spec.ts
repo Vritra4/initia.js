@@ -437,6 +437,66 @@ describe('createVip', () => {
   })
 
   // ===========================================================================
+  // Address override for query methods
+  // ===========================================================================
+
+  describe('address override', () => {
+    it('getPositions: should use overridden address instead of ctx.address', async () => {
+      viewReturnValue = []
+      const vip = createVip(makeMockCtx())
+      await vip.getPositions('init1override')
+
+      expect(viewCalls[0].args).toEqual(['init1override'])
+    })
+
+    it('getPosition: should use overridden address', async () => {
+      viewReturnValue = []
+      const vip = createVip(makeMockCtx())
+      await vip.getPosition({ metadata: '0x1::lp', validator: 'v1' }, 'init1override')
+
+      expect(viewCalls[0].args).toEqual(['init1override'])
+    })
+
+    it('getVotingPower: should use overridden address', async () => {
+      viewReturnValue = 0n
+      const vip = createVip(makeMockCtx())
+      await vip.getVotingPower('init1override')
+
+      expect(viewCalls[0].args).toEqual(['init1override'])
+    })
+
+    it('getVoteInfo: should use overridden address', async () => {
+      viewReturnValue = { max_voting_power: 0n, voting_power: 0n, weights: [] }
+      const vip = createVip(makeMockCtx())
+      await vip.getVoteInfo(1, 'init1override')
+
+      expect(viewCalls[0].fn).toBe('get_weight_vote')
+      expect(viewCalls[0].args).toEqual([1, 'init1override'])
+    })
+
+    it('getClaimableRewards: should use overridden address', async () => {
+      const mockIndexer = {
+        getVestingPositions: vi.fn().mockResolvedValue([]),
+      }
+      const vip = createVip(makeMockCtx(), { indexer: mockIndexer })
+      await vip.getClaimableRewards('init1override')
+
+      expect(mockIndexer.getVestingPositions).toHaveBeenCalledWith('init1override')
+    })
+
+    it('query methods should work without ctx.address when override is provided', async () => {
+      viewReturnValue = []
+      const ctx = makeMockCtx('initiation-2', undefined as unknown as string)
+      ;(ctx as { address: undefined }).address = undefined
+      const vip = createVip(ctx)
+
+      // Should NOT throw because address override is provided
+      await vip.getPositions('init1override')
+      expect(viewCalls[0].args).toEqual(['init1override'])
+    })
+  })
+
+  // ===========================================================================
   // Address requirement
   // ===========================================================================
 
@@ -454,6 +514,15 @@ describe('createVip', () => {
           validator: 'initvaloper1abc',
         })
       ).toThrow('require an address')
+    })
+
+    it('should throw when ctx.address is undefined and no override for query methods', async () => {
+      const ctx = makeMockCtx('initiation-2', undefined as unknown as string)
+      ;(ctx as { address: undefined }).address = undefined
+      const vip = createVip(ctx)
+
+      await expect(vip.getPositions()).rejects.toThrow('require an address')
+      await expect(vip.getVotingPower()).rejects.toThrow('require an address')
     })
   })
 })

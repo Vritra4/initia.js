@@ -24,16 +24,16 @@ export interface Vip {
   voteGaugeByAmount(params: GaugeVoteByAmountParams): Message
 
   // === VIP Rewards ===
-  getClaimableRewards(): Promise<ClaimableReward[]>
   claimRewards(rewards: ClaimableReward[]): Message[]
   claimRewardsRaw(params: ClaimRewardsRawParams): Message
 
   // === Queries ===
-  getPosition(params: GetPositionParams): Promise<PositionInfo | undefined>
-  getPositions(): Promise<PositionInfo[]>
-  getVotingPower(): Promise<bigint>
+  getPosition(params: GetPositionParams, address?: string): Promise<PositionInfo | undefined>
+  getPositions(address?: string): Promise<PositionInfo[]>
+  getVotingPower(address?: string): Promise<bigint>
   getStageInfo(): Promise<StageInfo>
-  getVoteInfo(cycle?: number): Promise<VoteInfo>
+  getVoteInfo(cycle?: number, address?: string): Promise<VoteInfo>
+  getClaimableRewards(address?: string): Promise<ClaimableReward[]>
 
   // === Move Contract Proxies (escape hatch) ===
   contracts: {
