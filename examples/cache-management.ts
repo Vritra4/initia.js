@@ -12,8 +12,7 @@
  * - Move module ABI (immutable after deployment)
  * - EVM denom↔contract mappings (immutable)
  *
- * Cache is in-memory LRU with 500 entries per type.
- * Immutable data (e.g., denom mappings) has no TTL; upgradeable Move modules use TTL (default 5 min).
+ * Cache is in-memory LRU with 64 entries per type. No TTL — all cached data is treated as immutable.
  */
 
 import { createInitiaContext } from 'initia.js'

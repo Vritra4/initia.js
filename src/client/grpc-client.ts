@@ -22,7 +22,7 @@ import type { AuthConfig, QueryOptions } from './types'
 
 /**
  * Maps a Connect RPC Client's methods to accept QueryOptions instead of CallOptions.
- * Unary methods return WrappedResponse (with $schema, typeUrl, toJson()).
+ * Unary methods return WrappedResponse (with schema, typeUrl, toJson()).
  */
 export type QueryClient<S extends DescService> = {
   [M in keyof Client<S>]: Client<S>[M] extends (
@@ -41,8 +41,11 @@ export type ServiceClients<T extends Record<string, DescService>> = {
 }
 
 /**
- * Wrap a service client to inject auth/headers, convert auth errors,
- * and wrap unary responses with schema metadata ($schema, typeUrl, toJson).
+ * Wrap a service client to:
+ * - Inject auth/headers via toCallOptions()
+ * - Convert ConnectError (Unauthenticated/PermissionDenied) to AuthenticationError
+ * - Wrap **unary** responses with WrappedResponse (schema, typeUrl, toJson);
+ *   streaming responses pass through unchanged
  */
 function createServiceProxy<S extends DescService>(
   service: S,
@@ -51,8 +54,8 @@ function createServiceProxy<S extends DescService>(
   contextHeaders: Record<string, string> | undefined
 ): QueryClient<S> {
   return new Proxy(serviceClient as unknown as QueryClient<S>, {
-    get(_, methodName: string | symbol) {
-      if (typeof methodName !== 'string') return undefined
+    get(target, methodName: string | symbol, receiver) {
+      if (typeof methodName !== 'string') return Reflect.get(target, methodName, receiver)
 
       const original = (serviceClient as Record<string, unknown>)[methodName]
       if (typeof original !== 'function') return original

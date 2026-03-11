@@ -2,7 +2,7 @@
 export { createClientWithTransport } from './client/client'
 
 // client/grpc-client
-export { createGrpcClient, type ServiceClients } from './client/grpc-client'
+export { createGrpcClient, type ServiceClients, type QueryClient } from './client/grpc-client'
 
 // client/types
 export { auth } from './client/types'

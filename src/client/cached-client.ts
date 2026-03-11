@@ -14,6 +14,10 @@
  *
  * Both include request deduplication (concurrent identical requests share one gRPC call).
  *
+ * **Important**: Cached responses are shared references. All callers receiving
+ * a cache hit get the same object. Do not mutate cached responses — treat them
+ * as immutable, consistent with protobuf-es convention.
+ *
  * ## Request Deduplication Flow
  *
  * ```
@@ -42,12 +46,13 @@
  * +-------+---------+
  *         |
  *         v
- * +-----------------+
- * | On Complete:    |
- * | 1. Cache Result |
- * | 2. Clear Pending|
- * | 3. Return       |
- * +-----------------+
+ * +---------------------+
+ * | On Settle:          |
+ * | - Success: Cache    |
+ * |   result (.then)    |
+ * | - Always: Clear     |
+ * |   pending (.finally)|
+ * +---------------------+
  * ```
  */
 
@@ -121,18 +126,17 @@ function withHeightCache(
     if (inflight) return inflight
 
     // 3. Fetch and cache
-    const promise = original(request, options).then(result => {
-      cache.heightCache.set(cacheKey, result)
-      return result
-    })
+    const promise = original(request, options)
+      .then(result => {
+        cache.heightCache.set(cacheKey, result)
+        return result
+      })
+      .finally(() => {
+        pending.delete(pendingKey)
+      })
 
     pending.set(pendingKey, promise)
-
-    try {
-      return await promise
-    } finally {
-      pending.delete(pendingKey)
-    }
+    return promise
   }
 }
 
@@ -153,8 +157,9 @@ function createHeightCachedService(
   chainId: string
 ): unknown {
   return new Proxy(service as Record<string, unknown>, {
-    get(target, prop) {
-      if (typeof prop !== 'string') return undefined
+    get(target, prop, receiver) {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+      if (typeof prop !== 'string') return Reflect.get(target, prop, receiver)
 
       const original = target[prop]
       if (typeof original !== 'function') return original
@@ -204,19 +209,18 @@ function createCachedMoveService(
           }
 
           // 3. Fetch with deduplication
-          const promise = originalModule(request, options).then(result => {
-            // Cache the result object directly (no JSON serialization)
-            cache.moveAbi.set(key, result)
-            return result
-          })
+          const promise = originalModule(request, options)
+            .then(result => {
+              // Cache the result object directly (no JSON serialization)
+              cache.moveAbi.set(key, result)
+              return result
+            })
+            .finally(() => {
+              pending.delete(pKey)
+            })
 
           pending.set(pKey, promise)
-
-          try {
-            return await promise
-          } finally {
-            pending.delete(pKey)
-          }
+          return promise
         }
       }
 
@@ -267,23 +271,22 @@ function createCachedEvmService(
           if (inflight) return inflight
 
           // 3. Fetch with deduplication
-          const promise = originalContractAddrByDenom(request, options).then(result => {
-            const normalizedAddr = normalizeEvmAddress(result.address)
-            // Mutate in-place to preserve Proxy wrapper
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
-            ;(result as any).address = normalizedAddr
-            // Cache own direction only (no bidirectional pre-population)
-            cache.denomToContract.set(key, result)
-            return result
-          })
+          const promise = originalContractAddrByDenom(request, options)
+            .then(result => {
+              const normalizedAddr = normalizeEvmAddress(result.address)
+              // Normalize address before caching (safe: result is not yet shared with any caller)
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
+              ;(result as any).address = normalizedAddr
+              // Cache own direction only (no bidirectional pre-population)
+              cache.denomToContract.set(key, result)
+              return result
+            })
+            .finally(() => {
+              pending.delete(pKey)
+            })
 
           pending.set(pKey, promise)
-
-          try {
-            return await promise
-          } finally {
-            pending.delete(pKey)
-          }
+          return promise
         }
       }
 
@@ -304,19 +307,18 @@ function createCachedEvmService(
           if (inflight) return inflight
 
           // 3. Fetch with deduplication
-          const promise = originalDenom(request, options).then(result => {
-            // Cache own direction only (no bidirectional pre-population)
-            cache.contractToDenom.set(key, result)
-            return result
-          })
+          const promise = originalDenom(request, options)
+            .then(result => {
+              // Cache own direction only (no bidirectional pre-population)
+              cache.contractToDenom.set(key, result)
+              return result
+            })
+            .finally(() => {
+              pending.delete(pKey)
+            })
 
           pending.set(pKey, promise)
-
-          try {
-            return await promise
-          } finally {
-            pending.delete(pKey)
-          }
+          return promise
         }
       }
 

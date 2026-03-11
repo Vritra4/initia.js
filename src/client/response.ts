@@ -9,6 +9,12 @@ import { toJson } from '@bufbuild/protobuf'
 
 const WRAPPED_MARKER = Symbol.for('initia.wrappedResponse')
 
+// Synthetic property names added by the Proxy wrapper.
+// Included in ownKeys so they survive spread/destructuring and appear in Object.keys().
+// WRAPPED_MARKER (Symbol) is intentionally excluded — internal detection sentinel,
+// should not leak through enumeration.
+const SYNTHETIC_KEYS = ['schema', 'typeUrl', 'toJson', 'toJSON'] as const
+
 // =============================================================================
 // Field Map Cache (WeakMap per DescMessage — build once per schema type)
 // =============================================================================
@@ -21,11 +27,11 @@ function getFieldMap(schema: DescMessage): FieldMap {
   if (!map) {
     map = new Map()
     for (const field of schema.fields) {
-      if (field.fieldKind === 'message') {
-        map.set(field.localName, field)
-      } else if (field.fieldKind === 'list' && field.listKind === 'message') {
-        map.set(field.localName, field)
-      } else if (field.fieldKind === 'map' && field.mapKind === 'message') {
+      const isMessageField =
+        field.fieldKind === 'message' ||
+        (field.fieldKind === 'list' && field.listKind === 'message') ||
+        (field.fieldKind === 'map' && field.mapKind === 'message')
+      if (isMessageField) {
         map.set(field.localName, field)
       }
     }
@@ -39,12 +45,19 @@ function getFieldMap(schema: DescMessage): FieldMap {
 // =============================================================================
 
 /**
- * Wrap a gRPC response with a Proxy that adds $schema, typeUrl, and toJson()
+ * Wrap a gRPC response with a Proxy that adds schema, typeUrl, and toJson()
  * while preserving depth — property access stays identical.
  *
- * - `$schema`: The DescMessage schema descriptor
+ * - `schema`: The DescMessage schema descriptor
  * - `typeUrl`: '/' + schema.typeName (same pattern as Message class)
  * - `toJson(options?)`: Canonical protobuf JSON serialization with optional JsonWriteOptions
+ * - `toJSON()`: Called by JSON.stringify(), delegates to toJson() with no options
+ *
+ * **Shadowing rules**:
+ * - `schema` and `typeUrl` are non-shadowing: if the underlying object already
+ *   has these properties, the original values pass through unchanged.
+ * - `toJson` and `toJSON` always shadow the underlying object's methods to
+ *   ensure consistent protobuf JSON serialization.
  *
  * Nested message-type fields are recursively wrapped using the field's
  * DescMessage from the schema descriptor. Supported field kinds:
@@ -68,16 +81,24 @@ export function wrapResponse<T extends object>(schema: DescMessage, value: T): T
 
   const fieldMap = getFieldMap(schema)
   const nestedCache = new Map<string, unknown>()
+  const msg = value as MessageShape<typeof schema>
+  const toJsonFn = (options?: Partial<JsonWriteOptions>) => {
+    try {
+      return toJson(schema, msg, options)
+    } catch (e) {
+      const cause = e instanceof Error ? e.message : String(e)
+      throw new Error(`Failed to serialize ${schema.typeName} to JSON: ${cause}`, { cause: e })
+    }
+  }
+  const toJSONFn = () => toJsonFn()
 
   const proxy = new Proxy(value, {
     get(target, prop, receiver) {
       if (prop === WRAPPED_MARKER) return true
-      if (prop === '$schema') return schema
+      if (prop === 'schema' && !Reflect.has(target, prop)) return schema
       if (prop === 'typeUrl' && !Reflect.has(target, prop)) return '/' + schema.typeName
-      if (prop === 'toJson') {
-        return (options?: Partial<JsonWriteOptions>) =>
-          toJson(schema, target as MessageShape<typeof schema>, options)
-      }
+      if (prop === 'toJson') return toJsonFn
+      if (prop === 'toJSON') return toJSONFn
 
       const raw = Reflect.get(target, prop, receiver)
 
@@ -108,19 +129,35 @@ export function wrapResponse<T extends object>(schema: DescMessage, value: T): T
     },
 
     has(target, prop) {
-      if (prop === WRAPPED_MARKER || prop === '$schema' || prop === 'toJson') return true
+      if (prop === WRAPPED_MARKER || prop === 'schema' || prop === 'toJson' || prop === 'toJSON')
+        return true
       if (prop === 'typeUrl') return true // either from target or computed
       return Reflect.has(target, prop)
     },
 
-    // Only include target's own keys — synthetic properties ($schema, typeUrl, toJson)
-    // are accessible via `in` operator and direct access, but don't appear in
-    // Object.keys(), for...in, spread, or JSON.stringify
     ownKeys(target) {
-      return Reflect.ownKeys(target)
+      const keys = Reflect.ownKeys(target)
+      for (const k of SYNTHETIC_KEYS) {
+        if (!keys.includes(k)) keys.push(k)
+      }
+      return keys
     },
 
     getOwnPropertyDescriptor(target, prop) {
+      if (prop === 'schema' && !Reflect.has(target, 'schema'))
+        return { configurable: true, enumerable: true, writable: false, value: schema }
+      if (prop === 'typeUrl' && !Reflect.has(target, 'typeUrl'))
+        return {
+          configurable: true,
+          enumerable: true,
+          writable: false,
+          value: '/' + schema.typeName,
+        }
+      if (prop === 'typeUrl') return Reflect.getOwnPropertyDescriptor(target, prop)
+      if (prop === 'toJson')
+        return { configurable: true, enumerable: true, writable: false, value: toJsonFn }
+      if (prop === 'toJSON')
+        return { configurable: true, enumerable: true, writable: false, value: toJSONFn }
       return Reflect.getOwnPropertyDescriptor(target, prop)
     },
   })
@@ -140,14 +177,39 @@ export function isWrappedResponse<T>(value: T): value is T & WrappedResponse {
   return value != null && typeof value === 'object' && WRAPPED_MARKER in (value as object)
 }
 
-/** A gRPC response enhanced with schema access and JSON serialization. */
+/**
+ * A gRPC response enhanced with schema access and JSON serialization.
+ *
+ * Nested message fields are also wrapped at runtime (with `schema`, `typeUrl`,
+ * `toJson()`), but this is NOT reflected in the static type to avoid deep
+ * recursive type expansion. Use `isWrappedResponse()` to narrow nested fields:
+ *
+ * ```typescript
+ * const res = await client.bank.balance({ address, denom })
+ * // res.balance is typed as Coin | undefined, but wrapped at runtime
+ * if (isWrappedResponse(res.balance)) {
+ *   res.balance.toJson() // OK after narrowing
+ * }
+ * ```
+ *
+ * **Spread/destructuring**: `{ ...wrapped }` copies synthetic properties
+ * (`schema`, `typeUrl`, `toJson`, `toJSON`) but nested fields become plain
+ * objects (no Proxy). Use spread when you need a data-only snapshot that
+ * breaks the GC retention chain to the parent response.
+ */
 export type WrappedResponse<T = unknown> = T & {
-  /** The protobuf schema descriptor for this response */
-  readonly $schema: DescMessage
+  /** The protobuf schema descriptor (same as `Message.schema`). */
+  readonly schema: DescMessage
   /** Type URL with '/' prefix (e.g., '/cosmos.bank.v1beta1.QueryBalanceResponse') */
   readonly typeUrl: string
-  /** Serialize to JSON using protobuf's canonical JSON mapping */
+  /**
+   * Serialize to canonical protobuf JSON (bare fields, no envelope).
+   * Unlike `Message.toJson()` which wraps in `{ typeUrl, value }`,
+   * this returns the direct protobuf JSON mapping.
+   */
   toJson(options?: Partial<JsonWriteOptions>): JsonValue
+  /** Called by JSON.stringify(). Returns canonical protobuf JSON (no options). */
+  toJSON(): JsonValue
 }
 
 /**

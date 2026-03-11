@@ -149,6 +149,34 @@ describe('wrapClientWithCache', () => {
       expect(result).toEqual({ address: '0x1', name: 'coin' })
       expect(moveMock.spies.module).toHaveBeenCalledTimes(2)
     })
+
+    it('should clean up pending after concurrent dedup failure and allow retry', async () => {
+      const moveMock = createMockMoveService()
+      const error = new Error('gRPC unavailable')
+      moveMock.spies.module
+        .mockImplementationOnce(
+          () => new Promise((_, reject) => setTimeout(() => reject(error), 50))
+        )
+        .mockResolvedValueOnce({ address: '0x1', name: 'coin' })
+
+      const mockClient = { move: moveMock.service } as unknown as InitiaClient
+      const client = wrapClientWithCache(mockClient, 'test-chain')
+
+      // Fire 2 concurrent requests — both join the same failing promise
+      const [r1, r2] = await Promise.allSettled([
+        client.move.module({ address: '0x1', moduleName: 'coin' }),
+        client.move.module({ address: '0x1', moduleName: 'coin' }),
+      ])
+
+      expect(r1.status).toBe('rejected')
+      expect(r2.status).toBe('rejected')
+      expect(moveMock.spies.module).toHaveBeenCalledTimes(1)
+
+      // After failure, pending should be cleared — retry must work
+      const result = await client.move.module({ address: '0x1', moduleName: 'coin' })
+      expect(result).toEqual({ address: '0x1', name: 'coin' })
+      expect(moveMock.spies.module).toHaveBeenCalledTimes(2)
+    })
   })
 
   describe('evm.contractAddrByDenom() caching', () => {
@@ -299,6 +327,55 @@ describe('wrapClientWithCache', () => {
       const client = wrapClientWithCache(mockClient, 'test-chain')
 
       expect((client.bank as any).serviceName).toBe('bank-query')
+    })
+
+    it('should deduplicate concurrent height-based requests', async () => {
+      const balanceSpy = vi
+        .fn()
+        .mockImplementation(
+          () => new Promise(resolve => setTimeout(() => resolve({ amount: '1000' }), 50))
+        )
+      const mockClient = {
+        bank: { balance: balanceSpy },
+      } as unknown as InitiaClient
+      const client = wrapClientWithCache(mockClient, 'test-chain')
+
+      const [r1, r2] = await Promise.all([
+        client.bank.balance({ address: 'init1...' }, { height: 100n }),
+        client.bank.balance({ address: 'init1...' }, { height: 100n }),
+      ])
+
+      expect(r1).toEqual({ amount: '1000' })
+      expect(r2).toEqual({ amount: '1000' })
+      expect(balanceSpy).toHaveBeenCalledTimes(1)
+    })
+
+    it('should clean up pending after height-cache error and allow retry', async () => {
+      const balanceSpy = vi
+        .fn()
+        .mockImplementationOnce(
+          () => new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 50))
+        )
+        .mockResolvedValueOnce({ amount: '500' })
+      const mockClient = {
+        bank: { balance: balanceSpy },
+      } as unknown as InitiaClient
+      const client = wrapClientWithCache(mockClient, 'test-chain')
+
+      // Concurrent requests — both fail
+      const [r1, r2] = await Promise.allSettled([
+        client.bank.balance({ address: 'init1...' }, { height: 100n }),
+        client.bank.balance({ address: 'init1...' }, { height: 100n }),
+      ])
+
+      expect(r1.status).toBe('rejected')
+      expect(r2.status).toBe('rejected')
+      expect(balanceSpy).toHaveBeenCalledTimes(1)
+
+      // Retry should work (pending cleared by .finally())
+      const result = await client.bank.balance({ address: 'init1...' }, { height: 100n })
+      expect(result).toEqual({ amount: '500' })
+      expect(balanceSpy).toHaveBeenCalledTimes(2)
     })
   })
 

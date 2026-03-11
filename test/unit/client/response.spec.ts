@@ -26,12 +26,12 @@ describe('wrapResponse', () => {
     expect(wrapped.amount).toBe('1000')
   })
 
-  it('should expose $schema', () => {
+  it('should expose schema', () => {
     const schema = mockDescMessage('cosmos.bank.v1beta1.QueryBalanceResponse')
     const raw = { denom: 'uinit', amount: '1000' }
     const wrapped = wrapResponse(schema, raw)
 
-    expect(wrapped.$schema).toBe(schema)
+    expect(wrapped.schema).toBe(schema)
   })
 
   it('should expose typeUrl with / prefix (same as Message class)', () => {
@@ -51,6 +51,14 @@ describe('wrapResponse', () => {
     expect(wrapped.typeUrl).toBe('/cosmos.auth.v1beta1.BaseAccount')
   })
 
+  it('should return same toJson/toJSON reference on repeated access', () => {
+    const schema = mockDescMessage('test.Response')
+    const wrapped = wrapResponse(schema, { a: 1 })
+
+    expect(wrapped.toJson).toBe(wrapped.toJson)
+    expect(wrapped.toJSON).toBe(wrapped.toJSON)
+  })
+
   it('should be detectable via isWrappedResponse', () => {
     const schema = mockDescMessage('test.Response')
     const wrapped = wrapResponse(schema, { foo: 'bar' })
@@ -59,23 +67,58 @@ describe('wrapResponse', () => {
     expect(isWrappedResponse({ foo: 'bar' })).toBe(false)
   })
 
-  it('should support spread operator (copies target own properties)', () => {
+  it('should preserve synthetic properties through spread', () => {
     const schema = mockDescMessage('test.Response')
     const raw = { a: 1, b: 2 }
     const wrapped = wrapResponse(schema, raw)
     const spread = { ...wrapped }
 
+    // Original properties
     expect(spread.a).toBe(1)
     expect(spread.b).toBe(2)
+
+    // Synthetic properties survive spread
+    expect(spread.schema).toBe(schema)
+    expect(spread.typeUrl).toBe('/test.Response')
+    expect(typeof spread.toJson).toBe('function')
+    expect(typeof spread.toJSON).toBe('function')
   })
 
-  it('should delegate ownKeys to target for JSON.stringify', () => {
+  it('should include synthetic properties in Object.keys()', () => {
     const schema = mockDescMessage('test.Response')
-    const raw = { a: 1, b: 'hello' }
+    const raw = { a: 1 }
     const wrapped = wrapResponse(schema, raw)
 
-    // JSON.stringify uses ownKeys — should match target's own properties
-    expect(JSON.parse(JSON.stringify(wrapped))).toEqual({ a: 1, b: 'hello' })
+    const keys = Object.keys(wrapped)
+    expect(keys).toContain('a')
+    expect(keys).toContain('schema')
+    expect(keys).toContain('typeUrl')
+    expect(keys).toContain('toJson')
+    expect(keys).toContain('toJSON')
+  })
+
+  it('should report synthetic properties via "in" operator', () => {
+    const schema = mockDescMessage('test.Response')
+    const wrapped = wrapResponse(schema, { a: 1 })
+
+    expect('schema' in wrapped).toBe(true)
+    expect('typeUrl' in wrapped).toBe(true)
+    expect('toJson' in wrapped).toBe(true)
+    expect('toJSON' in wrapped).toBe(true)
+    expect('a' in wrapped).toBe(true)
+    expect('nonExistent' in wrapped).toBe(false)
+  })
+
+  it('should produce canonical protobuf JSON via JSON.stringify (toJSON hook)', () => {
+    const coin = create(CoinSchema, { denom: 'uinit', amount: '1000' })
+    const response = create(QueryBalanceResponseSchema, { balance: coin })
+    const wrapped = wrapResponse(QueryBalanceResponseSchema, response)
+
+    // JSON.stringify invokes toJSON() which delegates to protobuf's toJson()
+    const parsed = JSON.parse(JSON.stringify(wrapped))
+    expect(parsed).toEqual({ balance: { denom: 'uinit', amount: '1000' } })
+    // $typeName should NOT appear in output
+    expect(parsed.$typeName).toBeUndefined()
   })
 
   it('should pass through undefined/null values', () => {
@@ -131,6 +174,33 @@ describe('toJson with real protobuf schemas', () => {
     // typeUrl is added by Proxy with '/' prefix
     expect(wrapped.typeUrl).toBe('/cosmos.bank.v1beta1.QueryBalanceResponse')
   })
+
+  it('should wrap toJson() errors with schema.typeName context', () => {
+    const wrapped = wrapResponse(QueryBalanceResponseSchema, {
+      balance: 'not-a-message',
+    } as any)
+
+    expect(() => wrapped.toJson()).toThrowError(
+      /Failed to serialize cosmos\.bank\.v1beta1\.QueryBalanceResponse to JSON/
+    )
+
+    // Verify cause is preserved
+    try {
+      wrapped.toJson()
+    } catch (e: any) {
+      expect(e.cause).toBeDefined()
+    }
+  })
+
+  it('should wrap toJSON() errors with schema.typeName context', () => {
+    const wrapped = wrapResponse(QueryBalanceResponseSchema, {
+      balance: 'not-a-message',
+    } as any)
+
+    expect(() => wrapped.toJSON()).toThrowError(
+      /Failed to serialize cosmos\.bank\.v1beta1\.QueryBalanceResponse to JSON/
+    )
+  })
 })
 
 describe('recursive nested wrapping', () => {
@@ -148,7 +218,7 @@ describe('recursive nested wrapping', () => {
     const wrapped = wrapResponse(outerSchema, raw)
 
     // Nested should also be wrapped
-    expect(wrapped.nested.$schema).toBe(innerSchema)
+    expect(wrapped.nested.schema).toBe(innerSchema)
     expect(wrapped.nested.typeUrl).toBe('/inner.Message')
     expect(wrapped.nested.foo).toBe('bar')
 
@@ -171,9 +241,9 @@ describe('recursive nested wrapping', () => {
     const wrapped = wrapResponse(listSchema, raw)
 
     expect(Array.isArray(wrapped.items)).toBe(true)
-    expect(wrapped.items[0].$schema).toBe(itemSchema)
+    expect(wrapped.items[0].schema).toBe(itemSchema)
     expect(wrapped.items[0].id).toBe(1)
-    expect(wrapped.items[1].$schema).toBe(itemSchema)
+    expect(wrapped.items[1].schema).toBe(itemSchema)
   })
 
   it('should cache wrapped nested objects (same reference on repeated access)', () => {
@@ -233,7 +303,7 @@ describe('recursive nested wrapping', () => {
 
     // Nested Coin should also be wrapped
     expect(wrapped.balance?.typeUrl).toBe('/cosmos.base.v1beta1.Coin')
-    expect(wrapped.balance?.$schema).toBeDefined()
+    expect(wrapped.balance?.schema).toBeDefined()
     expect(wrapped.balance?.denom).toBe('uinit')
     expect(wrapped.balance?.amount).toBe('1000')
   })
@@ -257,10 +327,10 @@ describe('recursive nested wrapping', () => {
     }
     const wrapped = wrapResponse(mapSchema, raw)
 
-    expect(wrapped.options.auth.$schema).toBe(valueSchema)
+    expect(wrapped.options.auth.schema).toBe(valueSchema)
     expect(wrapped.options.auth.typeUrl).toBe('/option.Message')
     expect(wrapped.options.auth.enabled).toBe(true)
-    expect(wrapped.options.bank.$schema).toBe(valueSchema)
+    expect(wrapped.options.bank.schema).toBe(valueSchema)
   })
 
   it('should not wrap map fields with scalar values', () => {
@@ -290,8 +360,8 @@ describe('recursive nested wrapping', () => {
 
     // The nested Any's typeUrl must be the original value, NOT '/google.protobuf.Any'
     expect(wrapped.account.typeUrl).toBe('/cosmos.auth.v1beta1.BaseAccount')
-    // But $schema should still be accessible
-    expect(wrapped.account.$schema).toBe(anySchema)
+    // But schema should still be accessible
+    expect(wrapped.account.schema).toBe(anySchema)
   })
 })
 
@@ -306,7 +376,7 @@ describe('createServiceProxy integration', () => {
     const wrapped = wrapResponse(outputSchema, mockResponse)
 
     expect(wrapped.typeUrl).toBe('/cosmos.bank.v1beta1.QueryBalanceResponse')
-    expect(wrapped.$schema).toBe(outputSchema)
+    expect(wrapped.schema).toBe(outputSchema)
     expect(wrapped.balance?.denom).toBe('uinit')
     expect(wrapped.balance?.typeUrl).toBe('/cosmos.base.v1beta1.Coin')
 
