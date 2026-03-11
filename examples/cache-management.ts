@@ -3,7 +3,7 @@
  *
  * This example demonstrates how caching works in initia.js:
  * 1. Automatic ABI caching (Move modules, EVM contracts)
- * 2. Denom↔Contract bidirectional caching
+ * 2. Denom↔Contract caching (each direction cached independently)
  * 3. Request deduplication (concurrent calls share one network request)
  * 4. Using clearCache() after contract deployments
  * 5. Multi-chain cache isolation
@@ -204,7 +204,7 @@ async function multiChainExample() {
 async function denomCachingExample() {
   console.log('\n=== Denom↔Contract Caching (Minievm) ===\n')
 
-  console.log('On Minievm chains, denom↔contract mappings are cached bidirectionally:')
+  console.log('On Minievm chains, denom↔contract mappings are cached per direction:')
   console.log('')
   console.log('  // First call - network fetch')
   console.log('  const addr = await ctx.client.evm.contractAddrByDenom({ denom: "uusdc" })')
@@ -212,19 +212,19 @@ async function denomCachingExample() {
   console.log('  // Second call - cached (no network)')
   console.log('  const addr2 = await ctx.client.evm.contractAddrByDenom({ denom: "uusdc" })')
   console.log('')
-  console.log('  // Reverse lookup - also cached from first call!')
+  console.log('  // Reverse lookup - separate cache, requires its own first fetch')
   console.log('  const denom = await ctx.client.evm.denom({ contractAddr: addr })')
   console.log('')
-  console.log('Bidirectional caching means one lookup populates both directions.')
+  console.log('Each direction is cached independently after its first lookup.')
 
   // Actual example (requires minievm chain)
   /*
   const evmCtx = await createMinievmContext({ network: 'testnet', chainId: 'evm-1' })
 
-  // This caches both denom→contract AND contract→denom
+  // Caches denom→contract direction
   const result = await evmCtx.client.evm.contractAddrByDenom({ denom: 'uusdc' })
 
-  // This uses the reverse cache (no network call)
+  // Caches contract→denom direction (separate cache entry)
   const reverse = await evmCtx.client.evm.denom({ contractAddr: result.address })
   */
 }
@@ -251,7 +251,7 @@ async function main() {
     console.log('- Concurrent requests share one network call')
     console.log('- Use ctx.client.clearCache() after contract deployments')
     console.log('- Each chain has isolated cache (chainId in key)')
-    console.log('- Denom mappings are cached bidirectionally')
+    console.log('- Denom mappings are cached per direction')
   } catch (error) {
     console.error('Error:', error)
   }

@@ -27,8 +27,8 @@ const DEFAULT_MAX_SIZE = 64
 export function createCacheManager() {
   return {
     moveAbi: lru<unknown>(DEFAULT_MAX_SIZE),
-    denomToContract: lru<string>(DEFAULT_MAX_SIZE),
-    contractToDenom: lru<string>(DEFAULT_MAX_SIZE),
+    denomToContract: lru<unknown>(DEFAULT_MAX_SIZE),
+    contractToDenom: lru<unknown>(DEFAULT_MAX_SIZE),
     /** General-purpose cache for height-scoped (immutable snapshot) queries */
     heightCache: lru<unknown>(DEFAULT_MAX_SIZE),
   }

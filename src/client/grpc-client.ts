@@ -13,20 +13,23 @@ import {
   type CallOptions,
 } from '@connectrpc/connect'
 import type { Transport } from '@connectrpc/connect'
-import type { DescService } from '@bufbuild/protobuf'
+import type { DescMessage, DescService } from '@bufbuild/protobuf'
 import { AuthenticationError } from '../errors'
 import { toCallOptions } from './headers'
+import { wrapResponse } from './response'
+import type { WrapReturnType } from './response'
 import type { AuthConfig, QueryOptions } from './types'
 
 /**
  * Maps a Connect RPC Client's methods to accept QueryOptions instead of CallOptions.
+ * Unary methods return WrappedResponse (with $schema, typeUrl, toJson()).
  */
 export type QueryClient<S extends DescService> = {
   [M in keyof Client<S>]: Client<S>[M] extends (
     request: infer R,
     options?: CallOptions
   ) => infer Ret
-    ? (request: R, options?: QueryOptions) => Ret
+    ? (request: R, options?: QueryOptions) => WrapReturnType<Ret>
     : Client<S>[M]
 }
 
@@ -38,9 +41,11 @@ export type ServiceClients<T extends Record<string, DescService>> = {
 }
 
 /**
- * Wrap a service client to inject auth/headers and convert auth errors.
+ * Wrap a service client to inject auth/headers, convert auth errors,
+ * and wrap unary responses with schema metadata ($schema, typeUrl, toJson).
  */
 function createServiceProxy<S extends DescService>(
+  service: S,
   serviceClient: Client<S>,
   contextAuth: AuthConfig | undefined,
   contextHeaders: Record<string, string> | undefined
@@ -52,10 +57,27 @@ function createServiceProxy<S extends DescService>(
       const original = (serviceClient as Record<string, unknown>)[methodName]
       if (typeof original !== 'function') return original
 
+      // Hoist method lookup: resolve output schema once per method access
+      const method = (service.method as Record<string, { methodKind: string; output: unknown }>)[
+        methodName
+      ]
+      const outputSchema =
+        method?.methodKind === 'unary' ? (method.output as DescMessage) : undefined
+
       return async (request: unknown, queryOptions?: QueryOptions) => {
         const callOptions = toCallOptions(contextAuth, contextHeaders, queryOptions)
         try {
-          return await (original.call(serviceClient, request, callOptions) as Promise<unknown>)
+          const result = await (original.call(
+            serviceClient,
+            request,
+            callOptions
+          ) as Promise<unknown>)
+
+          // Wrap unary response with pre-resolved output schema
+          if (outputSchema && result != null && typeof result === 'object') {
+            return wrapResponse(outputSchema, result)
+          }
+          return result
         } catch (error) {
           if (error instanceof ConnectError) {
             if (error.code === Code.Unauthenticated || error.code === Code.PermissionDenied) {
@@ -115,6 +137,7 @@ export function createGrpcClient<T extends Record<string, DescService>>(
       if (!(key in cache)) {
         const rawClient = createClient(services[key], transport)
         cache[key] = createServiceProxy(
+          services[key],
           rawClient,
           contextAuth,
           contextHeaders

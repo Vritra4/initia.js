@@ -237,7 +237,7 @@ function createCachedMoveService(
 
 /**
  * Wrap evm service with:
- * - Immutable cache for contractAddrByDenom() and denom() (bidirectional denom mapping)
+ * - Immutable cache for contractAddrByDenom() and denom() (each caches own direction only)
  * - Height cache for all other methods
  */
 function createCachedEvmService(
@@ -256,30 +256,25 @@ function createCachedEvmService(
           const key = cacheKeys.denomToContract(chainId, request.denom)
           const pKey = pendingKeys.denomMapping(chainId, request.denom)
 
-          // 1. Check cache
+          // 1. Check cache — return full wrapped response
           if (!options?.skipCache) {
             const cached = cache.denomToContract.get(key)
-            if (cached) {
-              return { address: cached }
-            }
+            if (cached !== undefined) return cached
           }
 
           // 2. Check inflight
           const inflight = pending.get(pKey)
-          if (inflight) {
-            return inflight
-          }
+          if (inflight) return inflight
 
           // 3. Fetch with deduplication
           const promise = originalContractAddrByDenom(request, options).then(result => {
             const normalizedAddr = normalizeEvmAddress(result.address)
-            // Cache both directions
-            cache.denomToContract.set(key, normalizedAddr)
-            cache.contractToDenom.set(
-              cacheKeys.contractToDenom(chainId, normalizedAddr),
-              request.denom
-            )
-            return { ...result, address: normalizedAddr }
+            // Mutate in-place to preserve Proxy wrapper
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
+            ;(result as any).address = normalizedAddr
+            // Cache own direction only (no bidirectional pre-population)
+            cache.denomToContract.set(key, result)
+            return result
           })
 
           pending.set(pKey, promise)
@@ -298,28 +293,20 @@ function createCachedEvmService(
           const key = cacheKeys.contractToDenom(chainId, normalizedAddr)
           const pKey = pendingKeys.denomMapping(chainId, normalizedAddr)
 
-          // 1. Check cache
+          // 1. Check cache — return full wrapped response
           if (!options?.skipCache) {
             const cached = cache.contractToDenom.get(key)
-            if (cached) {
-              return { denom: cached }
-            }
+            if (cached !== undefined) return cached
           }
 
           // 2. Check inflight
           const inflight = pending.get(pKey)
-          if (inflight) {
-            return inflight
-          }
+          if (inflight) return inflight
 
           // 3. Fetch with deduplication
           const promise = originalDenom(request, options).then(result => {
-            // Cache both directions
-            cache.contractToDenom.set(key, result.denom)
-            cache.denomToContract.set(
-              cacheKeys.denomToContract(chainId, result.denom),
-              normalizedAddr
-            )
+            // Cache own direction only (no bidirectional pre-population)
+            cache.contractToDenom.set(key, result)
             return result
           })
 

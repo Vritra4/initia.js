@@ -100,6 +100,14 @@ export {
   type ProfileCache,
 } from './client/address-profile'
 
+// client/response
+export {
+  wrapResponse,
+  isWrappedResponse,
+  type WrappedResponse,
+  type WrapReturnType,
+} from './client/response'
+
 // client/cached-client
 export type { CachedClient } from './client/cached-client'
 

@@ -46,6 +46,14 @@ export {
 // gRPC Client
 export { createGrpcClient, type ServiceClients } from './grpc-client'
 
+// Response Wrapper
+export {
+  wrapResponse,
+  isWrappedResponse,
+  type WrappedResponse,
+  type WrapReturnType,
+} from './response'
+
 // Client Factory
 export { createClientWithTransport } from './client'
 export type { CachedClient } from './cached-client'
