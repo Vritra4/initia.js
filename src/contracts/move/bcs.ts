@@ -46,7 +46,7 @@ const initiaAddress = (options?: BcsTypeOptions<Uint8Array, Iterable<number>>) =
       return bytes
     },
     output: val => {
-      const hex = Array.from(val)
+      const hex = Array.from<number>(val)
         .map(b => b.toString(16).padStart(2, '0'))
         .join('')
       return '0x' + hex
