@@ -104,6 +104,6 @@ export function createClientWithTransport(
     contextAuth,
     contextHeaders,
     typeRegistry
-  ) as Client
+  ) as unknown as Client
   return wrapClientWithCache(client, chainInfo.chainId)
 }
