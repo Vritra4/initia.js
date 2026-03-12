@@ -16,6 +16,8 @@ import { Query as WasmQuery } from '@buf/cosmwasm_wasmd.bufbuild_es/cosmwasm/was
 // OPinit child
 import { Query as OpchildQuery } from '@buf/initia-labs_opinit.bufbuild_es/opinit/opchild/v1/query_pb'
 
+// No chain-specific Any types — miniwasm uses only standard Cosmos accounts (BaseAccount).
+// Common types (crypto keys + BaseAccount) are inherited from createCommonRegistry().
 export const MiniwasmServices = createCommonRegistry()
   .add('wasm', WasmQuery)
   .add('opchild', OpchildQuery)

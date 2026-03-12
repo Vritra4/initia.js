@@ -5,6 +5,7 @@ import type {
   MessageShape,
   JsonValue,
   JsonWriteOptions,
+  Registry,
 } from '@bufbuild/protobuf'
 import { toJson } from '@bufbuild/protobuf'
 
@@ -71,8 +72,19 @@ function getFieldMap(schema: DescMessage): FieldMap {
  * if underlying fields are mutated after wrapping.
  *
  * Protobuf's own `$typeName` passes through from the underlying message.
+ *
+ * @param schema - The DescMessage schema descriptor for the response type
+ * @param value - The raw gRPC response object to wrap
+ * @param registry - Optional protobuf Registry for google.protobuf.Any serialization.
+ *   When provided, injected as default registry into toJson() calls.
+ *   Callers can override it by passing their own `registry` in JsonWriteOptions.
+ *   Propagated to all recursively wrapped nested message fields.
  */
-export function wrapResponse<T extends object>(schema: DescMessage, value: T): WrappedResponse<T> {
+export function wrapResponse<T extends object>(
+  schema: DescMessage,
+  value: T,
+  registry?: Registry
+): WrappedResponse<T> {
   // eslint-disable-next-line @typescript-eslint/no-unsafe-return, @typescript-eslint/no-explicit-any
   if (value == null || typeof value !== 'object') return value as any
 
@@ -85,7 +97,12 @@ export function wrapResponse<T extends object>(schema: DescMessage, value: T): W
   const msg = value as MessageShape<typeof schema>
   const toJsonFn = (options?: Partial<JsonWriteOptions>) => {
     try {
-      return toJson(schema, msg, options)
+      // Inject built-in registry as default; user-provided registry takes precedence.
+      let mergedOptions = options
+      if (registry && !options?.registry) {
+        mergedOptions = { ...options, registry }
+      }
+      return toJson(schema, msg, mergedOptions)
     } catch (e) {
       const cause = e instanceof Error ? e.message : String(e)
       throw new Error(`Failed to serialize ${schema.typeName} to JSON: ${cause}`, { cause: e })
@@ -111,17 +128,22 @@ export function wrapResponse<T extends object>(schema: DescMessage, value: T): W
         let wrapped: unknown
 
         if (field.fieldKind === 'message') {
-          wrapped = wrapResponse(field.message, raw as object)
+          wrapped = wrapResponse(field.message, raw as object, registry)
         } else if (field.fieldKind === 'list' && field.listKind === 'message') {
           const arr = raw as object[]
-          wrapped = arr.map(item => wrapResponse(field.message, item))
+          wrapped = arr.map(item => wrapResponse(field.message, item, registry))
         } else if (field.fieldKind === 'map' && field.mapKind === 'message') {
           const entries = Object.entries(raw as Record<string, object>)
-          wrapped = Object.fromEntries(entries.map(([k, v]) => [k, wrapResponse(field.message, v)]))
+          wrapped = Object.fromEntries(
+            entries.map(([k, v]) => [k, wrapResponse(field.message, v, registry)])
+          )
         } else {
           // Unreachable — getFieldMap only includes message-type fields.
           // If this fires, getFieldMap and wrapping logic are out of sync.
-          console.warn(`[initia.js] Unexpected field kind for ${prop}: ${field.fieldKind}`)
+          throw new Error(
+            `[initia.js] Internal error: unexpected field kind for ${prop}: ${field.fieldKind}. ` +
+              'getFieldMap and wrapping logic are out of sync.'
+          )
         }
 
         if (wrapped !== undefined) {

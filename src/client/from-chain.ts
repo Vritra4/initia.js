@@ -12,7 +12,7 @@
  */
 
 import type { Transport } from '@connectrpc/connect'
-import type { DescService } from '@bufbuild/protobuf'
+import type { DescService, Registry } from '@bufbuild/protobuf'
 import type { ChainInfo, ChainInfoProvider } from '../provider/types'
 import { createGrpcClient } from './grpc-client'
 import { wrapClientWithCache } from './cached-client'
@@ -115,13 +115,16 @@ export type FromChainResult =
  *
  * @param createTransport - Platform-specific transport creator
  * @param getServices - Resolves ChainInfo to service descriptors
+ * @param getTypeRegistry - Optional resolver for protobuf type registry.
+ *   When omitted, toJson() will fail on responses containing google.protobuf.Any fields.
  * @returns `fromChain` function bound to the given transport and services
  *
  * @see buildChainContextFactory — Same pattern for createChainContext
  */
 export function buildFromChain(
   createTransport: (chainInfo: ChainInfo, options?: TransportOptions) => Transport,
-  getServices: (chainInfo: ChainInfo) => Record<string, DescService>
+  getServices: (chainInfo: ChainInfo) => Record<string, DescService>,
+  getTypeRegistry?: (chainInfo: ChainInfo) => Registry
 ) {
   return function fromChain(chainId: string, options: FromChainOptions = {}): FromChainResult {
     if (!options.provider) {
@@ -141,10 +144,17 @@ export function buildFromChain(
 
     const services = getServices(chainInfo)
     const transport = options.transport ?? createTransport(chainInfo)
+    const typeRegistry = getTypeRegistry?.(chainInfo)
 
     // Cast through unknown: createGrpcClient returns ServiceClients<Record<string, DescService>>
     // which is structurally correct but too wide for TypeScript to narrow automatically.
-    const rawClient = createGrpcClient(transport, services) as unknown as Client
+    const rawClient = createGrpcClient(
+      transport,
+      services,
+      undefined,
+      undefined,
+      typeRegistry
+    ) as unknown as Client
     const client = wrapClientWithCache(rawClient, chainInfo.chainId)
 
     return {

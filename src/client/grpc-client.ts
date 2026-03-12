@@ -108,6 +108,7 @@ function createServiceProxy<S extends DescService>(
  * @param services - Map of service names to service descriptors
  * @param contextAuth - Context-level auth config (injected into every request)
  * @param contextHeaders - Context-level headers (injected into every request)
+ * @param typeRegistry - Protobuf type registry for google.protobuf.Any serialization (passed to wrapResponse)
  * @returns Proxy object with lazy-initialized clients
  *
  * @example

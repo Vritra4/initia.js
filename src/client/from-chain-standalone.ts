@@ -8,7 +8,11 @@
  */
 
 import { buildFromChain } from './from-chain'
-import { getServicesForChain } from './services'
+import { getServicesForChain, getTypeRegistryForChain } from './services'
 import { createTransport } from './transport.browser'
 
-export const fromChain = buildFromChain(createTransport, getServicesForChain)
+export const fromChain = buildFromChain(
+  createTransport,
+  getServicesForChain,
+  getTypeRegistryForChain
+)
