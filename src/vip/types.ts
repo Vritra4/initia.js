@@ -28,6 +28,7 @@ export interface Vip {
   claimRewardsRaw(params: ClaimRewardsRawParams): Message
 
   // === Queries ===
+  getVestingPositions(address?: string): Promise<VestingPosition[]>
   getPosition(params: GetPositionParams, address?: string): Promise<PositionInfo | undefined>
   getPositions(address?: string): Promise<PositionInfo[]>
   getVotingPower(address?: string): Promise<bigint>

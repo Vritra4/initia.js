@@ -7,7 +7,15 @@ import type { LOCK_STAKING_ABI } from './abi/lock-staking'
 import type { WEIGHT_VOTE_ABI } from './abi/weight-vote'
 import type { VIP_TESTNET_ABI } from './abi/vip-testnet'
 import { createVipIndexer } from './indexer'
-import type { Vip, VipOptions, ClaimableReward, PositionInfo, StageInfo, VoteInfo } from './types'
+import type {
+  Vip,
+  VipOptions,
+  VestingPosition,
+  ClaimableReward,
+  PositionInfo,
+  StageInfo,
+  VoteInfo,
+} from './types'
 
 // =============================================================================
 // Factory
@@ -164,6 +172,11 @@ export function createVip(ctx: ChainContext<'initia'>, options?: VipOptions): Vi
     // =========================================================================
     // VIP Reward Methods
     // =========================================================================
+
+    async getVestingPositions(addressOverride?: string): Promise<VestingPosition[]> {
+      const address = requireAddress(addressOverride)
+      return indexer.getVestingPositions(address)
+    },
 
     async getClaimableRewards(addressOverride?: string): Promise<ClaimableReward[]> {
       const address = requireAddress(addressOverride)
