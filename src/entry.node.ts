@@ -20,7 +20,7 @@ import type { Key } from './key'
 import type { ChainInfoProvider } from './provider/types'
 import { createTransport } from './client/transport.node'
 import { createClientWithTransport } from './client/client'
-import { getServicesForChain } from './client/services'
+import { getServicesForChain, getTypeRegistryForChain } from './client/services'
 import { InitiaServices } from './client/services/initia'
 import { MinievmServices } from './client/services/minievm'
 import { MiniwasmServices } from './client/services/miniwasm'
@@ -72,6 +72,7 @@ export const createChainContext = /* @__PURE__ */ buildChainContextFactory(
         token,
         sender
       ),
+    getTypeRegistry: getTypeRegistryForChain,
   }
 )
 
@@ -148,7 +149,11 @@ export const createMinimoveContext = /* @__PURE__ */ buildTypedFactory(
  *
  * Uses native gRPC over HTTP/2 transport.
  */
-export const fromChain = /* @__PURE__ */ buildFromChain(createTransport, getServicesForChain)
+export const fromChain = /* @__PURE__ */ buildFromChain(
+  createTransport,
+  getServicesForChain,
+  getTypeRegistryForChain
+)
 
 /**
  * Create a Wallet instance (Node.js).

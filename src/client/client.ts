@@ -21,7 +21,9 @@ import type {
  * Create a gRPC client from chain info and an existing transport.
  *
  * Use this when you need custom transport configuration or want to
- * share a transport across multiple clients.
+ * share a transport across multiple clients. Automatically provides a
+ * protobuf type registry for google.protobuf.Any serialization based
+ * on the chain type.
  *
  * The return type is automatically inferred based on the chain type:
  * - 'initia' → InitiaClient
@@ -90,11 +92,18 @@ export function createClientWithTransport(
 ): Client {
   const registry = getServiceRegistry(chainInfo.chainType)
   const services = registry.getServices(chainInfo.network)
+  const typeRegistry = registry.getRegistry()
 
   // Type assertion is safe here because:
   // 1. getServiceRegistry returns the correct service set for the chain type
   // 2. createGrpcClient creates clients matching the service set
   // 3. The function overloads guarantee the correct return type based on input
-  const client = createGrpcClient(transport, services, contextAuth, contextHeaders) as Client
+  const client = createGrpcClient(
+    transport,
+    services,
+    contextAuth,
+    contextHeaders,
+    typeRegistry
+  ) as unknown as Client
   return wrapClientWithCache(client, chainInfo.chainId)
 }

@@ -5,7 +5,7 @@
  * Each per-chain file imports only its own @buf/* packages.
  */
 
-import type { DescService } from '@bufbuild/protobuf'
+import type { DescService, Registry } from '@bufbuild/protobuf'
 import type { ChainInfo } from '../../provider/types'
 import type { ChainType } from '../types'
 import { InitiaServices } from './initia'
@@ -16,7 +16,10 @@ import { OtherServices } from './other'
 
 export { InitiaServices, MinievmServices, MiniwasmServices, MinimoveServices, OtherServices }
 
-export function getServiceRegistry(chainType: ChainType) {
+export function getServiceRegistry(chainType: ChainType): {
+  getServices(network?: string): Record<string, DescService>
+  getRegistry(): Registry
+} {
   switch (chainType) {
     case 'initia':
       return InitiaServices
@@ -34,4 +37,9 @@ export function getServiceRegistry(chainType: ChainType) {
 /** Resolve services for a chain. Used by generic entry-point factories. */
 export function getServicesForChain(chainInfo: ChainInfo): Record<string, DescService> {
   return getServiceRegistry(chainInfo.chainType).getServices(chainInfo.network)
+}
+
+/** Resolve type registry for a chain. Used by generic entry-point factories. */
+export function getTypeRegistryForChain(chainInfo: ChainInfo): Registry {
+  return getServiceRegistry(chainInfo.chainType).getRegistry()
 }

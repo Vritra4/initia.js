@@ -16,7 +16,7 @@
  * ```
  */
 
-import type { DescService } from '@bufbuild/protobuf'
+import type { DescService, Registry } from '@bufbuild/protobuf'
 import type { Transport } from '@connectrpc/connect'
 import type { ChainInfoProvider, ChainInfoForType, ChainInfo } from '../provider/types'
 import type { ChainType } from '../client/types'
@@ -131,21 +131,27 @@ function isChainInfo(obj: unknown): obj is ChainInfo {
 export function buildTypedFactory<T extends ChainType>(
   chainType: T,
   createTransport: (chainInfo: ChainInfo, options?: TransportOptions) => Transport,
-  services: { getServices(network?: string): Record<string, DescService> },
+  services: {
+    getServices(network?: string): Record<string, DescService>
+    getRegistry(): Registry
+  },
   msgs: MsgsForChain<T>,
   options?: TypedFactoryOptions
 ): TypedContextFactory<T> {
   const getDefaultChainId = options?.getDefaultChainId
 
-  // Create a chain-specific createChainContext (only imports this chain's services/msgs)
-  const factoryOpts: { tokenResolver?: TokenResolver; enricherFactory?: EnricherFactory } = {}
-  if (options?.tokenResolver) factoryOpts.tokenResolver = options.tokenResolver
-  if (options?.enricherFactory) factoryOpts.enricherFactory = options.enricherFactory
+  // Resolve type registry once — ServiceRegistryBuilder types are static (registered at module load)
+  const typeRegistry = services.getRegistry()
+
   const create = buildChainContextFactory(
     createTransport,
     chainInfo => services.getServices(chainInfo.network),
     () => msgs as MsgsForChain<ChainType>,
-    Object.keys(factoryOpts).length > 0 ? factoryOpts : undefined
+    {
+      tokenResolver: options?.tokenResolver,
+      enricherFactory: options?.enricherFactory,
+      getTypeRegistry: () => typeRegistry,
+    }
   )
 
   function resolveChainId(network?: string, chainId?: string): string {

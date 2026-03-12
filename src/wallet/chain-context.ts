@@ -23,7 +23,7 @@
  */
 
 import type { Numeric } from '../types'
-import { create, toBinary, type DescService } from '@bufbuild/protobuf'
+import { create, toBinary, type DescService, type Registry } from '@bufbuild/protobuf'
 import { type MsgInput, normalizeMsg } from '../msgs/types'
 import { bech32, base64 } from '@scure/base'
 import {
@@ -1142,7 +1142,11 @@ export function buildChainContextFactory(
   createTransport: (chainInfo: ChainInfo, options?: TransportOptions) => Transport,
   getServices: (chainInfo: ChainInfo) => Record<string, DescService>,
   getMsgs: (chainType: ChainType) => MsgsForChain<ChainType>,
-  factoryOptions?: { tokenResolver?: TokenResolver; enricherFactory?: EnricherFactory }
+  factoryOptions?: {
+    tokenResolver?: TokenResolver
+    enricherFactory?: EnricherFactory
+    getTypeRegistry?: (chainInfo: ChainInfo) => Registry
+  }
 ) {
   return function createChainContext<T extends ChainType>(
     chainInfo: ChainInfo & { chainType: T },
@@ -1165,11 +1169,13 @@ export function buildChainContextFactory(
     // Cast through unknown: createGrpcClient returns ServiceClients<Record<string, DescService>>
     // which is structurally correct but too wide for TypeScript to narrow automatically.
     const services = getServices(chainInfo)
+    const typeRegistry = factoryOptions?.getTypeRegistry?.(chainInfo)
     const rawClient = createGrpcClient(
       transport,
       services,
       options?.auth,
-      options?.headers
+      options?.headers,
+      typeRegistry
     ) as unknown as Client
     const client = wrapClientWithCache(rawClient, chainInfo.chainId) as unknown as ClientFor<T>
 

@@ -13,7 +13,7 @@ import {
   type CallOptions,
 } from '@connectrpc/connect'
 import type { Transport } from '@connectrpc/connect'
-import type { DescMessage, DescService } from '@bufbuild/protobuf'
+import type { DescMessage, DescService, Registry } from '@bufbuild/protobuf'
 import { AuthenticationError } from '../errors'
 import { toCallOptions } from './headers'
 import { wrapResponse } from './response'
@@ -51,7 +51,8 @@ function createServiceProxy<S extends DescService>(
   service: S,
   serviceClient: Client<S>,
   contextAuth: AuthConfig | undefined,
-  contextHeaders: Record<string, string> | undefined
+  contextHeaders: Record<string, string> | undefined,
+  typeRegistry: Registry | undefined
 ): QueryClient<S> {
   return new Proxy(serviceClient as unknown as QueryClient<S>, {
     get(target, methodName: string | symbol, receiver) {
@@ -78,7 +79,7 @@ function createServiceProxy<S extends DescService>(
 
           // Wrap unary response with pre-resolved output schema
           if (outputSchema && result != null && typeof result === 'object') {
-            return wrapResponse(outputSchema, result)
+            return wrapResponse(outputSchema, result, typeRegistry)
           }
           return result
         } catch (error) {
@@ -108,6 +109,7 @@ function createServiceProxy<S extends DescService>(
  * @param services - Map of service names to service descriptors
  * @param contextAuth - Context-level auth config (injected into every request)
  * @param contextHeaders - Context-level headers (injected into every request)
+ * @param typeRegistry - Protobuf type registry for google.protobuf.Any serialization (passed to wrapResponse)
  * @returns Proxy object with lazy-initialized clients
  *
  * @example
@@ -123,7 +125,8 @@ export function createGrpcClient<T extends Record<string, DescService>>(
   transport: Transport,
   services: T,
   contextAuth?: AuthConfig,
-  contextHeaders?: Record<string, string>
+  contextHeaders?: Record<string, string>,
+  typeRegistry?: Registry
 ): ServiceClients<T> {
   const cache: Partial<Record<keyof T, QueryClient<DescService>>> = {}
 
@@ -143,7 +146,8 @@ export function createGrpcClient<T extends Record<string, DescService>>(
           services[key],
           rawClient,
           contextAuth,
-          contextHeaders
+          contextHeaders,
+          typeRegistry
         ) as QueryClient<DescService>
       }
 

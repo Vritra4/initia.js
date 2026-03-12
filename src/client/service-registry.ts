@@ -4,7 +4,8 @@
  * Supports network-specific overrides with full type safety.
  */
 
-import type { DescService } from '@bufbuild/protobuf'
+import type { DescFile, DescMessage, DescService, Registry } from '@bufbuild/protobuf'
+import { createRegistry } from '@bufbuild/protobuf'
 
 /**
  * Override utility: Replace existing keys with new types.
@@ -46,6 +47,8 @@ export class ServiceRegistryBuilder<
 > {
   private defaultServices: Record<string, DescService> = {}
   private networkOverrides: Record<string, Record<string, DescService>> = {}
+  private typeInputs: (DescFile | DescMessage)[] = []
+  private cachedRegistry: Registry | null = null
 
   /**
    * Add a default service (used by all networks).
@@ -106,6 +109,31 @@ export class ServiceRegistryBuilder<
    */
   getDefaultServices(): TDefault {
     return { ...this.defaultServices } as TDefault
+  }
+
+  /**
+   * Register protobuf type descriptors for google.protobuf.Any serialization.
+   * Accepts DescFile or DescMessage inputs. Invalidates cached registry.
+   *
+   * Only DescFile and DescMessage are accepted because type registries for
+   * Any serialization only need message descriptors. DescFile includes all
+   * messages defined in that file, making it the most convenient input.
+   */
+  addTypes(...inputs: (DescFile | DescMessage)[]): this {
+    this.typeInputs.push(...inputs)
+    this.cachedRegistry = null
+    return this
+  }
+
+  /**
+   * Get (or create) a Registry containing all registered type descriptors.
+   * The result is cached until addTypes() is called again.
+   */
+  getRegistry(): Registry {
+    if (!this.cachedRegistry) {
+      this.cachedRegistry = createRegistry(...this.typeInputs)
+    }
+    return this.cachedRegistry
   }
 }
 
