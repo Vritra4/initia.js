@@ -19,7 +19,11 @@ import { Query as OpchildQuery } from '@buf/initia-labs_opinit.bufbuild_es/opini
 // Minievm-specific Any-wrapped types
 import { file_minievm_evm_v1_auth } from '@buf/initia-labs_minievm.bufbuild_es/minievm/evm/v1/auth_pb'
 
+// Minievm Msg types
+import { file_minievm_evm_v1_tx } from '@buf/initia-labs_minievm.bufbuild_es/minievm/evm/v1/tx_pb'
+import { file_opinit_opchild_v1_tx } from '@buf/initia-labs_opinit.bufbuild_es/opinit/opchild/v1/tx_pb'
+
 export const MinievmServices = createCommonRegistry()
-  .add('evm', EvmQuery)
-  .add('opchild', OpchildQuery)
+  .addModule('evm', EvmQuery, file_minievm_evm_v1_tx)
+  .addModule('opchild', OpchildQuery, file_opinit_opchild_v1_tx)
   .addTypes(file_minievm_evm_v1_auth)

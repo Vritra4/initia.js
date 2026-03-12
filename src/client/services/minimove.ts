@@ -19,7 +19,11 @@ import { Query as OpchildQuery } from '@buf/initia-labs_opinit.bufbuild_es/opini
 // Move VM Any-wrapped types (shared with Initia L1)
 import { file_initia_move_v1_auth } from '@buf/initia-labs_initia.bufbuild_es/initia/move/v1/auth_pb'
 
+// Minimove Msg types
+import { file_initia_move_v1_tx } from '@buf/initia-labs_initia.bufbuild_es/initia/move/v1/tx_pb'
+import { file_opinit_opchild_v1_tx } from '@buf/initia-labs_opinit.bufbuild_es/opinit/opchild/v1/tx_pb'
+
 export const MinimoveServices = createCommonRegistry()
-  .add('move', MoveQuery)
-  .add('opchild', OpchildQuery)
+  .addModule('move', MoveQuery, file_initia_move_v1_tx)
+  .addModule('opchild', OpchildQuery, file_opinit_opchild_v1_tx)
   .addTypes(file_initia_move_v1_auth)

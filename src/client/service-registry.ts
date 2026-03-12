@@ -4,7 +4,14 @@
  * Supports network-specific overrides with full type safety.
  */
 
-import type { DescFile, DescMessage, DescService, Registry } from '@bufbuild/protobuf'
+import type {
+  DescEnum,
+  DescExtension,
+  DescFile,
+  DescMessage,
+  DescService,
+  Registry,
+} from '@bufbuild/protobuf'
 import { createRegistry } from '@bufbuild/protobuf'
 
 /**
@@ -33,9 +40,9 @@ type ResolveServices<
  * @example
  * ```typescript
  * const registry = createServiceRegistry()
- *   .add('auth', AuthQuery)
- *   .add('gov', GovV1Query)
- *   .forNetwork('testnet').add('gov', GovV1Beta1Query)
+ *   .addModule('auth', AuthQuery)
+ *   .addModule('bank', BankQuery, file_cosmos_bank_v1beta1_tx)
+ *   .forNetwork('testnet').addModule('gov', GovV1Beta1Query)
  *
  * registry.getServices()          // { auth, gov: GovV1Query }
  * registry.getServices('testnet') // { auth, gov: GovV1Beta1Query }
@@ -47,17 +54,29 @@ export class ServiceRegistryBuilder<
 > {
   private defaultServices: Record<string, DescService> = {}
   private networkOverrides: Record<string, Record<string, DescService>> = {}
-  private typeInputs: (DescFile | DescMessage)[] = []
+  private typeInputs: (
+    | Registry
+    | DescFile
+    | DescMessage
+    | DescEnum
+    | DescExtension
+    | DescService
+  )[] = []
   private cachedRegistry: Registry | null = null
 
   /**
-   * Add a default service (used by all networks).
+   * Add a module with its query service and optional type descriptors.
    */
-  add<K extends string, S extends DescService>(
+  addModule<K extends string, S extends DescService>(
     name: K,
-    service: S
+    service: S,
+    ...types: (Registry | DescFile | DescMessage | DescEnum | DescExtension | DescService)[]
   ): ServiceRegistryBuilder<Override<TDefault, Record<K, S>>, TNetworks> {
     this.defaultServices[name] = service
+    if (types.length > 0) {
+      this.typeInputs.push(...types)
+      this.cachedRegistry = null
+    }
     // Builder pattern: TypeScript cannot track `this` type evolution through
     // mutations. The cast is safe because we're returning the same instance
     // with updated generic types that reflect the accumulated services.
@@ -72,9 +91,9 @@ export class ServiceRegistryBuilder<
 
     return {
       /**
-       * Add a service override for this network.
+       * Override a module's service for this network.
        */
-      add: <K extends string, S extends DescService>(
+      addModule: <K extends string, S extends DescService>(
         name: K,
         service: S
       ): ServiceRegistryBuilder<
@@ -85,7 +104,7 @@ export class ServiceRegistryBuilder<
           this.networkOverrides[network] = {}
         }
         this.networkOverrides[network][name] = service
-        // Builder pattern: Same reasoning as add() above. The cast reflects
+        // Builder pattern: Same reasoning as addModule() above. The cast reflects
         // the accumulated network-specific service overrides in the type system.
         return this as unknown as ServiceRegistryBuilder<
           TDefault,
@@ -113,13 +132,13 @@ export class ServiceRegistryBuilder<
 
   /**
    * Register protobuf type descriptors for google.protobuf.Any serialization.
-   * Accepts DescFile or DescMessage inputs. Invalidates cached registry.
-   *
-   * Only DescFile and DescMessage are accepted because type registries for
-   * Any serialization only need message descriptors. DescFile includes all
-   * messages defined in that file, making it the most convenient input.
+   * Accepts the same inputs as `createRegistry()`: DescFile, DescMessage,
+   * DescEnum, DescExtension, DescService, or existing Registry.
+   * Invalidates cached registry.
    */
-  addTypes(...inputs: (DescFile | DescMessage)[]): this {
+  addTypes(
+    ...inputs: (Registry | DescFile | DescMessage | DescEnum | DescExtension | DescService)[]
+  ): this {
     this.typeInputs.push(...inputs)
     this.cachedRegistry = null
     return this
