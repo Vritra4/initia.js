@@ -214,6 +214,79 @@ describe('wrapClientWithCache', () => {
       expect(evmMock.spies.contractAddrByDenom).toHaveBeenCalledTimes(1)
       expect(evmMock.spies.denom).toHaveBeenCalledTimes(1)
     })
+
+    it('should deduplicate concurrent contractAddrByDenom() requests', async () => {
+      const evmMock = createMockEvmService()
+      const contractAddr = '0x' + 'ab'.repeat(20)
+      evmMock.spies.contractAddrByDenom.mockImplementation(
+        () => new Promise(resolve => setTimeout(() => resolve({ address: contractAddr }), 50))
+      )
+
+      const mockClient = { evm: evmMock.service } as unknown as MinievmClient
+      const client = wrapClientWithCache(mockClient, 'test-chain')
+
+      const [r1, r2, r3] = await Promise.all([
+        client.evm.contractAddrByDenom({ denom: 'uinit' }),
+        client.evm.contractAddrByDenom({ denom: 'uinit' }),
+        client.evm.contractAddrByDenom({ denom: 'uinit' }),
+      ])
+
+      expect(r1.address).toBe(contractAddr)
+      expect(r2.address).toBe(contractAddr)
+      expect(r3.address).toBe(contractAddr)
+      // Only 1 gRPC call despite 3 requests
+      expect(evmMock.spies.contractAddrByDenom).toHaveBeenCalledTimes(1)
+    })
+
+    it('should clean up pending after contractAddrByDenom() dedup failure and allow retry', async () => {
+      const evmMock = createMockEvmService()
+      const error = new Error('gRPC unavailable')
+      const contractAddr = '0x' + 'ab'.repeat(20)
+      evmMock.spies.contractAddrByDenom
+        .mockImplementationOnce(
+          () => new Promise((_, reject) => setTimeout(() => reject(error), 50))
+        )
+        .mockResolvedValueOnce({ address: contractAddr })
+
+      const mockClient = { evm: evmMock.service } as unknown as MinievmClient
+      const client = wrapClientWithCache(mockClient, 'test-chain')
+
+      // Fire 2 concurrent requests — both join the same failing promise
+      const [r1, r2] = await Promise.allSettled([
+        client.evm.contractAddrByDenom({ denom: 'uinit' }),
+        client.evm.contractAddrByDenom({ denom: 'uinit' }),
+      ])
+
+      expect(r1.status).toBe('rejected')
+      expect(r2.status).toBe('rejected')
+      expect(evmMock.spies.contractAddrByDenom).toHaveBeenCalledTimes(1)
+
+      // After failure, pending should be cleared — retry must work
+      const result = await client.evm.contractAddrByDenom({ denom: 'uinit' })
+      expect(result.address).toBe(contractAddr)
+      expect(evmMock.spies.contractAddrByDenom).toHaveBeenCalledTimes(2)
+    })
+
+    it('should normalize address in .then() before caching on concurrent requests', async () => {
+      const evmMock = createMockEvmService()
+      const rawAddr = '0x' + 'AB'.repeat(20)
+      evmMock.spies.contractAddrByDenom.mockImplementation(
+        () => new Promise(resolve => setTimeout(() => resolve({ address: rawAddr }), 50))
+      )
+
+      const mockClient = { evm: evmMock.service } as unknown as MinievmClient
+      const client = wrapClientWithCache(mockClient, 'test-chain')
+
+      const [r1, r2] = await Promise.all([
+        client.evm.contractAddrByDenom({ denom: 'uinit' }),
+        client.evm.contractAddrByDenom({ denom: 'uinit' }),
+      ])
+
+      // Both should receive the normalized (lowercased) address
+      expect(r1.address).toBe(rawAddr.toLowerCase())
+      expect(r2.address).toBe(rawAddr.toLowerCase())
+      expect(evmMock.spies.contractAddrByDenom).toHaveBeenCalledTimes(1)
+    })
   })
 
   describe('evm.denom() caching', () => {
@@ -273,6 +346,60 @@ describe('wrapClientWithCache', () => {
       expect(evmMock.spies.denom).toHaveBeenCalledTimes(1)
       expect(evmMock.spies.contractAddrByDenom).toHaveBeenCalledTimes(1)
     })
+
+    it('should deduplicate concurrent denom() requests', async () => {
+      const evmMock = createMockEvmService()
+      const mockResult = { denom: 'uinit' }
+      evmMock.spies.denom.mockImplementation(
+        () => new Promise(resolve => setTimeout(() => resolve(mockResult), 50))
+      )
+
+      const mockClient = { evm: evmMock.service } as unknown as MinievmClient
+      const client = wrapClientWithCache(mockClient, 'test-chain')
+
+      const contractAddr = '0x' + 'ab'.repeat(20)
+      const [r1, r2, r3] = await Promise.all([
+        client.evm.denom({ contractAddr }),
+        client.evm.denom({ contractAddr }),
+        client.evm.denom({ contractAddr }),
+      ])
+
+      expect(r1.denom).toBe('uinit')
+      expect(r2.denom).toBe('uinit')
+      expect(r3.denom).toBe('uinit')
+      // Only 1 gRPC call despite 3 requests
+      expect(evmMock.spies.denom).toHaveBeenCalledTimes(1)
+    })
+
+    it('should clean up pending after denom() dedup failure and allow retry', async () => {
+      const evmMock = createMockEvmService()
+      const error = new Error('gRPC unavailable')
+      evmMock.spies.denom
+        .mockImplementationOnce(
+          () => new Promise((_, reject) => setTimeout(() => reject(error), 50))
+        )
+        .mockResolvedValueOnce({ denom: 'uinit' })
+
+      const mockClient = { evm: evmMock.service } as unknown as MinievmClient
+      const client = wrapClientWithCache(mockClient, 'test-chain')
+
+      const contractAddr = '0x' + 'ab'.repeat(20)
+
+      // Fire 2 concurrent requests — both join the same failing promise
+      const [r1, r2] = await Promise.allSettled([
+        client.evm.denom({ contractAddr }),
+        client.evm.denom({ contractAddr }),
+      ])
+
+      expect(r1.status).toBe('rejected')
+      expect(r2.status).toBe('rejected')
+      expect(evmMock.spies.denom).toHaveBeenCalledTimes(1)
+
+      // After failure, pending should be cleared — retry must work
+      const result = await client.evm.denom({ contractAddr })
+      expect(result.denom).toBe('uinit')
+      expect(evmMock.spies.denom).toHaveBeenCalledTimes(2)
+    })
   })
 
   describe('non-cached methods passthrough', () => {
@@ -327,6 +454,45 @@ describe('wrapClientWithCache', () => {
       const client = wrapClientWithCache(mockClient, 'test-chain')
 
       expect((client.bank as any).serviceName).toBe('bank-query')
+    })
+
+    it('should join inflight request even when skipCache is true', async () => {
+      const balanceSpy = vi
+        .fn()
+        .mockImplementation(
+          () => new Promise(resolve => setTimeout(() => resolve({ amount: '1000' }), 50))
+        )
+      const mockClient = {
+        bank: { balance: balanceSpy },
+      } as unknown as InitiaClient
+      const client = wrapClientWithCache(mockClient, 'test-chain')
+
+      // Fire concurrent requests, second with skipCache
+      const [r1, r2] = await Promise.all([
+        client.bank.balance({ address: 'init1...' }, { height: 100n }),
+        client.bank.balance({ address: 'init1...' }, { height: 100n, skipCache: true }),
+      ])
+
+      expect(r1).toEqual({ amount: '1000' })
+      expect(r2).toEqual({ amount: '1000' })
+      // Both should share the same inflight request
+      expect(balanceSpy).toHaveBeenCalledTimes(1)
+    })
+
+    it('should bypass cache but not dedup with skipCache after cached', async () => {
+      const balanceSpy = vi.fn().mockResolvedValue({ amount: '1000' })
+      const mockClient = {
+        bank: { balance: balanceSpy },
+      } as unknown as InitiaClient
+      const client = wrapClientWithCache(mockClient, 'test-chain')
+
+      // First call — caches result
+      await client.bank.balance({ address: 'init1...' }, { height: 100n })
+      expect(balanceSpy).toHaveBeenCalledTimes(1)
+
+      // Second call with skipCache — should skip cache and make a new gRPC call
+      await client.bank.balance({ address: 'init1...' }, { height: 100n, skipCache: true })
+      expect(balanceSpy).toHaveBeenCalledTimes(2)
     })
 
     it('should deduplicate concurrent height-based requests', async () => {

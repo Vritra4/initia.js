@@ -217,9 +217,9 @@ describe('recursive nested wrapping', () => {
     const raw = { nested: { foo: 'bar' }, scalar: 42 }
     const wrapped = wrapResponse(outerSchema, raw)
 
-    // Nested should also be wrapped
-    expect(wrapped.nested.schema).toBe(innerSchema)
-    expect(wrapped.nested.typeUrl).toBe('/inner.Message')
+    // Nested should also be wrapped (mock objects lack $typeName, so cast needed)
+    expect((wrapped.nested as any).schema).toBe(innerSchema)
+    expect((wrapped.nested as any).typeUrl).toBe('/inner.Message')
     expect(wrapped.nested.foo).toBe('bar')
 
     // Scalar stays as-is
@@ -241,9 +241,9 @@ describe('recursive nested wrapping', () => {
     const wrapped = wrapResponse(listSchema, raw)
 
     expect(Array.isArray(wrapped.items)).toBe(true)
-    expect(wrapped.items[0].schema).toBe(itemSchema)
+    expect((wrapped.items[0] as any).schema).toBe(itemSchema)
     expect(wrapped.items[0].id).toBe(1)
-    expect(wrapped.items[1].schema).toBe(itemSchema)
+    expect((wrapped.items[1] as any).schema).toBe(itemSchema)
   })
 
   it('should cache wrapped nested objects (same reference on repeated access)', () => {
@@ -291,8 +291,8 @@ describe('recursive nested wrapping', () => {
     const raw = { mid: { deep: { value: 'found' } } }
     const wrapped = wrapResponse(level1, raw)
 
-    expect(wrapped.mid.typeUrl).toBe('/level2')
-    expect(wrapped.mid.deep.typeUrl).toBe('/level3')
+    expect((wrapped.mid as any).typeUrl).toBe('/level2')
+    expect((wrapped.mid as any).deep.typeUrl).toBe('/level3')
     expect(wrapped.mid.deep.value).toBe('found')
   })
 
@@ -327,10 +327,10 @@ describe('recursive nested wrapping', () => {
     }
     const wrapped = wrapResponse(mapSchema, raw)
 
-    expect(wrapped.options.auth.schema).toBe(valueSchema)
-    expect(wrapped.options.auth.typeUrl).toBe('/option.Message')
+    expect((wrapped.options.auth as any).schema).toBe(valueSchema)
+    expect((wrapped.options.auth as any).typeUrl).toBe('/option.Message')
     expect(wrapped.options.auth.enabled).toBe(true)
-    expect(wrapped.options.bank.schema).toBe(valueSchema)
+    expect((wrapped.options.bank as any).schema).toBe(valueSchema)
   })
 
   it('should not wrap map fields with scalar values', () => {
@@ -359,9 +359,9 @@ describe('recursive nested wrapping', () => {
     const wrapped = wrapResponse(responseSchema, raw)
 
     // The nested Any's typeUrl must be the original value, NOT '/google.protobuf.Any'
-    expect(wrapped.account.typeUrl).toBe('/cosmos.auth.v1beta1.BaseAccount')
+    expect((wrapped.account as any).typeUrl).toBe('/cosmos.auth.v1beta1.BaseAccount')
     // But schema should still be accessible
-    expect(wrapped.account.schema).toBe(anySchema)
+    expect((wrapped.account as any).schema).toBe(anySchema)
   })
 })
 

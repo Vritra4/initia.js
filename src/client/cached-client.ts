@@ -274,7 +274,8 @@ function createCachedEvmService(
           const promise = originalContractAddrByDenom(request, options)
             .then(result => {
               const normalizedAddr = normalizeEvmAddress(result.address)
-              // Normalize address before caching (safe: result is not yet shared with any caller)
+              // Mutate before caching — runs inside .then() before the resolved value
+              // is delivered to any caller. Spread would break the WrappedResponse Proxy.
               // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
               ;(result as any).address = normalizedAddr
               // Cache own direction only (no bidirectional pre-population)

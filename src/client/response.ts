@@ -1,6 +1,7 @@
 import type {
   DescMessage,
   DescField,
+  Message,
   MessageShape,
   JsonValue,
   JsonWriteOptions,
@@ -71,7 +72,7 @@ function getFieldMap(schema: DescMessage): FieldMap {
  *
  * Protobuf's own `$typeName` passes through from the underlying message.
  */
-export function wrapResponse<T extends object>(schema: DescMessage, value: T): T & WrappedResponse {
+export function wrapResponse<T extends object>(schema: DescMessage, value: T): WrappedResponse<T> {
   // eslint-disable-next-line @typescript-eslint/no-unsafe-return, @typescript-eslint/no-explicit-any
   if (value == null || typeof value !== 'object') return value as any
 
@@ -117,6 +118,10 @@ export function wrapResponse<T extends object>(schema: DescMessage, value: T): T
         } else if (field.fieldKind === 'map' && field.mapKind === 'message') {
           const entries = Object.entries(raw as Record<string, object>)
           wrapped = Object.fromEntries(entries.map(([k, v]) => [k, wrapResponse(field.message, v)]))
+        } else {
+          // Unreachable — getFieldMap only includes message-type fields.
+          // If this fires, getFieldMap and wrapping logic are out of sync.
+          console.warn(`[initia.js] Unexpected field kind for ${prop}: ${field.fieldKind}`)
         }
 
         if (wrapped !== undefined) {
@@ -161,7 +166,7 @@ export function wrapResponse<T extends object>(schema: DescMessage, value: T): T
       return Reflect.getOwnPropertyDescriptor(target, prop)
     },
   })
-  return proxy as T & WrappedResponse
+  return proxy as WrappedResponse<T>
 }
 
 // =============================================================================
@@ -171,46 +176,60 @@ export function wrapResponse<T extends object>(schema: DescMessage, value: T): T
 /**
  * Type guard: check if a value is a wrapped gRPC response.
  * Generic preserves the input type through narrowing:
- *   isWrappedResponse(coin) → coin is Coin & WrappedResponse
+ *   isWrappedResponse(coin) → coin is WrappedResponse<Coin>
  */
-export function isWrappedResponse<T>(value: T): value is T & WrappedResponse {
+export function isWrappedResponse<T>(value: T): value is WrappedResponse<T> {
   return value != null && typeof value === 'object' && WRAPPED_MARKER in (value as object)
 }
 
-/**
- * A gRPC response enhanced with schema access and JSON serialization.
- *
- * Nested message fields are also wrapped at runtime (with `schema`, `typeUrl`,
- * `toJson()`), but this is NOT reflected in the static type to avoid deep
- * recursive type expansion. Use `isWrappedResponse()` to narrow nested fields:
- *
- * ```typescript
- * const res = await client.bank.balance({ address, denom })
- * // res.balance is typed as Coin | undefined, but wrapped at runtime
- * if (isWrappedResponse(res.balance)) {
- *   res.balance.toJson() // OK after narrowing
- * }
- * ```
- *
- * **Spread/destructuring**: `{ ...wrapped }` copies synthetic properties
- * (`schema`, `typeUrl`, `toJson`, `toJSON`) but nested fields become plain
- * objects (no Proxy). Use spread when you need a data-only snapshot that
- * breaks the GC retention chain to the parent response.
- */
-export type WrappedResponse<T = unknown> = T & {
-  /** The protobuf schema descriptor (same as `Message.schema`). */
+/** Synthetic properties added by the response wrapper Proxy. */
+type WrappedProps = {
+  /** The protobuf schema descriptor. */
   readonly schema: DescMessage
   /** Type URL with '/' prefix (e.g., '/cosmos.bank.v1beta1.QueryBalanceResponse') */
   readonly typeUrl: string
-  /**
-   * Serialize to canonical protobuf JSON (bare fields, no envelope).
-   * Unlike `Message.toJson()` which wraps in `{ typeUrl, value }`,
-   * this returns the direct protobuf JSON mapping.
-   */
+  /** Serialize to canonical protobuf JSON. */
   toJson(options?: Partial<JsonWriteOptions>): JsonValue
   /** Called by JSON.stringify(). Returns canonical protobuf JSON (no options). */
   toJSON(): JsonValue
 }
+
+/**
+ * Recursively wraps nested protobuf message fields with WrappedProps.
+ * - Single message fields (`balance?: Coin`) → `WrappedResponse<Coin> | undefined`
+ * - Repeated message fields (`validators: Validator[]`) → `WrappedResponse<Validator>[]`
+ * - Map fields with message values (`{ [key: string]: Msg }`) → `Record<string, WrappedResponse<Msg>>`
+ * - Scalar / Uint8Array / non-message fields pass through unchanged.
+ *
+ * Map detection uses `string extends keyof T[K]` to distinguish index signatures
+ * from named properties, preventing false positives on `{ a: Msg; b: Msg }`.
+ */
+type DeepWrapFields<T> = {
+  [K in keyof T]: T[K] extends Message | undefined
+    ? WrappedResponse<NonNullable<T[K]>> | Extract<T[K], undefined>
+    : T[K] extends (infer U)[]
+      ? U extends Message
+        ? WrappedResponse<U>[]
+        : T[K]
+      : string extends keyof T[K]
+        ? T[K] extends Record<string, infer V>
+          ? V extends Message
+            ? Record<string, WrappedResponse<V>>
+            : T[K]
+          : T[K]
+        : T[K]
+}
+
+/**
+ * A gRPC response enhanced with schema access and JSON serialization.
+ * Nested message fields are also recursively wrapped with the same properties.
+ *
+ * **Spread/destructuring**: `{ ...wrapped }` copies all properties including
+ * synthetic ones (`schema`, `typeUrl`, `toJson`, `toJSON`) and nested Proxy-wrapped
+ * fields. The spread result itself is a plain object (not a Proxy), so
+ * `isWrappedResponse({ ...wrapped })` returns false.
+ */
+export type WrappedResponse<T = unknown> = T & WrappedProps & DeepWrapFields<T>
 
 /**
  * Transforms Promise return types to include WrappedResponse.
