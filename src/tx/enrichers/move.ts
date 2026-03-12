@@ -8,6 +8,7 @@
 import type { MessageEnricher, DecodedTxMessage, GetTxOptions, AbiRegistry } from '../get-tx'
 import type { MoveModuleAbi } from '../../contracts/move/types'
 import type { MoveQueryClient } from '../../contracts/move/abi-fetcher'
+import type { HasMoveService } from '../../client/types'
 import { getModuleAbi, findFunction, getNonSignerParams } from '../../contracts/move/abi-fetcher'
 import { decodeMoveResults, parseMoveType, type ParsedMoveType } from '../../contracts/move/bcs'
 
@@ -84,8 +85,9 @@ export function createMoveEnricher(
   moveClient: MoveQueryClient,
   abis?: AbiRegistry<MoveModuleAbi>
 ): MessageEnricher {
-  // Adapter: wrap MoveQueryClient to satisfy HasMoveService interface (Decision #62)
-  const moveContext = { client: { move: moveClient } }
+  // MoveQueryClient is structurally compatible with HasMoveService.client.move
+  // (same .module() method), but the wrapper types differ (Client vs QueryClient).
+  const moveContext = { client: { move: moveClient } } as unknown as HasMoveService
 
   return {
     canEnrich(typeUrl) {

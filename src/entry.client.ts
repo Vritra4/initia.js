@@ -2,7 +2,7 @@
 export { createClientWithTransport } from './client/client'
 
 // client/grpc-client
-export { createGrpcClient, type ServiceClients } from './client/grpc-client'
+export { createGrpcClient, type ServiceClients, type QueryClient } from './client/grpc-client'
 
 // client/types
 export { auth } from './client/types'
@@ -99,6 +99,14 @@ export {
   type GetAddressProfileOptions,
   type ProfileCache,
 } from './client/address-profile'
+
+// client/response
+export {
+  wrapResponse,
+  isWrappedResponse,
+  type WrappedResponse,
+  type WrapReturnType,
+} from './client/response'
 
 // client/cached-client
 export type { CachedClient } from './client/cached-client'

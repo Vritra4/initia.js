@@ -61,7 +61,7 @@ describe('keyToViemAccount', () => {
   })
 })
 
-const PK_HEX = `0x${'01'.repeat(32)}`
+const PK_HEX: `0x${string}` = `0x${'01'.repeat(32)}`
 
 describe('viemAccountToSigner', () => {
   it('should return a DirectSigner', () => {

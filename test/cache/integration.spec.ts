@@ -38,10 +38,10 @@ describe('wrapClientWithCache', () => {
       const client = wrapClientWithCache(mockClient, 'test-chain')
 
       // First call - should hit gRPC
-      const result1 = await client.move!.module({ address: '0x1', moduleName: 'coin' })
+      const result1 = await client.move.module({ address: '0x1', moduleName: 'coin' })
 
       // Second call - should use cache
-      const result2 = await client.move!.module({ address: '0x1', moduleName: 'coin' })
+      const result2 = await client.move.module({ address: '0x1', moduleName: 'coin' })
 
       expect(result1).toEqual(mockResult)
       expect(result2).toEqual(mockResult)
@@ -56,8 +56,8 @@ describe('wrapClientWithCache', () => {
       const mockClient = { move: moveMock.service } as unknown as InitiaClient
       const client = wrapClientWithCache(mockClient, 'test-chain')
 
-      await client.move!.module({ address: '0x1', moduleName: 'coin' })
-      await client.move!.module({ address: '0x1', moduleName: 'coin' }, { skipCache: true })
+      await client.move.module({ address: '0x1', moduleName: 'coin' })
+      await client.move.module({ address: '0x1', moduleName: 'coin' }, { skipCache: true })
 
       expect(moveMock.spies.module).toHaveBeenCalledTimes(2)
     })
@@ -75,8 +75,8 @@ describe('wrapClientWithCache', () => {
 
       // Fire concurrent requests, second with skipCache
       const [r1, r2] = await Promise.all([
-        client.move!.module({ address: '0x1', moduleName: 'coin' }),
-        client.move!.module({ address: '0x1', moduleName: 'coin' }, { skipCache: true }),
+        client.move.module({ address: '0x1', moduleName: 'coin' }),
+        client.move.module({ address: '0x1', moduleName: 'coin' }, { skipCache: true }),
       ])
 
       expect(r1).toEqual(mockResult)
@@ -97,9 +97,9 @@ describe('wrapClientWithCache', () => {
 
       // Fire 3 concurrent requests
       const [r1, r2, r3] = await Promise.all([
-        client.move!.module({ address: '0x1', moduleName: 'coin' }),
-        client.move!.module({ address: '0x1', moduleName: 'coin' }),
-        client.move!.module({ address: '0x1', moduleName: 'coin' }),
+        client.move.module({ address: '0x1', moduleName: 'coin' }),
+        client.move.module({ address: '0x1', moduleName: 'coin' }),
+        client.move.module({ address: '0x1', moduleName: 'coin' }),
       ])
 
       expect(r1).toEqual(mockResult)
@@ -118,9 +118,9 @@ describe('wrapClientWithCache', () => {
       const client = wrapClientWithCache(mockClient, 'test-chain')
 
       // Different case, same address
-      await client.move!.module({ address: '0x1', moduleName: 'coin' })
-      await client.move!.module({ address: '0X1', moduleName: 'coin' })
-      await client.move!.module({
+      await client.move.module({ address: '0x1', moduleName: 'coin' })
+      await client.move.module({ address: '0X1', moduleName: 'coin' })
+      await client.move.module({
         address: '0x0000000000000000000000000000000000000000000000000000000000000001',
         moduleName: 'coin',
       })
@@ -140,12 +140,40 @@ describe('wrapClientWithCache', () => {
       const client = wrapClientWithCache(mockClient, 'test-chain')
 
       // First call fails
-      await expect(client.move!.module({ address: '0x1', moduleName: 'coin' })).rejects.toThrow(
+      await expect(client.move.module({ address: '0x1', moduleName: 'coin' })).rejects.toThrow(
         'Module not found'
       )
 
       // Second call should retry (not use cached error)
-      const result = await client.move!.module({ address: '0x1', moduleName: 'coin' })
+      const result = await client.move.module({ address: '0x1', moduleName: 'coin' })
+      expect(result).toEqual({ address: '0x1', name: 'coin' })
+      expect(moveMock.spies.module).toHaveBeenCalledTimes(2)
+    })
+
+    it('should clean up pending after concurrent dedup failure and allow retry', async () => {
+      const moveMock = createMockMoveService()
+      const error = new Error('gRPC unavailable')
+      moveMock.spies.module
+        .mockImplementationOnce(
+          () => new Promise((_, reject) => setTimeout(() => reject(error), 50))
+        )
+        .mockResolvedValueOnce({ address: '0x1', name: 'coin' })
+
+      const mockClient = { move: moveMock.service } as unknown as InitiaClient
+      const client = wrapClientWithCache(mockClient, 'test-chain')
+
+      // Fire 2 concurrent requests — both join the same failing promise
+      const [r1, r2] = await Promise.allSettled([
+        client.move.module({ address: '0x1', moduleName: 'coin' }),
+        client.move.module({ address: '0x1', moduleName: 'coin' }),
+      ])
+
+      expect(r1.status).toBe('rejected')
+      expect(r2.status).toBe('rejected')
+      expect(moveMock.spies.module).toHaveBeenCalledTimes(1)
+
+      // After failure, pending should be cleared — retry must work
+      const result = await client.move.module({ address: '0x1', moduleName: 'coin' })
       expect(result).toEqual({ address: '0x1', name: 'coin' })
       expect(moveMock.spies.module).toHaveBeenCalledTimes(2)
     })
@@ -160,31 +188,104 @@ describe('wrapClientWithCache', () => {
       const mockClient = { evm: evmMock.service } as unknown as MinievmClient
       const client = wrapClientWithCache(mockClient, 'test-chain')
 
-      const result1 = await client.evm!.contractAddrByDenom({ denom: 'uinit' })
-      const result2 = await client.evm!.contractAddrByDenom({ denom: 'uinit' })
+      const result1 = await client.evm.contractAddrByDenom({ denom: 'uinit' })
+      const result2 = await client.evm.contractAddrByDenom({ denom: 'uinit' })
 
       expect(result1.address).toBe(mockResult.address.toLowerCase())
       expect(result2.address).toBe(mockResult.address.toLowerCase())
       expect(evmMock.spies.contractAddrByDenom).toHaveBeenCalledTimes(1)
     })
 
-    it('should cache bidirectionally (denom lookup populates reverse cache)', async () => {
+    it('should NOT cache bidirectionally (each direction caches independently)', async () => {
       const evmMock = createMockEvmService()
       const contractAddr = '0x' + 'AB'.repeat(20)
       evmMock.spies.contractAddrByDenom.mockResolvedValue({ address: contractAddr })
+      evmMock.spies.denom.mockResolvedValue({ denom: 'uinit' })
 
       const mockClient = { evm: evmMock.service } as unknown as MinievmClient
       const client = wrapClientWithCache(mockClient, 'test-chain')
 
       // Lookup by denom
-      await client.evm!.contractAddrByDenom({ denom: 'uinit' })
+      await client.evm.contractAddrByDenom({ denom: 'uinit' })
 
-      // Now lookup by contract should use reverse cache
-      const denomResult = await client.evm!.denom({ contractAddr: contractAddr.toLowerCase() })
+      // Reverse lookup should NOT use cache — requires its own gRPC call
+      await client.evm.denom({ contractAddr: contractAddr.toLowerCase() })
 
-      expect(denomResult.denom).toBe('uinit')
-      // denom() should not have been called - used reverse cache
-      expect(evmMock.spies.denom).toHaveBeenCalledTimes(0)
+      expect(evmMock.spies.contractAddrByDenom).toHaveBeenCalledTimes(1)
+      expect(evmMock.spies.denom).toHaveBeenCalledTimes(1)
+    })
+
+    it('should deduplicate concurrent contractAddrByDenom() requests', async () => {
+      const evmMock = createMockEvmService()
+      const contractAddr = '0x' + 'ab'.repeat(20)
+      evmMock.spies.contractAddrByDenom.mockImplementation(
+        () => new Promise(resolve => setTimeout(() => resolve({ address: contractAddr }), 50))
+      )
+
+      const mockClient = { evm: evmMock.service } as unknown as MinievmClient
+      const client = wrapClientWithCache(mockClient, 'test-chain')
+
+      const [r1, r2, r3] = await Promise.all([
+        client.evm.contractAddrByDenom({ denom: 'uinit' }),
+        client.evm.contractAddrByDenom({ denom: 'uinit' }),
+        client.evm.contractAddrByDenom({ denom: 'uinit' }),
+      ])
+
+      expect(r1.address).toBe(contractAddr)
+      expect(r2.address).toBe(contractAddr)
+      expect(r3.address).toBe(contractAddr)
+      // Only 1 gRPC call despite 3 requests
+      expect(evmMock.spies.contractAddrByDenom).toHaveBeenCalledTimes(1)
+    })
+
+    it('should clean up pending after contractAddrByDenom() dedup failure and allow retry', async () => {
+      const evmMock = createMockEvmService()
+      const error = new Error('gRPC unavailable')
+      const contractAddr = '0x' + 'ab'.repeat(20)
+      evmMock.spies.contractAddrByDenom
+        .mockImplementationOnce(
+          () => new Promise((_, reject) => setTimeout(() => reject(error), 50))
+        )
+        .mockResolvedValueOnce({ address: contractAddr })
+
+      const mockClient = { evm: evmMock.service } as unknown as MinievmClient
+      const client = wrapClientWithCache(mockClient, 'test-chain')
+
+      // Fire 2 concurrent requests — both join the same failing promise
+      const [r1, r2] = await Promise.allSettled([
+        client.evm.contractAddrByDenom({ denom: 'uinit' }),
+        client.evm.contractAddrByDenom({ denom: 'uinit' }),
+      ])
+
+      expect(r1.status).toBe('rejected')
+      expect(r2.status).toBe('rejected')
+      expect(evmMock.spies.contractAddrByDenom).toHaveBeenCalledTimes(1)
+
+      // After failure, pending should be cleared — retry must work
+      const result = await client.evm.contractAddrByDenom({ denom: 'uinit' })
+      expect(result.address).toBe(contractAddr)
+      expect(evmMock.spies.contractAddrByDenom).toHaveBeenCalledTimes(2)
+    })
+
+    it('should normalize address in .then() before caching on concurrent requests', async () => {
+      const evmMock = createMockEvmService()
+      const rawAddr = '0x' + 'AB'.repeat(20)
+      evmMock.spies.contractAddrByDenom.mockImplementation(
+        () => new Promise(resolve => setTimeout(() => resolve({ address: rawAddr }), 50))
+      )
+
+      const mockClient = { evm: evmMock.service } as unknown as MinievmClient
+      const client = wrapClientWithCache(mockClient, 'test-chain')
+
+      const [r1, r2] = await Promise.all([
+        client.evm.contractAddrByDenom({ denom: 'uinit' }),
+        client.evm.contractAddrByDenom({ denom: 'uinit' }),
+      ])
+
+      // Both should receive the normalized (lowercased) address
+      expect(r1.address).toBe(rawAddr.toLowerCase())
+      expect(r2.address).toBe(rawAddr.toLowerCase())
+      expect(evmMock.spies.contractAddrByDenom).toHaveBeenCalledTimes(1)
     })
   })
 
@@ -198,8 +299,8 @@ describe('wrapClientWithCache', () => {
       const client = wrapClientWithCache(mockClient, 'test-chain')
 
       const contractAddr = '0x' + '1'.repeat(40)
-      const result1 = await client.evm!.denom({ contractAddr })
-      const result2 = await client.evm!.denom({ contractAddr })
+      const result1 = await client.evm.denom({ contractAddr })
+      const result2 = await client.evm.denom({ contractAddr })
 
       expect(result1.denom).toBe('uinit')
       expect(result2.denom).toBe('uinit')
@@ -218,17 +319,18 @@ describe('wrapClientWithCache', () => {
       const addrUpper = '0x' + 'AB'.repeat(20)
       const addrMixed = '0x' + 'Ab'.repeat(20)
 
-      await client.evm!.denom({ contractAddr: addrLower })
-      await client.evm!.denom({ contractAddr: addrUpper })
-      await client.evm!.denom({ contractAddr: addrMixed })
+      await client.evm.denom({ contractAddr: addrLower })
+      await client.evm.denom({ contractAddr: addrUpper })
+      await client.evm.denom({ contractAddr: addrMixed })
 
       // All should hit same cache entry
       expect(evmMock.spies.denom).toHaveBeenCalledTimes(1)
     })
 
-    it('should cache bidirectionally (contract lookup populates reverse cache)', async () => {
+    it('should NOT cache bidirectionally (each direction caches independently)', async () => {
       const evmMock = createMockEvmService()
       evmMock.spies.denom.mockResolvedValue({ denom: 'uinit' })
+      evmMock.spies.contractAddrByDenom.mockResolvedValue({ address: '0x' + '1'.repeat(40) })
 
       const mockClient = { evm: evmMock.service } as unknown as MinievmClient
       const client = wrapClientWithCache(mockClient, 'test-chain')
@@ -236,14 +338,67 @@ describe('wrapClientWithCache', () => {
       const contractAddr = '0x' + '1'.repeat(40)
 
       // Lookup by contract
-      await client.evm!.denom({ contractAddr })
+      await client.evm.denom({ contractAddr })
 
-      // Now lookup by denom should use reverse cache
-      const addrResult = await client.evm!.contractAddrByDenom({ denom: 'uinit' })
+      // Reverse lookup should NOT use cache — requires its own gRPC call
+      await client.evm.contractAddrByDenom({ denom: 'uinit' })
 
-      expect(addrResult.address).toBe(contractAddr.toLowerCase())
-      // contractAddrByDenom() should not have been called
-      expect(evmMock.spies.contractAddrByDenom).toHaveBeenCalledTimes(0)
+      expect(evmMock.spies.denom).toHaveBeenCalledTimes(1)
+      expect(evmMock.spies.contractAddrByDenom).toHaveBeenCalledTimes(1)
+    })
+
+    it('should deduplicate concurrent denom() requests', async () => {
+      const evmMock = createMockEvmService()
+      const mockResult = { denom: 'uinit' }
+      evmMock.spies.denom.mockImplementation(
+        () => new Promise(resolve => setTimeout(() => resolve(mockResult), 50))
+      )
+
+      const mockClient = { evm: evmMock.service } as unknown as MinievmClient
+      const client = wrapClientWithCache(mockClient, 'test-chain')
+
+      const contractAddr = '0x' + 'ab'.repeat(20)
+      const [r1, r2, r3] = await Promise.all([
+        client.evm.denom({ contractAddr }),
+        client.evm.denom({ contractAddr }),
+        client.evm.denom({ contractAddr }),
+      ])
+
+      expect(r1.denom).toBe('uinit')
+      expect(r2.denom).toBe('uinit')
+      expect(r3.denom).toBe('uinit')
+      // Only 1 gRPC call despite 3 requests
+      expect(evmMock.spies.denom).toHaveBeenCalledTimes(1)
+    })
+
+    it('should clean up pending after denom() dedup failure and allow retry', async () => {
+      const evmMock = createMockEvmService()
+      const error = new Error('gRPC unavailable')
+      evmMock.spies.denom
+        .mockImplementationOnce(
+          () => new Promise((_, reject) => setTimeout(() => reject(error), 50))
+        )
+        .mockResolvedValueOnce({ denom: 'uinit' })
+
+      const mockClient = { evm: evmMock.service } as unknown as MinievmClient
+      const client = wrapClientWithCache(mockClient, 'test-chain')
+
+      const contractAddr = '0x' + 'ab'.repeat(20)
+
+      // Fire 2 concurrent requests — both join the same failing promise
+      const [r1, r2] = await Promise.allSettled([
+        client.evm.denom({ contractAddr }),
+        client.evm.denom({ contractAddr }),
+      ])
+
+      expect(r1.status).toBe('rejected')
+      expect(r2.status).toBe('rejected')
+      expect(evmMock.spies.denom).toHaveBeenCalledTimes(1)
+
+      // After failure, pending should be cleared — retry must work
+      const result = await client.evm.denom({ contractAddr })
+      expect(result.denom).toBe('uinit')
+      expect(evmMock.spies.denom).toHaveBeenCalledTimes(2)
     })
   })
 
@@ -300,6 +455,94 @@ describe('wrapClientWithCache', () => {
 
       expect((client.bank as any).serviceName).toBe('bank-query')
     })
+
+    it('should join inflight request even when skipCache is true', async () => {
+      const balanceSpy = vi
+        .fn()
+        .mockImplementation(
+          () => new Promise(resolve => setTimeout(() => resolve({ amount: '1000' }), 50))
+        )
+      const mockClient = {
+        bank: { balance: balanceSpy },
+      } as unknown as InitiaClient
+      const client = wrapClientWithCache(mockClient, 'test-chain')
+
+      // Fire concurrent requests, second with skipCache
+      const [r1, r2] = await Promise.all([
+        client.bank.balance({ address: 'init1...' }, { height: 100n }),
+        client.bank.balance({ address: 'init1...' }, { height: 100n, skipCache: true }),
+      ])
+
+      expect(r1).toEqual({ amount: '1000' })
+      expect(r2).toEqual({ amount: '1000' })
+      // Both should share the same inflight request
+      expect(balanceSpy).toHaveBeenCalledTimes(1)
+    })
+
+    it('should bypass cache but not dedup with skipCache after cached', async () => {
+      const balanceSpy = vi.fn().mockResolvedValue({ amount: '1000' })
+      const mockClient = {
+        bank: { balance: balanceSpy },
+      } as unknown as InitiaClient
+      const client = wrapClientWithCache(mockClient, 'test-chain')
+
+      // First call — caches result
+      await client.bank.balance({ address: 'init1...' }, { height: 100n })
+      expect(balanceSpy).toHaveBeenCalledTimes(1)
+
+      // Second call with skipCache — should skip cache and make a new gRPC call
+      await client.bank.balance({ address: 'init1...' }, { height: 100n, skipCache: true })
+      expect(balanceSpy).toHaveBeenCalledTimes(2)
+    })
+
+    it('should deduplicate concurrent height-based requests', async () => {
+      const balanceSpy = vi
+        .fn()
+        .mockImplementation(
+          () => new Promise(resolve => setTimeout(() => resolve({ amount: '1000' }), 50))
+        )
+      const mockClient = {
+        bank: { balance: balanceSpy },
+      } as unknown as InitiaClient
+      const client = wrapClientWithCache(mockClient, 'test-chain')
+
+      const [r1, r2] = await Promise.all([
+        client.bank.balance({ address: 'init1...' }, { height: 100n }),
+        client.bank.balance({ address: 'init1...' }, { height: 100n }),
+      ])
+
+      expect(r1).toEqual({ amount: '1000' })
+      expect(r2).toEqual({ amount: '1000' })
+      expect(balanceSpy).toHaveBeenCalledTimes(1)
+    })
+
+    it('should clean up pending after height-cache error and allow retry', async () => {
+      const balanceSpy = vi
+        .fn()
+        .mockImplementationOnce(
+          () => new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 50))
+        )
+        .mockResolvedValueOnce({ amount: '500' })
+      const mockClient = {
+        bank: { balance: balanceSpy },
+      } as unknown as InitiaClient
+      const client = wrapClientWithCache(mockClient, 'test-chain')
+
+      // Concurrent requests — both fail
+      const [r1, r2] = await Promise.allSettled([
+        client.bank.balance({ address: 'init1...' }, { height: 100n }),
+        client.bank.balance({ address: 'init1...' }, { height: 100n }),
+      ])
+
+      expect(r1.status).toBe('rejected')
+      expect(r2.status).toBe('rejected')
+      expect(balanceSpy).toHaveBeenCalledTimes(1)
+
+      // Retry should work (pending cleared by .finally())
+      const result = await client.bank.balance({ address: 'init1...' }, { height: 100n })
+      expect(result).toEqual({ amount: '500' })
+      expect(balanceSpy).toHaveBeenCalledTimes(2)
+    })
   })
 
   describe('client without move/evm services', () => {
@@ -347,18 +590,18 @@ describe('wrapClientWithCache', () => {
       const client = wrapClientWithCache(mockClient, 'test-chain')
 
       // First call - caches result
-      await client.move!.module({ address: '0x1', moduleName: 'coin' })
+      await client.move.module({ address: '0x1', moduleName: 'coin' })
       expect(moveMock.spies.module).toHaveBeenCalledTimes(1)
 
       // Clear cache
       client.clearCache()
 
       // Second call - should hit gRPC again
-      await client.move!.module({ address: '0x1', moduleName: 'coin' })
+      await client.move.module({ address: '0x1', moduleName: 'coin' })
       expect(moveMock.spies.module).toHaveBeenCalledTimes(2)
     })
 
-    it('should clear bidirectional EVM cache', async () => {
+    it('should clear EVM cache', async () => {
       const evmMock = createMockEvmService()
       const contractAddr = '0x' + 'ab'.repeat(20)
       evmMock.spies.contractAddrByDenom.mockResolvedValue({ address: contractAddr })
@@ -367,14 +610,14 @@ describe('wrapClientWithCache', () => {
       const mockClient = { evm: evmMock.service } as unknown as MinievmClient
       const client = wrapClientWithCache(mockClient, 'test-chain')
 
-      // Populate cache (bidirectional)
-      await client.evm!.contractAddrByDenom({ denom: 'uinit' })
+      // Populate cache
+      await client.evm.contractAddrByDenom({ denom: 'uinit' })
 
       // Clear cache
       client.clearCache()
 
       // Both directions should require fresh fetch
-      await client.evm!.denom({ contractAddr })
+      await client.evm.denom({ contractAddr })
       expect(evmMock.spies.denom).toHaveBeenCalledTimes(1)
     })
 

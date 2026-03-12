@@ -6,7 +6,7 @@ import { verifyMessage } from 'viem'
 
 describe('Round-trip: RawKey → viemAccount → viemAccountToSigner', () => {
   const pkBytes = new Uint8Array(32).fill(42)
-  const pkHex = `0x${Array.from(pkBytes)
+  const pkHex: `0x${string}` = `0x${Array.from(pkBytes)
     .map(b => b.toString(16).padStart(2, '0'))
     .join('')}`
 

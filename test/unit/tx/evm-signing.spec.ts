@@ -16,7 +16,7 @@ import { secp256k1 } from '@noble/curves/secp256k1.js'
 import { hexToBytes, bytesToHex } from '@noble/hashes/utils.js'
 import { keccak256 } from '../../../src/util/hash'
 
-const TEST_PK = `0x${'01'.repeat(32)}`
+const TEST_PK: `0x${string}` = `0x${'01'.repeat(32)}`
 
 /**
  * Replicate the signing logic from src/tx/evm.ts (lines 128-142)
@@ -39,9 +39,11 @@ function signTransaction(
   })
 
   // Serialize signed transaction
+  const r: `0x${string}` = `0x${bytesToHex(sigBytes.slice(1, 33))}`
+  const s: `0x${string}` = `0x${bytesToHex(sigBytes.slice(33, 65))}`
   return serializeTransaction(txParams, {
-    r: `0x${bytesToHex(sigBytes.slice(1, 33))}`,
-    s: `0x${bytesToHex(sigBytes.slice(33, 65))}`,
+    r,
+    s,
     yParity: sigBytes[0] as 0 | 1,
   })
 }
