@@ -36,6 +36,18 @@ npm install initia.js
 
 All proto dependencies (`@initia/initia-proto`, `@initia/minievm-proto`, `@initia/miniwasm-proto`, `@initia/opinit-proto`) are bundled as regular dependencies — no registry configuration needed.
 
+### Proto packages
+
+Proto type definitions are published as separate npm packages rather than bundled into the SDK. This allows teams that fork Minievm, Minimove, or Miniwasm to swap proto packages without forking initia.js itself:
+
+```json
+{
+  "dependencies": {
+    "@initia/minievm-proto": "npm:@mychain/myevm-proto@^1.0.0"
+  }
+}
+```
+
 ## Quick Start
 
 ### Query balance
