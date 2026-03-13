@@ -17,7 +17,7 @@ import {
   MsgUpdateOracleSchema,
   MsgRegisterMigrationInfoSchema,
   MsgMigrateTokenSchema,
-} from '@buf/initia-labs_opinit.bufbuild_es/opinit/opchild/v1/tx_pb'
+} from '@initia/opinit-proto/opinit/opchild/v1/tx_pb'
 import { msg, type FriendlyInit, type Message } from '../types'
 
 export interface OpchildModule {

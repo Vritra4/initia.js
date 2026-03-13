@@ -6,7 +6,7 @@ import { describe, it, expect } from 'vitest'
 import { baseMsgs } from '../../../src/msgs/base'
 import { coin } from '../../../src/core/coin'
 import { Message } from '../../../src/msgs/types'
-import { MsgSendSchema } from '@buf/cosmos_cosmos-sdk.bufbuild_es/cosmos/bank/v1beta1/tx_pb'
+import { MsgSendSchema } from '@initia/initia-proto/cosmos/bank/v1beta1/tx_pb'
 
 describe('baseMsgs', () => {
   describe('bank.send', () => {

@@ -2,7 +2,7 @@ import type { DescMessage } from '@bufbuild/protobuf'
 import {
   MsgSoftwareUpgradeSchema,
   MsgCancelUpgradeSchema,
-} from '@buf/cosmos_cosmos-sdk.bufbuild_es/cosmos/upgrade/v1beta1/tx_pb'
+} from '@initia/initia-proto/cosmos/upgrade/v1beta1/tx_pb'
 import { msg, type FriendlyInit, type Message } from '../types'
 
 export interface UpgradeModule {

@@ -5,8 +5,8 @@ export default defineConfig({
     paths: id => {
       if (id.endsWith('.js')) return id
 
-      // @buf packages: no exports map, need explicit .js extension
-      if (id.startsWith('@buf/')) {
+      // @initia proto packages: no exports map, need explicit .js extension
+      if (id.startsWith('@initia/') && id.includes('-proto/')) {
         return id + '.js'
       }
 

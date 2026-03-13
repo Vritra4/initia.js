@@ -2,7 +2,7 @@ import type { DescMessage } from '@bufbuild/protobuf'
 import {
   MsgRegisterAccountSchema,
   MsgSubmitTxSchema,
-} from '@buf/initia-labs_initia.bufbuild_es/initia/intertx/v1/tx_pb'
+} from '@initia/initia-proto/initia/intertx/v1/tx_pb'
 import { msg, type FriendlyInit, type Message } from '../types'
 
 export interface InterTxModule {

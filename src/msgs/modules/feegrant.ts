@@ -3,7 +3,7 @@ import {
   MsgGrantAllowanceSchema,
   MsgRevokeAllowanceSchema,
   MsgPruneAllowancesSchema,
-} from '@buf/cosmos_cosmos-sdk.bufbuild_es/cosmos/feegrant/v1beta1/tx_pb'
+} from '@initia/initia-proto/cosmos/feegrant/v1beta1/tx_pb'
 import { msg, type FriendlyInit, type Message } from '../types'
 
 export interface FeegrantModule {

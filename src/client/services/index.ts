@@ -2,7 +2,7 @@
  * Service presets — barrel re-export + generic resolver.
  *
  * Existing imports (`from './services'`) resolve here after the split.
- * Each per-chain file imports only its own @buf/* packages.
+ * Each per-chain file imports only its own @initia/* proto packages.
  */
 
 import type { DescService, Registry } from '@bufbuild/protobuf'

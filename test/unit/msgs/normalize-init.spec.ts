@@ -6,11 +6,11 @@ import { describe, it, expect } from 'vitest'
 import { normalizeInit, Message, defaultTimeout, msgWithDefaults } from '../../../src/msgs/types'
 import { ValidationError } from '../../../src/errors'
 import { coin } from '../../../src/core/coin'
-import { MsgSendSchema } from '@buf/cosmos_cosmos-sdk.bufbuild_es/cosmos/bank/v1beta1/tx_pb'
-import { MsgTransferSchema } from '@buf/cosmos_ibc.bufbuild_es/ibc/applications/transfer/v1/tx_pb'
-import { MsgGrantSchema } from '@buf/cosmos_cosmos-sdk.bufbuild_es/cosmos/authz/v1beta1/tx_pb'
-import { MsgExecuteSchema } from '@buf/initia-labs_initia.bufbuild_es/initia/move/v1/tx_pb'
-import { MsgExecSchema } from '@buf/cosmos_cosmos-sdk.bufbuild_es/cosmos/authz/v1beta1/tx_pb'
+import { MsgSendSchema } from '@initia/initia-proto/cosmos/bank/v1beta1/tx_pb'
+import { MsgTransferSchema } from '@initia/initia-proto/ibc/applications/transfer/v1/tx_pb'
+import { MsgGrantSchema } from '@initia/initia-proto/cosmos/authz/v1beta1/tx_pb'
+import { MsgExecuteSchema } from '@initia/initia-proto/initia/move/v1/tx_pb'
+import { MsgExecSchema } from '@initia/initia-proto/cosmos/authz/v1beta1/tx_pb'
 
 describe('normalizeInit', () => {
   describe('Coin handling', () => {

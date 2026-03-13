@@ -6,7 +6,7 @@
  *
  * Used by CosmosRegistryProvider chains (Osmosis, Noble, Cosmos Hub, etc.)
  *
- * Source imports: @buf/cosmos_cosmos-sdk only
+ * Source imports: @initia/initia-proto only
  */
 
 import { createCommonRegistry } from './common'

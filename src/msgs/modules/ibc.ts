@@ -2,7 +2,7 @@ import type { DescMessage } from '@bufbuild/protobuf'
 import {
   MsgTransferSchema,
   MsgUpdateParamsSchema,
-} from '@buf/cosmos_ibc.bufbuild_es/ibc/applications/transfer/v1/tx_pb'
+} from '@initia/initia-proto/ibc/applications/transfer/v1/tx_pb'
 import {
   msg,
   msgWithDefaults,

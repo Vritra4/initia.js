@@ -10,10 +10,12 @@ import {
   MsgGovExecuteJSONSchema,
   MsgGovScriptSchema,
   MsgGovScriptJSONSchema,
-  MsgWhitelistSchema,
-  MsgDelistSchema,
+  MsgWhitelistStakingSchema,
+  MsgWhitelistGasPriceSchema,
+  MsgDelistStakingSchema,
+  MsgDelistGasPriceSchema,
   MsgUpdateParamsSchema,
-} from '@buf/initia-labs_initia.bufbuild_es/initia/move/v1/tx_pb'
+} from '@initia/initia-proto/initia/move/v1/tx_pb'
 import { msg, type FriendlyInit, type Message } from '../types'
 
 export interface MoveModule {
@@ -31,8 +33,18 @@ export interface MoveModule {
   govScriptJSON(
     init: FriendlyInit<typeof MsgGovScriptJSONSchema>
   ): Message<typeof MsgGovScriptJSONSchema>
-  whitelist(init: FriendlyInit<typeof MsgWhitelistSchema>): Message<typeof MsgWhitelistSchema>
-  delist(init: FriendlyInit<typeof MsgDelistSchema>): Message<typeof MsgDelistSchema>
+  whitelistStaking(
+    init: FriendlyInit<typeof MsgWhitelistStakingSchema>
+  ): Message<typeof MsgWhitelistStakingSchema>
+  whitelistGasPrice(
+    init: FriendlyInit<typeof MsgWhitelistGasPriceSchema>
+  ): Message<typeof MsgWhitelistGasPriceSchema>
+  delistStaking(
+    init: FriendlyInit<typeof MsgDelistStakingSchema>
+  ): Message<typeof MsgDelistStakingSchema>
+  delistGasPrice(
+    init: FriendlyInit<typeof MsgDelistGasPriceSchema>
+  ): Message<typeof MsgDelistGasPriceSchema>
   updateParams(
     init: FriendlyInit<typeof MsgUpdateParamsSchema>
   ): Message<typeof MsgUpdateParamsSchema>
@@ -49,8 +61,10 @@ export const moveSchemas: DescMessage[] = [
   MsgGovExecuteJSONSchema,
   MsgGovScriptSchema,
   MsgGovScriptJSONSchema,
-  MsgWhitelistSchema,
-  MsgDelistSchema,
+  MsgWhitelistStakingSchema,
+  MsgWhitelistGasPriceSchema,
+  MsgDelistStakingSchema,
+  MsgDelistGasPriceSchema,
   MsgUpdateParamsSchema,
 ]
 
@@ -65,7 +79,9 @@ export const moveModule: MoveModule = {
   govExecuteJSON: init => msg(MsgGovExecuteJSONSchema, init),
   govScript: init => msg(MsgGovScriptSchema, init),
   govScriptJSON: init => msg(MsgGovScriptJSONSchema, init),
-  whitelist: init => msg(MsgWhitelistSchema, init),
-  delist: init => msg(MsgDelistSchema, init),
+  whitelistStaking: init => msg(MsgWhitelistStakingSchema, init),
+  whitelistGasPrice: init => msg(MsgWhitelistGasPriceSchema, init),
+  delistStaking: init => msg(MsgDelistStakingSchema, init),
+  delistGasPrice: init => msg(MsgDelistGasPriceSchema, init),
   updateParams: init => msg(MsgUpdateParamsSchema, init),
 }

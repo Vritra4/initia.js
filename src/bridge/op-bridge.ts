@@ -7,12 +7,12 @@
 
 import type { Numeric } from '../types'
 import { create } from '@bufbuild/protobuf'
-import { CoinSchema } from '@buf/cosmos_cosmos-sdk.bufbuild_es/cosmos/base/v1beta1/coin_pb'
+import { CoinSchema } from '@initia/initia-proto/cosmos/base/v1beta1/coin_pb'
 import {
   MsgInitiateTokenDepositSchema,
   MsgFinalizeTokenWithdrawalSchema,
-} from '@buf/initia-labs_opinit.bufbuild_es/opinit/ophost/v1/tx_pb'
-import { MsgInitiateTokenWithdrawalSchema } from '@buf/initia-labs_opinit.bufbuild_es/opinit/opchild/v1/tx_pb'
+} from '@initia/opinit-proto/opinit/ophost/v1/tx_pb'
+import { MsgInitiateTokenWithdrawalSchema } from '@initia/opinit-proto/opinit/opchild/v1/tx_pb'
 import type { ChainInfo, ChainInfoProvider } from '../provider/types'
 import type { InitiaClient } from '../client/types'
 import { Message } from '../msgs/types'

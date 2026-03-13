@@ -3,8 +3,8 @@ import {
   MsgRegisterInterchainAccountSchema,
   MsgSendTxSchema,
   MsgUpdateParamsSchema as MsgControllerUpdateParamsSchema,
-} from '@buf/cosmos_ibc.bufbuild_es/ibc/applications/interchain_accounts/controller/v1/tx_pb'
-import { MsgUpdateParamsSchema as MsgHostUpdateParamsSchema } from '@buf/cosmos_ibc.bufbuild_es/ibc/applications/interchain_accounts/host/v1/tx_pb'
+} from '@initia/initia-proto/ibc/applications/interchain_accounts/controller/v1/tx_pb'
+import { MsgUpdateParamsSchema as MsgHostUpdateParamsSchema } from '@initia/initia-proto/ibc/applications/interchain_accounts/host/v1/tx_pb'
 import { msg, type FriendlyInit, type Message } from '../types'
 
 export interface IbcIcaModule {

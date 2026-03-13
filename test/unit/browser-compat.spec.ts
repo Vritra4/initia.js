@@ -21,7 +21,6 @@ describe('Browser Compatibility', () => {
       format: 'esm',
       metafile: true,
       external: [
-        '@buf/*',
         '@bufbuild/*',
         '@connectrpc/connect',
         '@connectrpc/connect-web',
@@ -96,7 +95,6 @@ describe('Browser Compatibility', () => {
       format: 'esm',
       metafile: true,
       external: [
-        '@buf/*',
         '@bufbuild/*',
         '@connectrpc/connect',
         '@connectrpc/connect-node',

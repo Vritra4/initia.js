@@ -26,7 +26,7 @@ import { toAmino as protoToAmino, type AminoMsg } from '../tx/amino'
 import { InitiaError, ValidationError, ParseError } from '../errors'
 import type { Coin } from '../core/coin'
 import type { ChainType } from '../client/types'
-import { CoinSchema } from '@buf/cosmos_cosmos-sdk.bufbuild_es/cosmos/base/v1beta1/coin_pb'
+import { CoinSchema } from '@initia/initia-proto/cosmos/base/v1beta1/coin_pb'
 
 import type { BankModule } from './modules/bank'
 import type { IbcModule } from './modules/ibc'

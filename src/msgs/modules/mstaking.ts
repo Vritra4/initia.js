@@ -7,7 +7,7 @@ import {
   MsgUndelegateSchema,
   MsgCancelUnbondingDelegationSchema,
   MsgUpdateParamsSchema,
-} from '@buf/initia-labs_initia.bufbuild_es/initia/mstaking/v1/tx_pb'
+} from '@initia/initia-proto/initia/mstaking/v1/tx_pb'
 import { msg, type FriendlyInit, type Message } from '../types'
 
 export interface MstakingModule {
