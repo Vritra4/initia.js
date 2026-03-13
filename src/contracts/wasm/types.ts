@@ -7,7 +7,7 @@
 
 import type { Numeric } from '../../types'
 import type { Client } from '@connectrpc/connect'
-import type { Query as WasmQuery } from '@buf/cosmwasm_wasmd.bufbuild_es/cosmwasm/wasm/v1/query_pb'
+import type { Query as WasmQuery } from '@initia/miniwasm-proto/cosmwasm/wasm/v1/query_pb'
 import type {
   MsgStoreCode,
   MsgInstantiateContract,
@@ -15,12 +15,12 @@ import type {
   MsgMigrateContract,
   MsgUpdateAdmin,
   MsgClearAdmin,
-} from '@buf/cosmwasm_wasmd.bufbuild_es/cosmwasm/wasm/v1/tx_pb'
-import type { MsgExecuteContractSchema } from '@buf/cosmwasm_wasmd.bufbuild_es/cosmwasm/wasm/v1/tx_pb'
+} from '@initia/miniwasm-proto/cosmwasm/wasm/v1/tx_pb'
+import type { MsgExecuteContractSchema } from '@initia/miniwasm-proto/cosmwasm/wasm/v1/tx_pb'
 import type {
   AccessConfig,
   ContractInfo,
-} from '@buf/cosmwasm_wasmd.bufbuild_es/cosmwasm/wasm/v1/types_pb'
+} from '@initia/miniwasm-proto/cosmwasm/wasm/v1/types_pb'
 import type { Message } from '../../msgs/types'
 import type { Coin } from '../../core/coin'
 import type { TokenInfo, NftInfo, OwnerOfResponse } from '../types'

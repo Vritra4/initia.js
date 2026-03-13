@@ -5,7 +5,7 @@ import { anyUnpack } from '@bufbuild/protobuf/wkt'
 import {
   ContractAccountSchema,
   ShorthandAccountSchema,
-} from '@buf/initia-labs_minievm.bufbuild_es/minievm/evm/v1/auth_pb'
+} from '@initia/minievm-proto/minievm/evm/v1/auth_pb'
 
 /**
  * On-chain account type derived from auth query's typeUrl.

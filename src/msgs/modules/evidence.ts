@@ -1,5 +1,5 @@
 import type { DescMessage } from '@bufbuild/protobuf'
-import { MsgSubmitEvidenceSchema } from '@buf/cosmos_cosmos-sdk.bufbuild_es/cosmos/evidence/v1beta1/tx_pb'
+import { MsgSubmitEvidenceSchema } from '@initia/initia-proto/cosmos/evidence/v1beta1/tx_pb'
 import { msg, type FriendlyInit, type Message } from '../types'
 
 export interface EvidenceModule {

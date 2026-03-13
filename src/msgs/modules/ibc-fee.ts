@@ -4,7 +4,7 @@ import {
   MsgRegisterCounterpartyPayeeSchema,
   MsgPayPacketFeeSchema,
   MsgPayPacketFeeAsyncSchema,
-} from '@buf/cosmos_ibc.bufbuild_es/ibc/applications/fee/v1/tx_pb'
+} from '@initia/initia-proto/ibc/applications/fee/v1/tx_pb'
 import { msg, type FriendlyInit, type Message } from '../types'
 
 export interface IbcFeeModule {

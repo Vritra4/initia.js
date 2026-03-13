@@ -30,17 +30,11 @@ TypeScript SDK for Initia and its rollup ecosystem.
 
 ## Installation
 
-Configure the BSR (Buf Schema Registry) npm registry, then install:
-
 ```bash
-npm config set @buf:registry https://buf.build/gen/npm/v1
 npm install initia.js
 ```
 
-Peer dependencies:
-
-- **Required**: `@buf/cosmos_cosmos-sdk.bufbuild_es`, `@buf/initia-labs_initia.bufbuild_es`
-- **Optional**: `@buf/initia-labs_minievm.bufbuild_es` (EVM), `@buf/cosmwasm_wasmd.bufbuild_es` (CosmWasm), `@buf/initia-labs_opinit.bufbuild_es` (OP Bridge)
+All proto dependencies (`@initia/initia-proto`, `@initia/minievm-proto`, `@initia/miniwasm-proto`, `@initia/opinit-proto`) are bundled as regular dependencies — no registry configuration needed.
 
 ## Quick Start
 

@@ -113,7 +113,11 @@
     "@connectrpc/connect": "^2.1.1",
     "@connectrpc/connect-node": "^2.1.1",
     "@connectrpc/connect-web": "^2.1.1",
+    "@initia/initia-proto": "^0.0.0-canary.03f482e",
     "@initia/initia-registry-types": "^1.0.13",
+    "@initia/minievm-proto": "^0.0.0-canary.baf9bf1",
+    "@initia/miniwasm-proto": "^0.0.0-canary.7fdc4e2",
+    "@initia/opinit-proto": "^0.0.0-canary.6635126",
     "@mysten/bcs": "^2.0.1",
     "@noble/curves": "^2.0.1",
     "@noble/hashes": "^2.0.1",
@@ -126,30 +130,7 @@
     "valibot": "^1.2.0",
     "viem": "^2.45.1"
   },
-  "peerDependencies": {
-    "@buf/cosmos_cosmos-sdk.bufbuild_es": "*",
-    "@buf/cosmwasm_wasmd.bufbuild_es": "*",
-    "@buf/initia-labs_initia.bufbuild_es": "*",
-    "@buf/initia-labs_minievm.bufbuild_es": "*",
-    "@buf/initia-labs_opinit.bufbuild_es": "*"
-  },
-  "peerDependenciesMeta": {
-    "@buf/cosmwasm_wasmd.bufbuild_es": {
-      "optional": true
-    },
-    "@buf/initia-labs_minievm.bufbuild_es": {
-      "optional": true
-    },
-    "@buf/initia-labs_opinit.bufbuild_es": {
-      "optional": true
-    }
-  },
   "devDependencies": {
-    "@buf/cosmos_cosmos-sdk.bufbuild_es": "latest",
-    "@buf/cosmwasm_wasmd.bufbuild_es": "latest",
-    "@buf/initia-labs_initia.bufbuild_es": "latest",
-    "@buf/initia-labs_minievm.bufbuild_es": "latest",
-    "@buf/initia-labs_opinit.bufbuild_es": "latest",
     "@changesets/cli": "^2.29.8",
     "@types/node": "^25.3.0",
     "esbuild": "^0.27.2",

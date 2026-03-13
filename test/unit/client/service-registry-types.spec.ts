@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest'
 import { createServiceRegistry } from '../../../src/client/service-registry'
 
-import { file_cosmos_crypto_ed25519_keys } from '@buf/cosmos_cosmos-sdk.bufbuild_es/cosmos/crypto/ed25519/keys_pb'
-import { file_cosmos_crypto_secp256k1_keys } from '@buf/cosmos_cosmos-sdk.bufbuild_es/cosmos/crypto/secp256k1/keys_pb'
+import { file_cosmos_crypto_ed25519_keys } from '@initia/initia-proto/cosmos/crypto/ed25519/keys_pb'
+import { file_cosmos_crypto_secp256k1_keys } from '@initia/initia-proto/cosmos/crypto/secp256k1/keys_pb'
 
 describe('ServiceRegistryBuilder type registry', () => {
   it('getRegistry() returns empty registry when no types added', () => {

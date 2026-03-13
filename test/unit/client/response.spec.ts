@@ -3,8 +3,8 @@ import { create } from '@bufbuild/protobuf'
 import {
   QueryBalanceResponseSchema,
   Query as BankQuery,
-} from '@buf/cosmos_cosmos-sdk.bufbuild_es/cosmos/bank/v1beta1/query_pb'
-import { CoinSchema } from '@buf/cosmos_cosmos-sdk.bufbuild_es/cosmos/base/v1beta1/coin_pb'
+} from '@initia/initia-proto/cosmos/bank/v1beta1/query_pb'
+import { CoinSchema } from '@initia/initia-proto/cosmos/base/v1beta1/coin_pb'
 import { wrapResponse, isWrappedResponse } from '../../../src/client/response'
 
 // Minimal mock DescMessage for testing Proxy behavior

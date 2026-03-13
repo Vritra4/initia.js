@@ -8,7 +8,7 @@ import { coin } from '../../../src/core/coin'
 import { Message } from '../../../src/msgs/types'
 import { create } from '@bufbuild/protobuf'
 import { AnySchema } from '@bufbuild/protobuf/wkt'
-import { MsgSendSchema } from '@buf/cosmos_cosmos-sdk.bufbuild_es/cosmos/bank/v1beta1/tx_pb'
+import { MsgSendSchema } from '@initia/initia-proto/cosmos/bank/v1beta1/tx_pb'
 
 describe('initiaMsgs', () => {
   // ============= Bank =============

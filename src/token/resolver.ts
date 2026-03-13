@@ -6,9 +6,9 @@
  */
 
 import type { Client as ConnectClient } from '@connectrpc/connect'
-import type { Query as EvmQuery } from '@buf/initia-labs_minievm.bufbuild_es/minievm/evm/v1/query_pb'
-import type { Query as WasmQuery } from '@buf/cosmwasm_wasmd.bufbuild_es/cosmwasm/wasm/v1/query_pb'
-import type { Query as MoveQuery } from '@buf/initia-labs_initia.bufbuild_es/initia/move/v1/query_pb'
+import type { Query as EvmQuery } from '@initia/minievm-proto/minievm/evm/v1/query_pb'
+import type { Query as WasmQuery } from '@initia/miniwasm-proto/cosmwasm/wasm/v1/query_pb'
+import type { Query as MoveQuery } from '@initia/initia-proto/initia/move/v1/query_pb'
 
 import type { ChainType } from '../client/types'
 import type { TokenContract } from './types'

@@ -11,7 +11,7 @@
 import { describe, it, expect } from 'vitest'
 import { create } from '@bufbuild/protobuf'
 import { AnySchema } from '@bufbuild/protobuf/wkt'
-import { MsgSendSchema } from '@buf/cosmos_cosmos-sdk.bufbuild_es/cosmos/bank/v1beta1/tx_pb'
+import { MsgSendSchema } from '@initia/initia-proto/cosmos/bank/v1beta1/tx_pb'
 import { Message, normalizeMsg } from '../../../src/msgs/types'
 
 // ============= #113: Message class =============

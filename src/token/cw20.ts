@@ -6,8 +6,8 @@
 
 import type { Numeric } from '../types'
 import type { Client as ConnectClient } from '@connectrpc/connect'
-import { MsgExecuteContractSchema } from '@buf/cosmwasm_wasmd.bufbuild_es/cosmwasm/wasm/v1/tx_pb'
-import type { Query as WasmQuery } from '@buf/cosmwasm_wasmd.bufbuild_es/cosmwasm/wasm/v1/query_pb'
+import { MsgExecuteContractSchema } from '@initia/miniwasm-proto/cosmwasm/wasm/v1/tx_pb'
+import type { Query as WasmQuery } from '@initia/miniwasm-proto/cosmwasm/wasm/v1/query_pb'
 
 import type { TokenInfo } from '../contracts/types'
 import { Message } from '../msgs/types'

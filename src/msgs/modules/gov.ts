@@ -7,7 +7,7 @@ import {
   MsgDepositSchema,
   MsgUpdateParamsSchema,
   MsgCancelProposalSchema,
-} from '@buf/cosmos_cosmos-sdk.bufbuild_es/cosmos/gov/v1/tx_pb'
+} from '@initia/initia-proto/cosmos/gov/v1/tx_pb'
 import { msg, msgWithDefaults, type FriendlyInit, type Message, type WithDefaults } from '../types'
 
 export interface GovModule {

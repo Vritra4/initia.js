@@ -7,11 +7,11 @@ import { MinimoveServices } from '../../../src/client/services/minimove'
 import { MiniwasmServices } from '../../../src/client/services/miniwasm'
 import { OtherServices } from '../../../src/client/services/other'
 
-import { QueryAccountResponseSchema } from '@buf/cosmos_cosmos-sdk.bufbuild_es/cosmos/auth/v1beta1/query_pb'
+import { QueryAccountResponseSchema } from '@initia/initia-proto/cosmos/auth/v1beta1/query_pb'
 import {
   BaseAccountSchema,
   file_cosmos_auth_v1beta1_auth,
-} from '@buf/cosmos_cosmos-sdk.bufbuild_es/cosmos/auth/v1beta1/auth_pb'
+} from '@initia/initia-proto/cosmos/auth/v1beta1/auth_pb'
 import { anyPack } from '@bufbuild/protobuf/wkt'
 
 describe('wrapResponse with Registry for Any fields', () => {

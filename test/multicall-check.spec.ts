@@ -5,7 +5,7 @@
 import { describe, it, expect } from 'vitest'
 import { createClient } from '@connectrpc/connect'
 import { createGrpcTransport } from '@connectrpc/connect-node'
-import { Query as EvmQuery } from '@buf/initia-labs_minievm.bufbuild_es/minievm/evm/v1/query_pb'
+import { Query as EvmQuery } from '@initia/minievm-proto/minievm/evm/v1/query_pb'
 
 describe('Multicall3 Check', () => {
   const grpcEndpoint = 'https://grpc-evm-1.anvil.asia-southeast.initia.xyz'

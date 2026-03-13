@@ -11,7 +11,7 @@ import type {
   ContractFunctionArgs,
   ContractFunctionReturnType,
 } from 'viem'
-import type { MsgCallSchema } from '@buf/initia-labs_minievm.bufbuild_es/minievm/evm/v1/tx_pb'
+import type { MsgCallSchema } from '@initia/minievm-proto/minievm/evm/v1/tx_pb'
 import type { Message } from '../../msgs/types'
 import type { TokenInfo } from '../types'
 

@@ -4,7 +4,7 @@ import {
   MsgMultiSendSchema,
   MsgUpdateParamsSchema,
   MsgSetSendEnabledSchema,
-} from '@buf/cosmos_cosmos-sdk.bufbuild_es/cosmos/bank/v1beta1/tx_pb'
+} from '@initia/initia-proto/cosmos/bank/v1beta1/tx_pb'
 import { msg, type FriendlyInit, type Message } from '../types'
 
 export interface BankModule {

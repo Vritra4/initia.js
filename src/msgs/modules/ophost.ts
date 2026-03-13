@@ -14,7 +14,7 @@ import {
   MsgUpdateParamsSchema,
   MsgUpdateFinalizationPeriodSchema,
   MsgRegisterMigrationInfoSchema,
-} from '@buf/initia-labs_opinit.bufbuild_es/opinit/ophost/v1/tx_pb'
+} from '@initia/opinit-proto/opinit/ophost/v1/tx_pb'
 import { msg, type FriendlyInit, type Message } from '../types'
 
 export interface OphostModule {

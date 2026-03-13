@@ -21,30 +21,30 @@ import {
   MsgSendSchema,
   MsgMultiSendSchema,
   MsgSetSendEnabledSchema,
-} from '@buf/cosmos_cosmos-sdk.bufbuild_es/cosmos/bank/v1beta1/tx_pb'
-import { MsgUpdateParamsSchema as MsgUpdateBankParamsSchema } from '@buf/cosmos_cosmos-sdk.bufbuild_es/cosmos/bank/v1beta1/tx_pb'
+} from '@initia/initia-proto/cosmos/bank/v1beta1/tx_pb'
+import { MsgUpdateParamsSchema as MsgUpdateBankParamsSchema } from '@initia/initia-proto/cosmos/bank/v1beta1/tx_pb'
 
 // Initia Bank
-import { MsgSetDenomMetadataSchema } from '@buf/initia-labs_initia.bufbuild_es/initia/bank/v1/tx_pb'
+import { MsgSetDenomMetadataSchema } from '@initia/initia-proto/initia/bank/v1/tx_pb'
 
 // Auth
-import { MsgUpdateParamsSchema as MsgUpdateAuthParamsSchema } from '@buf/cosmos_cosmos-sdk.bufbuild_es/cosmos/auth/v1beta1/tx_pb'
+import { MsgUpdateParamsSchema as MsgUpdateAuthParamsSchema } from '@initia/initia-proto/cosmos/auth/v1beta1/tx_pb'
 
 // Authz
 import {
   MsgGrantSchema,
   MsgExecSchema,
   MsgRevokeSchema,
-} from '@buf/cosmos_cosmos-sdk.bufbuild_es/cosmos/authz/v1beta1/tx_pb'
+} from '@initia/initia-proto/cosmos/authz/v1beta1/tx_pb'
 
 // Crisis
 import {
   MsgVerifyInvariantSchema,
   MsgUpdateParamsSchema as MsgUpdateCrisisParamsSchema,
-} from '@buf/cosmos_cosmos-sdk.bufbuild_es/cosmos/crisis/v1beta1/tx_pb'
+} from '@initia/initia-proto/cosmos/crisis/v1beta1/tx_pb'
 
 // Consensus
-import { MsgUpdateParamsSchema as MsgUpdateConsensusParamsSchema } from '@buf/cosmos_cosmos-sdk.bufbuild_es/cosmos/consensus/v1/tx_pb'
+import { MsgUpdateParamsSchema as MsgUpdateConsensusParamsSchema } from '@initia/initia-proto/cosmos/consensus/v1/tx_pb'
 
 // Distribution
 import {
@@ -53,16 +53,16 @@ import {
   MsgWithdrawValidatorCommissionSchema,
   MsgFundCommunityPoolSchema,
   MsgCommunityPoolSpendSchema,
-} from '@buf/cosmos_cosmos-sdk.bufbuild_es/cosmos/distribution/v1beta1/tx_pb'
+} from '@initia/initia-proto/cosmos/distribution/v1beta1/tx_pb'
 
 // Initia Distribution
 import {
   MsgUpdateParamsSchema as MsgUpdateDistrParamsSchema,
   MsgDepositValidatorRewardsPoolSchema,
-} from '@buf/initia-labs_initia.bufbuild_es/initia/distribution/v1/tx_pb'
+} from '@initia/initia-proto/initia/distribution/v1/tx_pb'
 
 // Evidence
-import { MsgSubmitEvidenceSchema } from '@buf/cosmos_cosmos-sdk.bufbuild_es/cosmos/evidence/v1beta1/tx_pb'
+import { MsgSubmitEvidenceSchema } from '@initia/initia-proto/cosmos/evidence/v1beta1/tx_pb'
 
 // EVM (Minievm)
 import {
@@ -70,13 +70,13 @@ import {
   MsgCreate2Schema as MsgEvmCreate2Schema,
   MsgCallSchema,
   MsgUpdateParamsSchema as MsgUpdateEvmParamsSchema,
-} from '@buf/initia-labs_minievm.bufbuild_es/minievm/evm/v1/tx_pb'
+} from '@initia/minievm-proto/minievm/evm/v1/tx_pb'
 
 // Feegrant
 import {
   MsgGrantAllowanceSchema,
   MsgRevokeAllowanceSchema,
-} from '@buf/cosmos_cosmos-sdk.bufbuild_es/cosmos/feegrant/v1beta1/tx_pb'
+} from '@initia/initia-proto/cosmos/feegrant/v1beta1/tx_pb'
 
 // Gov v1
 import {
@@ -85,7 +85,7 @@ import {
   MsgSubmitProposalSchema,
   MsgVoteSchema,
   MsgVoteWeightedSchema,
-} from '@buf/cosmos_cosmos-sdk.bufbuild_es/cosmos/gov/v1/tx_pb'
+} from '@initia/initia-proto/cosmos/gov/v1/tx_pb'
 
 // Gov v1beta1 (legacy)
 import {
@@ -93,14 +93,14 @@ import {
   MsgSubmitProposalSchema as MsgSubmitProposalLegacySchema,
   MsgVoteSchema as MsgVoteLegacySchema,
   MsgVoteWeightedSchema as MsgVoteWeightedLegacySchema,
-} from '@buf/cosmos_cosmos-sdk.bufbuild_es/cosmos/gov/v1beta1/tx_pb'
+} from '@initia/initia-proto/cosmos/gov/v1beta1/tx_pb'
 
 // Initia Gov
 import {
   MsgUpdateParamsSchema as MsgUpdateGovParamsSchema,
-  MsgAddEmergencyProposalSubmittersSchema,
-  MsgRemoveEmergencyProposalSubmittersSchema,
-} from '@buf/initia-labs_initia.bufbuild_es/initia/gov/v1/tx_pb'
+  MsgAddEmergencySubmittersSchema,
+  MsgRemoveEmergencySubmittersSchema,
+} from '@initia/initia-proto/initia/gov/v1/tx_pb'
 
 // Group
 import {
@@ -117,22 +117,22 @@ import {
   MsgLeaveGroupSchema,
   MsgSubmitProposalSchema as MsgGroupSubmitProposalSchema,
   MsgVoteSchema as MsgGroupVoteSchema,
-} from '@buf/cosmos_cosmos-sdk.bufbuild_es/cosmos/group/v1/tx_pb'
+} from '@initia/initia-proto/cosmos/group/v1/tx_pb'
 
 // IBC Hooks
 import {
   MsgUpdateACLSchema,
   MsgUpdateParamsSchema as MsgUpdateIbcHooksParamsSchema,
-} from '@buf/initia-labs_initia.bufbuild_es/initia/ibchooks/v1/tx_pb'
+} from '@initia/initia-proto/initia/ibchooks/v1/tx_pb'
 
 // IBC Transfer
-import { MsgTransferSchema } from '@buf/cosmos_ibc.bufbuild_es/ibc/applications/transfer/v1/tx_pb'
+import { MsgTransferSchema } from '@initia/initia-proto/ibc/applications/transfer/v1/tx_pb'
 
 // Intertx
 import {
   MsgRegisterAccountSchema,
   MsgSubmitTxSchema,
-} from '@buf/initia-labs_initia.bufbuild_es/initia/intertx/v1/tx_pb'
+} from '@initia/initia-proto/initia/intertx/v1/tx_pb'
 
 // Move
 import {
@@ -142,14 +142,16 @@ import {
   MsgScriptSchema,
   MsgScriptJSONSchema,
   MsgUpdateParamsSchema as MsgUpdateMoveParamsSchema,
-  MsgWhitelistSchema,
-  MsgDelistSchema,
+  MsgWhitelistStakingSchema,
+  MsgWhitelistGasPriceSchema,
+  MsgDelistStakingSchema,
+  MsgDelistGasPriceSchema,
   MsgGovExecuteSchema,
   MsgGovExecuteJSONSchema,
   MsgGovPublishSchema,
   MsgGovScriptSchema,
   MsgGovScriptJSONSchema,
-} from '@buf/initia-labs_initia.bufbuild_es/initia/move/v1/tx_pb'
+} from '@initia/initia-proto/initia/move/v1/tx_pb'
 
 // Mstaking
 import {
@@ -160,7 +162,7 @@ import {
   MsgUndelegateSchema,
   MsgCancelUnbondingDelegationSchema,
   MsgUpdateParamsSchema as MsgUpdateMstakingParamsSchema,
-} from '@buf/initia-labs_initia.bufbuild_es/initia/mstaking/v1/tx_pb'
+} from '@initia/initia-proto/initia/mstaking/v1/tx_pb'
 
 // OpChild
 import {
@@ -179,7 +181,7 @@ import {
   MsgUpdateOracleSchema,
   MsgRegisterMigrationInfoSchema as MsgRegisterL2MigrationInfoSchema,
   MsgMigrateTokenSchema,
-} from '@buf/initia-labs_opinit.bufbuild_es/opinit/opchild/v1/tx_pb'
+} from '@initia/opinit-proto/opinit/opchild/v1/tx_pb'
 
 // OpHost
 import {
@@ -197,22 +199,22 @@ import {
   MsgUpdateParamsSchema as MsgUpdateOphostParamsSchema,
   MsgUpdateFinalizationPeriodSchema,
   MsgRegisterMigrationInfoSchema as MsgRegisterL1MigrationInfoSchema,
-} from '@buf/initia-labs_opinit.bufbuild_es/opinit/ophost/v1/tx_pb'
+} from '@initia/opinit-proto/opinit/ophost/v1/tx_pb'
 
 // Reward
-import { MsgUpdateParamsSchema as MsgUpdateRewardParamsSchema } from '@buf/initia-labs_initia.bufbuild_es/initia/reward/v1/tx_pb'
+import { MsgUpdateParamsSchema as MsgUpdateRewardParamsSchema } from '@initia/initia-proto/initia/reward/v1/tx_pb'
 
 // Slashing
 import {
   MsgUnjailSchema,
   MsgUpdateParamsSchema as MsgUpdateSlashingParamsSchema,
-} from '@buf/cosmos_cosmos-sdk.bufbuild_es/cosmos/slashing/v1beta1/tx_pb'
+} from '@initia/initia-proto/cosmos/slashing/v1beta1/tx_pb'
 
 // Upgrade
 import {
   MsgSoftwareUpgradeSchema,
   MsgCancelUpgradeSchema,
-} from '@buf/cosmos_cosmos-sdk.bufbuild_es/cosmos/upgrade/v1beta1/tx_pb'
+} from '@initia/initia-proto/cosmos/upgrade/v1beta1/tx_pb'
 
 // Wasm (CosmWasm)
 import {
@@ -233,7 +235,7 @@ import {
   MsgAddCodeUploadParamsAddressesSchema,
   MsgRemoveCodeUploadParamsAddressesSchema,
   MsgUpdateContractLabelSchema,
-} from '@buf/cosmwasm_wasmd.bufbuild_es/cosmwasm/wasm/v1/tx_pb'
+} from '@initia/miniwasm-proto/cosmwasm/wasm/v1/tx_pb'
 
 // ============= V1 Legacy Registry =============
 // Extracted from legacy/src/core/Msg.ts fromAmino (L405-784) + fromData (L789-1252)
@@ -532,13 +534,13 @@ const V1_AMINO_REGISTRY: V1Entry[] = [
     protoTypeUrl: '/initia.gov.v1.MsgAddEmergencySubmitters',
     aminoType: 'gov/MsgAddEmergencySubmitters',
     module: 'gov',
-    schema: MsgAddEmergencyProposalSubmittersSchema,
+    schema: MsgAddEmergencySubmittersSchema,
   },
   {
     protoTypeUrl: '/initia.gov.v1.MsgRemoveEmergencySubmitters',
     aminoType: 'gov/MsgRemoveEmergencySubmitters',
     module: 'gov',
-    schema: MsgRemoveEmergencyProposalSubmittersSchema,
+    schema: MsgRemoveEmergencySubmittersSchema,
   },
   {
     protoTypeUrl: '/initia.gov.v1.MsgActivateEmergencyProposal',
@@ -756,16 +758,28 @@ const V1_AMINO_REGISTRY: V1Entry[] = [
     schema: MsgUpdateMoveParamsSchema,
   },
   {
-    protoTypeUrl: '/initia.move.v1.MsgWhitelist',
-    aminoType: 'move/MsgWhitelist',
+    protoTypeUrl: '/initia.move.v1.MsgWhitelistStaking',
+    aminoType: 'move/MsgWhitelistStaking',
     module: 'move',
-    schema: MsgWhitelistSchema,
+    schema: MsgWhitelistStakingSchema,
   },
   {
-    protoTypeUrl: '/initia.move.v1.MsgDelist',
-    aminoType: 'move/MsgDelist',
+    protoTypeUrl: '/initia.move.v1.MsgWhitelistGasPrice',
+    aminoType: 'move/MsgWhitelistGasPrice',
     module: 'move',
-    schema: MsgDelistSchema,
+    schema: MsgWhitelistGasPriceSchema,
+  },
+  {
+    protoTypeUrl: '/initia.move.v1.MsgDelistStaking',
+    aminoType: 'move/MsgDelistStaking',
+    module: 'move',
+    schema: MsgDelistStakingSchema,
+  },
+  {
+    protoTypeUrl: '/initia.move.v1.MsgDelistGasPrice',
+    aminoType: 'move/MsgDelistGasPrice',
+    module: 'move',
+    schema: MsgDelistGasPriceSchema,
   },
   {
     protoTypeUrl: '/initia.move.v1.MsgGovExecute',

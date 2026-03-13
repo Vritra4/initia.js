@@ -10,7 +10,7 @@ import {
   MsgTimeoutSchema,
   MsgTimeoutOnCloseSchema,
   MsgAcknowledgementSchema,
-} from '@buf/cosmos_ibc.bufbuild_es/ibc/core/channel/v1/tx_pb'
+} from '@initia/initia-proto/ibc/core/channel/v1/tx_pb'
 import {
   MsgCreateClientSchema,
   MsgUpdateClientSchema,
@@ -19,14 +19,14 @@ import {
   MsgRecoverClientSchema,
   MsgIBCSoftwareUpgradeSchema,
   MsgUpdateParamsSchema as MsgClientUpdateParamsSchema,
-} from '@buf/cosmos_ibc.bufbuild_es/ibc/core/client/v1/tx_pb'
+} from '@initia/initia-proto/ibc/core/client/v1/tx_pb'
 import {
   MsgConnectionOpenInitSchema,
   MsgConnectionOpenTrySchema,
   MsgConnectionOpenAckSchema,
   MsgConnectionOpenConfirmSchema,
   MsgUpdateParamsSchema as MsgConnectionUpdateParamsSchema,
-} from '@buf/cosmos_ibc.bufbuild_es/ibc/core/connection/v1/tx_pb'
+} from '@initia/initia-proto/ibc/core/connection/v1/tx_pb'
 import { msg, type FriendlyInit, type Message } from '../types'
 
 export interface IbcCoreModule {

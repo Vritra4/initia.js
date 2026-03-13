@@ -22,10 +22,10 @@ import { makeStdSignDoc, signAmino, toAmino, type StdFee } from 'initia.js/tx'
 import { TEST_MNEMONIC, RECIPIENT } from './constants'
 import { create, toBinary } from '@bufbuild/protobuf'
 import { anyPack, anyIs, anyUnpack } from '@bufbuild/protobuf/wkt'
-import { MsgSendSchema } from '@buf/cosmos_cosmos-sdk.bufbuild_es/cosmos/bank/v1beta1/tx_pb'
-import { CoinSchema } from '@buf/cosmos_cosmos-sdk.bufbuild_es/cosmos/base/v1beta1/coin_pb'
-import { BaseAccountSchema } from '@buf/cosmos_cosmos-sdk.bufbuild_es/cosmos/auth/v1beta1/auth_pb'
-import { BroadcastMode } from '@buf/cosmos_cosmos-sdk.bufbuild_es/cosmos/tx/v1beta1/service_pb'
+import { MsgSendSchema } from '@initia/initia-proto/cosmos/bank/v1beta1/tx_pb'
+import { CoinSchema } from '@initia/initia-proto/cosmos/base/v1beta1/coin_pb'
+import { BaseAccountSchema } from '@initia/initia-proto/cosmos/auth/v1beta1/auth_pb'
+import { BroadcastMode } from '@initia/initia-proto/cosmos/tx/v1beta1/service_pb'
 import {
   TxBodySchema,
   AuthInfoSchema,
@@ -33,8 +33,8 @@ import {
   SignerInfoSchema,
   ModeInfoSchema,
   FeeSchema,
-} from '@buf/cosmos_cosmos-sdk.bufbuild_es/cosmos/tx/v1beta1/tx_pb'
-import { SignMode } from '@buf/cosmos_cosmos-sdk.bufbuild_es/cosmos/tx/signing/v1beta1/signing_pb'
+} from '@initia/initia-proto/cosmos/tx/v1beta1/tx_pb'
+import { SignMode } from '@initia/initia-proto/cosmos/tx/signing/v1beta1/signing_pb'
 
 async function main() {
   // 1. Connect to chain

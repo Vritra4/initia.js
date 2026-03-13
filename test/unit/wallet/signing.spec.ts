@@ -17,7 +17,7 @@ import { describe, it, expect } from 'vitest'
 import { buildChainContextFactory } from '../../../src/wallet/chain-context'
 import { RawKey } from '../../../src/key/raw-key'
 import { Message } from '../../../src/msgs/types'
-import { MsgSendSchema } from '@buf/cosmos_cosmos-sdk.bufbuild_es/cosmos/bank/v1beta1/tx_pb'
+import { MsgSendSchema } from '@initia/initia-proto/cosmos/bank/v1beta1/tx_pb'
 import type { UnsignedTx, SignModeType } from '../../../src/client/types'
 import type {
   DirectSigner,

@@ -4,7 +4,7 @@ import {
   MsgCreate2Schema,
   MsgCallSchema,
   MsgUpdateParamsSchema,
-} from '@buf/initia-labs_minievm.bufbuild_es/minievm/evm/v1/tx_pb'
+} from '@initia/minievm-proto/minievm/evm/v1/tx_pb'
 import { msg, msgWithDefaults, type FriendlyInit, type Message, type WithDefaults } from '../types'
 
 export interface EvmModule {
@@ -15,7 +15,7 @@ export interface EvmModule {
     init: WithDefaults<FriendlyInit<typeof MsgCreate2Schema>, 'value' | 'accessList'>
   ): Message<typeof MsgCreate2Schema>
   call(
-    init: WithDefaults<FriendlyInit<typeof MsgCallSchema>, 'value' | 'accessList'>
+    init: WithDefaults<FriendlyInit<typeof MsgCallSchema>, 'value' | 'accessList' | 'authList'>
   ): Message<typeof MsgCallSchema>
   updateParams(
     init: FriendlyInit<typeof MsgUpdateParamsSchema>

@@ -14,7 +14,7 @@ import {
   MsgVoteSchema,
   MsgExecSchema,
   MsgLeaveGroupSchema,
-} from '@buf/cosmos_cosmos-sdk.bufbuild_es/cosmos/group/v1/tx_pb'
+} from '@initia/initia-proto/cosmos/group/v1/tx_pb'
 import { msg, msgWithDefaults, type FriendlyInit, type Message, type WithDefaults } from '../types'
 
 export interface GroupModule {

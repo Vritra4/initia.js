@@ -17,7 +17,7 @@ import {
   MsgAddCodeUploadParamsAddressesSchema,
   MsgStoreAndMigrateContractSchema,
   MsgUpdateContractLabelSchema,
-} from '@buf/cosmwasm_wasmd.bufbuild_es/cosmwasm/wasm/v1/tx_pb'
+} from '@initia/miniwasm-proto/cosmwasm/wasm/v1/tx_pb'
 import { msg, msgWithDefaults, type FriendlyInit, type Message, type WithDefaults } from '../types'
 
 export interface WasmModule {

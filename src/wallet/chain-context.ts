@@ -33,8 +33,8 @@ import {
   SignerInfoSchema,
   ModeInfoSchema,
   FeeSchema,
-} from '@buf/cosmos_cosmos-sdk.bufbuild_es/cosmos/tx/v1beta1/tx_pb'
-import { SignMode } from '@buf/cosmos_cosmos-sdk.bufbuild_es/cosmos/tx/signing/v1beta1/signing_pb'
+} from '@initia/initia-proto/cosmos/tx/v1beta1/tx_pb'
+import { SignMode } from '@initia/initia-proto/cosmos/tx/signing/v1beta1/signing_pb'
 import type { Transport } from '@connectrpc/connect'
 import { Key } from '../key'
 import {

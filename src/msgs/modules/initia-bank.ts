@@ -1,5 +1,5 @@
 import type { DescMessage } from '@bufbuild/protobuf'
-import { MsgSetDenomMetadataSchema } from '@buf/initia-labs_initia.bufbuild_es/initia/bank/v1/tx_pb'
+import { MsgSetDenomMetadataSchema } from '@initia/initia-proto/initia/bank/v1/tx_pb'
 import { msg, type FriendlyInit, type Message } from '../types'
 
 export interface InitiaBankModule {
