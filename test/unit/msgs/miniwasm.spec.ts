@@ -1,24 +1,26 @@
 /**
- * Unit tests for Miniwasm rollup message builders (namespaced module API).
+ * Unit tests for Miniwasm rollup message builders (ChainConfigBuilder API).
  */
 
 import { describe, it, expect } from 'vitest'
-import { miniwasmMsgs } from '../../../src/msgs/miniwasm'
+import { miniwasmChain } from '../../../src/chains/miniwasm'
 import { coin } from '../../../src/core/coin'
 import { Message } from '../../../src/msgs/types'
+
+const miniwasmMsgs = miniwasmChain.build().msgs
 
 const encode = (obj: unknown) => new TextEncoder().encode(JSON.stringify(obj))
 
 describe('miniwasmMsgs', () => {
-  // ============= CosmWasm =============
-
   describe('wasm.instantiateContract', () => {
     it('should create a MsgInstantiateContract', () => {
       const msg = miniwasmMsgs.wasm.instantiateContract({
         sender: 'init1sender...',
+        admin: '',
         codeId: 1n,
         label: 'my-counter',
         msg: encode({ count: 0 }),
+        funds: [],
       })
 
       expect(msg.toAny().typeUrl).toBe('/cosmwasm.wasm.v1.MsgInstantiateContract')
@@ -28,6 +30,7 @@ describe('miniwasmMsgs', () => {
     it('should create a MsgInstantiateContract with funds', () => {
       const msg = miniwasmMsgs.wasm.instantiateContract({
         sender: 'init1sender...',
+        admin: '',
         codeId: 1n,
         label: 'my-token',
         msg: encode({ owner: 'init1owner...' }),
@@ -45,6 +48,7 @@ describe('miniwasmMsgs', () => {
         sender: 'init1sender...',
         contract: 'init1contract...',
         msg: encode({ increment: {} }),
+        funds: [],
       })
 
       expect(msg.toAny().typeUrl).toBe('/cosmwasm.wasm.v1.MsgExecuteContract')
@@ -96,14 +100,13 @@ describe('miniwasmMsgs', () => {
       const msg = miniwasmMsgs.wasm.storeCode({
         sender: 'init1sender...',
         wasmByteCode: wasmBytecode,
+        instantiatePermission: undefined,
       })
 
       expect(msg.toAny().typeUrl).toBe('/cosmwasm.wasm.v1.MsgStoreCode')
       expect(msg.value).toBeDefined()
     })
   })
-
-  // ============= Inherited Bank / IBC =============
 
   describe('bank.send', () => {
     it('should have send method', () => {
@@ -124,6 +127,10 @@ describe('miniwasmMsgs', () => {
         receiver: 'init1receiver...',
         token: coin('umin', '1000000'),
         sourceChannel: 'channel-0',
+        sourcePort: 'transfer',
+        timeoutHeight: { revisionNumber: 0n, revisionHeight: 0n },
+        timeoutTimestamp: BigInt(Date.now() + 10 * 60_000) * 1_000_000n,
+        memo: '',
       })
 
       expect(msg.toAny().typeUrl).toBe('/ibc.applications.transfer.v1.MsgTransfer')

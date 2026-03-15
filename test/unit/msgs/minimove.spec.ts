@@ -1,15 +1,15 @@
 /**
- * Unit tests for Minimove rollup message builders (namespaced module API).
+ * Unit tests for Minimove rollup message builders (ChainConfigBuilder API).
  */
 
 import { describe, it, expect } from 'vitest'
-import { minimoveMsgs } from '../../../src/msgs/minimove'
+import { minimoveChain } from '../../../src/chains/minimove'
 import { coin } from '../../../src/core/coin'
 import { Message } from '../../../src/msgs/types'
 
-describe('minimoveMsgs', () => {
-  // ============= Move =============
+const minimoveMsgs = minimoveChain.build().msgs
 
+describe('minimoveMsgs', () => {
   describe('move.execute', () => {
     it('should create a MsgExecute for Move function', () => {
       const msg = minimoveMsgs.move.execute({
@@ -81,8 +81,6 @@ describe('minimoveMsgs', () => {
     })
   })
 
-  // ============= Inherited Bank / IBC =============
-
   describe('bank.send', () => {
     it('should have send method', () => {
       const msg = minimoveMsgs.bank.send({
@@ -102,6 +100,10 @@ describe('minimoveMsgs', () => {
         receiver: 'init1receiver...',
         token: coin('umin', '1000000'),
         sourceChannel: 'channel-0',
+        sourcePort: 'transfer',
+        timeoutHeight: { revisionNumber: 0n, revisionHeight: 0n },
+        timeoutTimestamp: BigInt(Date.now() + 10 * 60_000) * 1_000_000n,
+        memo: '',
       })
 
       expect(msg.toAny().typeUrl).toBe('/ibc.applications.transfer.v1.MsgTransfer')

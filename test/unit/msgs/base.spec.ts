@@ -1,12 +1,14 @@
 /**
- * Unit tests for base message builders (namespaced module API).
+ * Unit tests for base message builders (common chain config API).
  */
 
 import { describe, it, expect } from 'vitest'
-import { baseMsgs } from '../../../src/msgs/base'
+import { createBaseConfig } from '../../../src/chains/common'
 import { coin } from '../../../src/core/coin'
 import { Message } from '../../../src/msgs/types'
 import { MsgSendSchema } from '@initia/initia-proto/cosmos/bank/v1beta1/tx_pb'
+
+const baseMsgs = createBaseConfig().build().msgs
 
 describe('baseMsgs', () => {
   describe('bank.send', () => {
@@ -40,12 +42,16 @@ describe('baseMsgs', () => {
   })
 
   describe('ibc.transfer', () => {
-    it('should create a MsgTransfer with defaults', () => {
+    it('should create a MsgTransfer with all required fields', () => {
       const msg = baseMsgs.ibc.transfer({
         sender: 'init1sender...',
         receiver: 'init1receiver...',
         token: coin('uinit', '1000000'),
         sourceChannel: 'channel-0',
+        sourcePort: 'transfer',
+        timeoutHeight: { revisionNumber: 0n, revisionHeight: 0n },
+        timeoutTimestamp: BigInt(Date.now() + 10 * 60_000) * 1_000_000n,
+        memo: '',
       })
 
       expect(msg.toAny().typeUrl).toBe('/ibc.applications.transfer.v1.MsgTransfer')
@@ -64,6 +70,9 @@ describe('baseMsgs', () => {
         token: coin('uinit', '1000000'),
         sourceChannel: 'channel-0',
         sourcePort: 'custom-port',
+        timeoutHeight: { revisionNumber: 0n, revisionHeight: 0n },
+        timeoutTimestamp: 0n,
+        memo: '',
       })
 
       expect(msg.toAny().typeUrl).toBe('/ibc.applications.transfer.v1.MsgTransfer')
@@ -76,10 +85,13 @@ describe('baseMsgs', () => {
         receiver: 'init1receiver...',
         token: coin('uinit', '1000000'),
         sourceChannel: 'channel-0',
+        sourcePort: 'transfer',
         timeoutHeight: {
           revisionNumber: 1n,
           revisionHeight: 100000n,
         },
+        timeoutTimestamp: 0n,
+        memo: '',
       })
 
       expect(msg.toAny().typeUrl).toBe('/ibc.applications.transfer.v1.MsgTransfer')
@@ -93,7 +105,10 @@ describe('baseMsgs', () => {
         receiver: 'init1receiver...',
         token: coin('uinit', '1000000'),
         sourceChannel: 'channel-0',
+        sourcePort: 'transfer',
+        timeoutHeight: { revisionNumber: 0n, revisionHeight: 0n },
         timeoutTimestamp: futureTimestamp,
+        memo: '',
       })
 
       expect(msg.toAny().typeUrl).toBe('/ibc.applications.transfer.v1.MsgTransfer')
@@ -105,6 +120,9 @@ describe('baseMsgs', () => {
         receiver: 'init1receiver...',
         token: coin('uinit', '1000000'),
         sourceChannel: 'channel-0',
+        sourcePort: 'transfer',
+        timeoutHeight: { revisionNumber: 0n, revisionHeight: 0n },
+        timeoutTimestamp: 0n,
         memo: 'test memo',
       })
 

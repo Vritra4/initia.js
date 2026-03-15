@@ -3,12 +3,15 @@
  */
 
 import { describe, it, expect } from 'vitest'
-import { baseMsgs } from '../../../src/msgs/base'
-import { initiaMsgs } from '../../../src/msgs/initia'
+import { createBaseConfig } from '../../../src/chains/common'
+import { initiaChain } from '../../../src/chains/initia'
 import { coin } from '../../../src/core/coin'
 import { Message } from '../../../src/msgs/types'
 import { create } from '@bufbuild/protobuf'
 import { AnySchema } from '@bufbuild/protobuf/wkt'
+
+const baseMsgs = createBaseConfig().build().msgs
+const initiaMsgs = initiaChain.build().msgs
 
 describe('Message.toJson', () => {
   it('should return typeUrl and value for MsgSend', () => {

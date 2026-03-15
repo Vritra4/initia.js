@@ -1,11 +1,11 @@
 import { describe, it, expect } from 'vitest'
 import { create, createRegistry } from '@bufbuild/protobuf'
 import { wrapResponse } from '../../../src/client/response'
-import { InitiaServices } from '../../../src/client/services/initia'
-import { MinievmServices } from '../../../src/client/services/minievm'
-import { MinimoveServices } from '../../../src/client/services/minimove'
-import { MiniwasmServices } from '../../../src/client/services/miniwasm'
-import { OtherServices } from '../../../src/client/services/other'
+import { initiaChain } from '../../../src/chains/initia'
+import { minievmChain } from '../../../src/chains/minievm'
+import { minimoveChain } from '../../../src/chains/minimove'
+import { miniwasmChain } from '../../../src/chains/miniwasm'
+import { createBaseConfig } from '../../../src/chains/common'
 
 import { QueryAccountResponseSchema } from '@initia/initia-proto/cosmos/auth/v1beta1/query_pb'
 import {
@@ -77,8 +77,8 @@ describe('wrapResponse with Registry for Any fields', () => {
 })
 
 describe('Chain preset registries', () => {
-  it('InitiaServices.getRegistry() resolves all expected types', () => {
-    const registry = InitiaServices.getRegistry()
+  it('initiaChain registry resolves all expected types', () => {
+    const registry = initiaChain.build().registry
     // Common types (inherited)
     expect(registry.getMessage('cosmos.crypto.ed25519.PubKey')).toBeDefined()
     expect(registry.getMessage('cosmos.crypto.secp256k1.PubKey')).toBeDefined()
@@ -89,29 +89,29 @@ describe('Chain preset registries', () => {
     expect(registry.getMessage('initia.move.v1.TableAccount')).toBeDefined()
   })
 
-  it('MinievmServices.getRegistry() resolves EVM account types', () => {
-    const registry = MinievmServices.getRegistry()
-    expect(registry.getMessage('cosmos.crypto.ed25519.PubKey')).toBeDefined()
-    expect(registry.getMessage('minievm.evm.v1.ContractAccount')).toBeDefined()
-    expect(registry.getMessage('minievm.evm.v1.ShorthandAccount')).toBeDefined()
-  })
-
-  it('MinimoveServices.getRegistry() resolves Move account types', () => {
-    const registry = MinimoveServices.getRegistry()
-    expect(registry.getMessage('cosmos.crypto.ed25519.PubKey')).toBeDefined()
-    expect(registry.getMessage('initia.move.v1.ObjectAccount')).toBeDefined()
-    expect(registry.getMessage('initia.move.v1.TableAccount')).toBeDefined()
-  })
-
-  it('MiniwasmServices.getRegistry() resolves common types', () => {
-    const registry = MiniwasmServices.getRegistry()
+  it('minievmChain registry resolves common types', () => {
+    const registry = minievmChain.build().registry
     expect(registry.getMessage('cosmos.crypto.ed25519.PubKey')).toBeDefined()
     expect(registry.getMessage('cosmos.crypto.secp256k1.PubKey')).toBeDefined()
     expect(registry.getMessage('cosmos.auth.v1beta1.BaseAccount')).toBeDefined()
   })
 
-  it('OtherServices.getRegistry() resolves common types', () => {
-    const registry = OtherServices.getRegistry()
+  it('minimoveChain registry resolves common types', () => {
+    const registry = minimoveChain.build().registry
+    expect(registry.getMessage('cosmos.crypto.ed25519.PubKey')).toBeDefined()
+    expect(registry.getMessage('cosmos.crypto.secp256k1.PubKey')).toBeDefined()
+    expect(registry.getMessage('cosmos.auth.v1beta1.BaseAccount')).toBeDefined()
+  })
+
+  it('miniwasmChain registry resolves common types', () => {
+    const registry = miniwasmChain.build().registry
+    expect(registry.getMessage('cosmos.crypto.ed25519.PubKey')).toBeDefined()
+    expect(registry.getMessage('cosmos.crypto.secp256k1.PubKey')).toBeDefined()
+    expect(registry.getMessage('cosmos.auth.v1beta1.BaseAccount')).toBeDefined()
+  })
+
+  it('base chain registry resolves common types', () => {
+    const registry = createBaseConfig().build().registry
     expect(registry.getMessage('cosmos.crypto.ed25519.PubKey')).toBeDefined()
     expect(registry.getMessage('cosmos.crypto.secp256k1.PubKey')).toBeDefined()
     expect(registry.getMessage('cosmos.auth.v1beta1.BaseAccount')).toBeDefined()

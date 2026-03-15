@@ -86,6 +86,10 @@ describe.skipIf(SKIP || !TEST_MNEMONIC)('Provider Wallet Queries (Initia Testnet
         receiver: wallet.address!,
         token: coin('uinit', '1000'),
         sourceChannel: 'channel-0',
+        sourcePort: 'transfer',
+        timeoutHeight: { revisionNumber: 0n, revisionHeight: 0n },
+        timeoutTimestamp: BigInt(Date.now() + 10 * 60_000) * 1_000_000n,
+        memo: '',
       })
       expect(msg.toAny().typeUrl).toContain('MsgTransfer')
       expect(msg.toAny().value.length).toBeGreaterThan(0)

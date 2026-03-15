@@ -1,30 +1,34 @@
 /**
- * Unit tests for Minievm rollup message builders (namespaced module API).
+ * Unit tests for Minievm rollup message builders (ChainConfigBuilder API).
  */
 
 import { describe, it, expect } from 'vitest'
-import { minievmMsgs } from '../../../src/msgs/minievm'
+import { minievmChain } from '../../../src/chains/minievm'
 import { coin } from '../../../src/core/coin'
 import { Message } from '../../../src/msgs/types'
 
-describe('minievmMsgs', () => {
-  // ============= EVM =============
+const minievmMsgs = minievmChain.build().msgs
 
+describe('minievmMsgs', () => {
   describe('evm.create', () => {
     it('should create a MsgCreate for contract deployment', () => {
       const msg = minievmMsgs.evm.create({
         sender: 'init1sender...',
         code: '0x60806040',
+        value: '',
+        accessList: [],
       })
 
       expect(msg.toAny().typeUrl).toBe('/minievm.evm.v1.MsgCreate')
       expect(msg.value).toBeDefined()
     })
 
-    it('should create a MsgCreate without explicit value', () => {
+    it('should create a MsgCreate with all required fields', () => {
       const msg = minievmMsgs.evm.create({
         sender: 'init1sender...',
         code: '0x6080604052',
+        value: '',
+        accessList: [],
       })
 
       expect(msg.toAny().typeUrl).toBe('/minievm.evm.v1.MsgCreate')
@@ -38,35 +42,41 @@ describe('minievmMsgs', () => {
         sender: 'init1sender...',
         contractAddr: '0x1234567890abcdef1234567890abcdef12345678',
         input: '0xa9059cbb',
+        value: '',
+        accessList: [],
+        authList: [],
       })
 
       expect(msg.toAny().typeUrl).toBe('/minievm.evm.v1.MsgCall')
       expect(msg.value).toBeDefined()
     })
 
-    it('should default value to "0" when omitted', () => {
+    it('should have empty value when not provided', () => {
       const msg = minievmMsgs.evm.call({
         sender: 'init1sender...',
         contractAddr: '0xcontract...',
         input: '0x00',
+        value: '',
+        accessList: [],
+        authList: [],
       })
 
-      expect(msg.value.value).toBe('0')
+      expect(msg.value.value).toBe('')
     })
 
-    it('should override default value when explicitly provided', () => {
+    it('should use explicit value when provided', () => {
       const msg = minievmMsgs.evm.call({
         sender: 'init1sender...',
         contractAddr: '0xcontract...',
         input: '0x00',
         value: '100',
+        accessList: [],
+        authList: [],
       })
 
       expect(msg.value.value).toBe('100')
     })
   })
-
-  // ============= OpChild =============
 
   describe('opchild.initiateTokenWithdrawal', () => {
     it('should create a MsgInitiateTokenWithdrawal', () => {
@@ -80,8 +90,6 @@ describe('minievmMsgs', () => {
       expect(msg.value.sender).toBe('init1sender...')
     })
   })
-
-  // ============= Inherited Bank / IBC =============
 
   describe('bank.send', () => {
     it('should have send method', () => {
@@ -102,6 +110,10 @@ describe('minievmMsgs', () => {
         receiver: 'init1receiver...',
         token: coin('umin', '1000000'),
         sourceChannel: 'channel-0',
+        sourcePort: 'transfer',
+        timeoutHeight: { revisionNumber: 0n, revisionHeight: 0n },
+        timeoutTimestamp: BigInt(Date.now() + 10 * 60_000) * 1_000_000n,
+        memo: '',
       })
 
       expect(msg.toAny().typeUrl).toBe('/ibc.applications.transfer.v1.MsgTransfer')

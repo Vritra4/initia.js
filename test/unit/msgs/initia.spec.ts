@@ -1,18 +1,18 @@
 /**
- * Unit tests for Initia L1 message builders (namespaced module API).
+ * Unit tests for Initia L1 message builders (ChainConfigBuilder API).
  */
 
 import { describe, it, expect } from 'vitest'
-import { initiaMsgs } from '../../../src/msgs/initia'
+import { initiaChain } from '../../../src/chains/initia'
 import { coin } from '../../../src/core/coin'
 import { Message } from '../../../src/msgs/types'
 import { create } from '@bufbuild/protobuf'
 import { AnySchema } from '@bufbuild/protobuf/wkt'
 import { MsgSendSchema } from '@initia/initia-proto/cosmos/bank/v1beta1/tx_pb'
 
-describe('initiaMsgs', () => {
-  // ============= Bank =============
+const initiaMsgs = initiaChain.build().msgs
 
+describe('initiaMsgs', () => {
   describe('bank.send', () => {
     it('should create a MsgSend', () => {
       const msg = initiaMsgs.bank.send({
@@ -25,8 +25,6 @@ describe('initiaMsgs', () => {
     })
   })
 
-  // ============= IBC =============
-
   describe('ibc.transfer', () => {
     it('should create a MsgTransfer', () => {
       const msg = initiaMsgs.ibc.transfer({
@@ -34,13 +32,15 @@ describe('initiaMsgs', () => {
         receiver: 'init1receiver...',
         token: coin('uinit', '1000000'),
         sourceChannel: 'channel-0',
+        sourcePort: 'transfer',
+        timeoutHeight: { revisionNumber: 0n, revisionHeight: 0n },
+        timeoutTimestamp: BigInt(Date.now() + 10 * 60_000) * 1_000_000n,
+        memo: '',
       })
 
       expect(msg.toAny().typeUrl).toBe('/ibc.applications.transfer.v1.MsgTransfer')
     })
   })
-
-  // ============= Staking (mstaking) =============
 
   describe('mstaking.delegate', () => {
     it('should create a MsgDelegate', () => {
@@ -82,8 +82,6 @@ describe('initiaMsgs', () => {
     })
   })
 
-  // ============= Distribution =============
-
   describe('distribution.withdrawDelegatorReward', () => {
     it('should create a MsgWithdrawDelegatorReward', () => {
       const msg = initiaMsgs.distribution.withdrawDelegatorReward({
@@ -95,8 +93,6 @@ describe('initiaMsgs', () => {
       expect(msg.value).toBeDefined()
     })
   })
-
-  // ============= Move =============
 
   describe('move.execute', () => {
     it('should create a MsgExecute for Move function', () => {
@@ -142,14 +138,13 @@ describe('initiaMsgs', () => {
     })
   })
 
-  // ============= Governance =============
-
   describe('gov.vote', () => {
     it('should create a MsgVote with yes option', () => {
       const msg = initiaMsgs.gov.vote({
         proposalId: 1n,
         voter: 'init1voter...',
         option: 1,
+        metadata: '',
       })
 
       expect(msg.toAny().typeUrl).toBe('/cosmos.gov.v1.MsgVote')
@@ -169,8 +164,6 @@ describe('initiaMsgs', () => {
       expect(msg.value).toBeDefined()
     })
   })
-
-  // ============= Authz =============
 
   describe('authz.grant', () => {
     it('should create a MsgGrant with authorization', () => {
@@ -221,8 +214,6 @@ describe('initiaMsgs', () => {
     })
   })
 
-  // ============= Feegrant =============
-
   describe('feegrant.grantAllowance', () => {
     it('should create a MsgGrantAllowance', () => {
       const authAny = create(AnySchema, {
@@ -253,8 +244,6 @@ describe('initiaMsgs', () => {
     })
   })
 
-  // ============= Group =============
-
   describe('group.createGroup', () => {
     it('should create a MsgCreateGroup', () => {
       const msg = initiaMsgs.group.createGroup({
@@ -263,6 +252,7 @@ describe('initiaMsgs', () => {
           { address: 'init1member1...', weight: '1', metadata: '' },
           { address: 'init1member2...', weight: '2', metadata: '' },
         ],
+        metadata: '',
       })
 
       expect(msg.toAny().typeUrl).toBe('/cosmos.group.v1.MsgCreateGroup')
@@ -273,13 +263,12 @@ describe('initiaMsgs', () => {
       const msg = initiaMsgs.group.createGroup({
         admin: 'init1admin...',
         members: [{ address: 'init1member...', weight: '1', metadata: '' }],
+        metadata: 'group metadata',
       })
 
       expect(msg.toAny().typeUrl).toBe('/cosmos.group.v1.MsgCreateGroup')
     })
   })
-
-  // ============= Custom =============
 
   describe('custom', () => {
     it('should create a custom message from schema', () => {
