@@ -139,7 +139,6 @@ export function buildTypedFactory<T extends ChainType>(
   // Build default config once — services, msgs, and registry are derived from it
   const defaultConfig = chainConfig.build()
   const typeRegistry = defaultConfig.registry
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
   const msgs = defaultConfig.msgs as unknown as MsgsForChain<T>
 
   const create = buildChainContextFactory(

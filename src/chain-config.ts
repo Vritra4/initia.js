@@ -80,18 +80,20 @@ function extractSchemas(tx: TxInput): DescMessage[] {
   const services = Array.isArray(tx) ? tx : [tx]
   const schemas: DescMessage[] = []
   for (const svc of services) {
-    for (const method of Object.values(svc.method) as MethodDescriptor[]) {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+    for (const method of Object.values(svc.method as Record<string, MethodDescriptor>)) {
       schemas.push(method.input)
     }
   }
   return schemas
 }
 
-function createMsgBuilders(tx: TxInput): Record<string, (init: any) => Message> {
+function createMsgBuilders(tx: TxInput): Record<string, (init: FriendlyInit<DescMessage>) => Message> {
   const services = Array.isArray(tx) ? tx : [tx]
-  const builders: Record<string, (init: any) => Message> = {}
+  const builders: Record<string, (init: FriendlyInit<DescMessage>) => Message> = {}
   for (const svc of services) {
-    for (const [name, method] of Object.entries(svc.method) as [string, MethodDescriptor][]) {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+    for (const [name, method] of Object.entries(svc.method as Record<string, MethodDescriptor>)) {
       if (builders[name]) {
         console.warn(
           `[ChainConfig] Duplicate method name "${name}" in multi-source tx module. ` +
@@ -109,7 +111,9 @@ function createMsgBuilders(tx: TxInput): Record<string, (init: any) => Message> 
 type TypeInput = Registry | DescFile | DescMessage | DescEnum | DescExtension | DescService
 
 export class ChainConfigBuilder<
+  // eslint-disable-next-line @typescript-eslint/no-empty-object-type
   TDefault extends Record<string, ModuleInput> = {},
+  // eslint-disable-next-line @typescript-eslint/no-empty-object-type
   TNetworks extends Record<string, Record<string, ModuleInput>> = {},
 > {
   private modules: Record<string, ModuleInput> = {}
@@ -128,6 +132,7 @@ export class ChainConfigBuilder<
     name: K,
     input: { tx: T }
   ): ChainConfigBuilder<TDefault & Record<K, { tx: T }>, TNetworks>
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   addModule(name: string, input: ModuleInput): ChainConfigBuilder<any, any> {
     if (!input.query && !input.tx) {
       throw new Error(`addModule("${name}"): at least one of query or tx must be provided`)
@@ -135,9 +140,10 @@ export class ChainConfigBuilder<
     const next = this.clone()
     next.modules[name] = input
     if (input.tx) {
-      const schemas = extractSchemas(input.tx as TxInput)
+      const schemas = extractSchemas(input.tx)
       next.typeInputs.push(...schemas)
     }
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     return next as any
   }
 
@@ -163,6 +169,7 @@ export class ChainConfigBuilder<
     }
 
     const networkBuilder: NetworkBuilder = {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       addModule(name: string, input: ModuleInput): ChainConfigBuilder<any, any> {
         if (!input.query && !input.tx) {
           throw new Error(`forNetwork("${network}").addModule("${name}"): at least one of query or tx must be provided`)
@@ -173,9 +180,10 @@ export class ChainConfigBuilder<
         }
         next.networkOverrides[network][name] = input
         if (input.tx) {
-          const schemas = extractSchemas(input.tx as TxInput)
+          const schemas = extractSchemas(input.tx)
           next.typeInputs.push(...schemas)
         }
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-return
         return next as any
       },
     } as unknown as NetworkBuilder
@@ -188,11 +196,12 @@ export class ChainConfigBuilder<
   ): ChainConfigBuilder<TDefault, TNetworks> {
     const next = this.clone()
     next.typeInputs.push(...inputs)
-    return next as any
+    return next
   }
 
   build(): ChainConfig<TDefault>
   build<N extends string>(network: N): ChainConfig<ResolveModules<TDefault, TNetworks, N>>
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   build(network?: string): ChainConfig<any> {
     const overrides = network ? (this.networkOverrides[network] ?? {}) : {}
     const resolved = { ...this.modules, ...overrides }
@@ -200,16 +209,16 @@ export class ChainConfigBuilder<
     // Build services map
     const services: Record<string, DescService> = {}
     for (const [name, mod] of Object.entries(resolved)) {
-      if (mod.query) services[name] = mod.query as DescService
+      if (mod.query) services[name] = mod.query
     }
 
     // Build msg builders + collect all schemas for decode
     const allSchemas: DescMessage[] = []
-    const msgBuilders: Record<string, Record<string, (init: any) => Message>> = {}
+    const msgBuilders: Record<string, Record<string, (init: FriendlyInit<DescMessage>) => Message>> = {}
     for (const [name, mod] of Object.entries(resolved)) {
       if (mod.tx) {
-        msgBuilders[name] = createMsgBuilders(mod.tx as TxInput)
-        allSchemas.push(...extractSchemas(mod.tx as TxInput))
+        msgBuilders[name] = createMsgBuilders(mod.tx)
+        allSchemas.push(...extractSchemas(mod.tx))
       }
     }
 
@@ -217,7 +226,7 @@ export class ChainConfigBuilder<
     for (const overrideMap of Object.values(this.networkOverrides)) {
       for (const mod of Object.values(overrideMap)) {
         if (mod.tx) {
-          allSchemas.push(...extractSchemas(mod.tx as TxInput))
+          allSchemas.push(...extractSchemas(mod.tx))
         }
       }
     }
@@ -236,6 +245,7 @@ export class ChainConfigBuilder<
       decode,
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return, @typescript-eslint/no-explicit-any
     return { services, msgs, registry } as any
   }
 
