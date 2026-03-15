@@ -1,6 +1,7 @@
 import { defineConfig } from 'tsdown'
 
 export default defineConfig({
+  sourcemap: true,
   outputOptions: {
     paths: id => {
       if (id.endsWith('.js')) return id
