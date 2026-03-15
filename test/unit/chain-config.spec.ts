@@ -4,7 +4,6 @@ import { Msg as BankTxMsg } from '@initia/initia-proto/cosmos/bank/v1beta1/tx_pb
 import { Query as BankQuery } from '@initia/initia-proto/cosmos/bank/v1beta1/query_pb'
 import { Query as AuthQuery } from '@initia/initia-proto/cosmos/auth/v1beta1/query_pb'
 import { Msg as MoveTxMsg } from '@initia/initia-proto/initia/move/v1/tx_pb'
-import { Query as MoveQuery } from '@initia/initia-proto/initia/move/v1/query_pb'
 import { Query as GovQuery } from '@initia/initia-proto/cosmos/gov/v1/query_pb'
 import { Query as GovV1Beta1Query } from '@initia/initia-proto/cosmos/gov/v1beta1/query_pb'
 import { Msg as GovTxMsg } from '@initia/initia-proto/cosmos/gov/v1/tx_pb'
@@ -12,6 +11,7 @@ import { file_cosmos_crypto_ed25519_keys } from '@initia/initia-proto/cosmos/cry
 import { Msg as ChannelTxMsg } from '@initia/initia-proto/ibc/core/channel/v1/tx_pb'
 import { Msg as ClientTxMsg } from '@initia/initia-proto/ibc/core/client/v1/tx_pb'
 import { Msg as ConnectionTxMsg } from '@initia/initia-proto/ibc/core/connection/v1/tx_pb'
+import { coin } from '../../src/core/coin'
 
 describe('createChainConfig', () => {
   it('returns a ChainConfigBuilder', () => {
@@ -60,7 +60,7 @@ describe('addModule + build', () => {
     const msg = config.msgs.bank.send({
       fromAddress: 'init1sender',
       toAddress: 'init1receiver',
-      amount: { denom: 'uinit', amount: '1000000' },
+      amount: [coin('uinit', '1000000')],
     })
 
     expect(msg.typeUrl).toBe('/cosmos.bank.v1beta1.MsgSend')
@@ -84,7 +84,7 @@ describe('addModule + build', () => {
     const msg = config.msgs.bank.send({
       fromAddress: 'init1sender',
       toAddress: 'init1receiver',
-      amount: { denom: 'uinit', amount: '1000000' },
+      amount: [coin('uinit', '1000000')],
     })
 
     const decoded = config.msgs.decode(msg.toAny())
@@ -142,7 +142,7 @@ describe('forNetwork', () => {
 
     const msg = mainnet.msgs.bank.send({
       fromAddress: 'init1a', toAddress: 'init1b',
-      amount: { denom: 'uinit', amount: '1000' },
+      amount: [coin('uinit', '1000')],
     })
     expect(() => mainnet.msgs.decode(msg.toAny())).not.toThrow()
     expect(() => testnet.msgs.decode(msg.toAny())).not.toThrow()

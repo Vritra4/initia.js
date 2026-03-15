@@ -72,11 +72,15 @@ export interface ChainConfig<TModules extends Record<string, ModuleInput>> {
 
 // ─── Runtime Helpers ───────────────────────────────────────────────
 
+interface MethodDescriptor {
+  input: DescMessage
+}
+
 function extractSchemas(tx: TxInput): DescMessage[] {
   const services = Array.isArray(tx) ? tx : [tx]
   const schemas: DescMessage[] = []
   for (const svc of services) {
-    for (const method of Object.values(svc.method)) {
+    for (const method of Object.values(svc.method) as MethodDescriptor[]) {
       schemas.push(method.input)
     }
   }
@@ -87,7 +91,7 @@ function createMsgBuilders(tx: TxInput): Record<string, (init: any) => Message> 
   const services = Array.isArray(tx) ? tx : [tx]
   const builders: Record<string, (init: any) => Message> = {}
   for (const svc of services) {
-    for (const [name, method] of Object.entries(svc.method)) {
+    for (const [name, method] of Object.entries(svc.method) as [string, MethodDescriptor][]) {
       if (builders[name]) {
         console.warn(
           `[ChainConfig] Duplicate method name "${name}" in multi-source tx module. ` +
@@ -105,8 +109,8 @@ function createMsgBuilders(tx: TxInput): Record<string, (init: any) => Message> 
 type TypeInput = Registry | DescFile | DescMessage | DescEnum | DescExtension | DescService
 
 export class ChainConfigBuilder<
-  TDefault extends Record<string, ModuleInput> = Record<string, never>,
-  TNetworks extends Record<string, Record<string, ModuleInput>> = Record<string, never>,
+  TDefault extends Record<string, ModuleInput> = {},
+  TNetworks extends Record<string, Record<string, ModuleInput>> = {},
 > {
   private modules: Record<string, ModuleInput> = {}
   private networkOverrides: Record<string, Record<string, ModuleInput>> = {}
