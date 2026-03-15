@@ -20,17 +20,15 @@ import type { Key } from './key'
 import type { ChainInfoProvider } from './provider/types'
 import { createTransport } from './client/transport.node'
 import { createClientWithTransport } from './client/client'
-import { getServicesForChain, getTypeRegistryForChain } from './client/services'
-import { InitiaServices } from './client/services/initia'
-import { MinievmServices } from './client/services/minievm'
-import { MiniwasmServices } from './client/services/miniwasm'
-import { MinimoveServices } from './client/services/minimove'
-import { createMsgs } from './msgs'
-import { initiaMsgs } from './msgs/initia'
-import { minievmMsgs } from './msgs/minievm'
-import { miniwasmMsgs } from './msgs/miniwasm'
-import { minimoveMsgs } from './msgs/minimove'
-import type { Client } from './client/types'
+import type { DescService } from '@bufbuild/protobuf'
+import { initiaChain } from './chains/initia'
+import { minievmChain } from './chains/minievm'
+import { minimoveChain } from './chains/minimove'
+import { miniwasmChain } from './chains/miniwasm'
+import { createBaseConfig } from './chains/common'
+import type { ChainConfigBuilder } from './chain-config'
+import type { Client, ChainType } from './client/types'
+import type { MsgsForChain } from './msgs/types'
 import { buildChainContextFactory } from './wallet/chain-context'
 import { buildTypedFactory, L1_CHAIN_IDS } from './wallet/typed-context'
 import { buildFromChain } from './client/from-chain'
@@ -53,6 +51,13 @@ import { createWasmEnricher } from './tx/enrichers/wasm'
 
 export { createTransport }
 
+const chainConfigs: Record<string, ChainConfigBuilder<any, any>> = {
+  initia: initiaChain,
+  minievm: minievmChain,
+  minimove: minimoveChain,
+  miniwasm: miniwasmChain,
+}
+
 /**
  * Create a ChainContext from chain info (Node.js).
  *
@@ -60,8 +65,17 @@ export { createTransport }
  */
 export const createChainContext = /* @__PURE__ */ buildChainContextFactory(
   createTransport,
-  getServicesForChain,
-  createMsgs,
+  chainInfo => {
+    const config = chainConfigs[chainInfo.chainType as keyof typeof chainConfigs]
+    if (!config) return createBaseConfig().build().services as Record<string, DescService>
+    const built = chainInfo.network ? config.build(chainInfo.network) : config.build()
+    return built.services as Record<string, DescService>
+  },
+  (chainType: ChainType) => {
+    const config = chainConfigs[chainType as keyof typeof chainConfigs]
+    if (!config) return createBaseConfig().build().msgs as unknown as MsgsForChain<ChainType>
+    return config.build().msgs as unknown as MsgsForChain<ChainType>
+  },
   {
     // Generic path: assert client to all VM interfaces, narrow chainType to satisfy overload resolution.
     // Safe: resolveTokenContract's implementation dispatches on actual chainType at runtime.
@@ -72,7 +86,12 @@ export const createChainContext = /* @__PURE__ */ buildChainContextFactory(
         token,
         sender
       ),
-    getTypeRegistry: getTypeRegistryForChain,
+    getTypeRegistry: chainInfo => {
+      const config = chainConfigs[chainInfo.chainType as keyof typeof chainConfigs]
+      if (!config) return createBaseConfig().build().registry
+      const built = chainInfo.network ? config.build(chainInfo.network) : config.build()
+      return built.registry
+    },
   }
 )
 
@@ -92,8 +111,7 @@ export const createChainContext = /* @__PURE__ */ buildChainContextFactory(
 export const createInitiaContext = /* @__PURE__ */ buildTypedFactory(
   'initia',
   createTransport,
-  InitiaServices,
-  initiaMsgs,
+  initiaChain,
   {
     getDefaultChainId: n => L1_CHAIN_IDS[n],
     tokenResolver: (_client, _ct, token) =>
@@ -109,8 +127,7 @@ export const createInitiaContext = /* @__PURE__ */ buildTypedFactory(
 export const createMinievmContext = /* @__PURE__ */ buildTypedFactory(
   'minievm',
   createTransport,
-  MinievmServices,
-  minievmMsgs,
+  minievmChain,
   {
     tokenResolver: (_client, _ct, token, sender) =>
       createErc20Token((_client as EvmEnabled).evm, token, sender),
@@ -120,8 +137,7 @@ export const createMinievmContext = /* @__PURE__ */ buildTypedFactory(
 export const createMiniwasmContext = /* @__PURE__ */ buildTypedFactory(
   'miniwasm',
   createTransport,
-  MiniwasmServices,
-  miniwasmMsgs,
+  miniwasmChain,
   {
     tokenResolver: (_client, _ct, token) => createCw20Token((_client as WasmEnabled).wasm, token),
     enricherFactory: () => [createWasmEnricher()],
@@ -130,8 +146,7 @@ export const createMiniwasmContext = /* @__PURE__ */ buildTypedFactory(
 export const createMinimoveContext = /* @__PURE__ */ buildTypedFactory(
   'minimove',
   createTransport,
-  MinimoveServices,
-  minimoveMsgs,
+  minimoveChain,
   {
     tokenResolver: (_client, _ct, token) =>
       createFungibleAssetToken((_client as MoveEnabled).move, token),
@@ -151,8 +166,18 @@ export const createMinimoveContext = /* @__PURE__ */ buildTypedFactory(
  */
 export const fromChain = /* @__PURE__ */ buildFromChain(
   createTransport,
-  getServicesForChain,
-  getTypeRegistryForChain
+  chainInfo => {
+    const config = chainConfigs[chainInfo.chainType as keyof typeof chainConfigs]
+    if (!config) return createBaseConfig().build().services as Record<string, DescService>
+    const built = chainInfo.network ? config.build(chainInfo.network) : config.build()
+    return built.services as Record<string, DescService>
+  },
+  chainInfo => {
+    const config = chainConfigs[chainInfo.chainType as keyof typeof chainConfigs]
+    if (!config) return createBaseConfig().build().registry
+    const built = chainInfo.network ? config.build(chainInfo.network) : config.build()
+    return built.registry
+  }
 )
 
 /**

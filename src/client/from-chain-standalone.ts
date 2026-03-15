@@ -7,12 +7,35 @@
  * pull in any chain service modules.
  */
 
+import type { DescService } from '@bufbuild/protobuf'
 import { buildFromChain } from './from-chain'
-import { getServicesForChain, getTypeRegistryForChain } from './services'
 import { createTransport } from './transport.browser'
+import { initiaChain } from '../chains/initia'
+import { minievmChain } from '../chains/minievm'
+import { minimoveChain } from '../chains/minimove'
+import { miniwasmChain } from '../chains/miniwasm'
+import { createBaseConfig } from '../chains/common'
+import type { ChainConfigBuilder } from '../chain-config'
+
+const chainConfigs: Record<string, ChainConfigBuilder<any, any>> = {
+  initia: initiaChain,
+  minievm: minievmChain,
+  minimove: minimoveChain,
+  miniwasm: miniwasmChain,
+}
 
 export const fromChain = buildFromChain(
   createTransport,
-  getServicesForChain,
-  getTypeRegistryForChain
+  chainInfo => {
+    const config = chainConfigs[chainInfo.chainType as keyof typeof chainConfigs]
+    if (!config) return createBaseConfig().build().services as Record<string, DescService>
+    const built = chainInfo.network ? config.build(chainInfo.network) : config.build()
+    return built.services as Record<string, DescService>
+  },
+  chainInfo => {
+    const config = chainConfigs[chainInfo.chainType as keyof typeof chainConfigs]
+    if (!config) return createBaseConfig().build().registry
+    const built = chainInfo.network ? config.build(chainInfo.network) : config.build()
+    return built.registry
+  }
 )

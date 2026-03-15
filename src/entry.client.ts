@@ -55,18 +55,6 @@ export {
   type SimulateClient,
 } from './client/gas'
 
-// client/service-registry
-export { createServiceRegistry, ServiceRegistryBuilder } from './client/service-registry'
-
-// client/services
-export {
-  InitiaServices,
-  MinievmServices,
-  MiniwasmServices,
-  MinimoveServices,
-  OtherServices,
-} from './client/services'
-
 // client/transport-common
 export {
   createHeadersInterceptor,

@@ -31,18 +31,6 @@ export type {
 // Auth helpers
 export { auth } from './types'
 
-// Service Registry
-export { ServiceRegistryBuilder, createServiceRegistry } from './service-registry'
-
-// Service Presets
-export {
-  InitiaServices,
-  MinievmServices,
-  MiniwasmServices,
-  MinimoveServices,
-  OtherServices,
-} from './services'
-
 // gRPC Client
 export { createGrpcClient, type ServiceClients, type QueryClient } from './grpc-client'
 

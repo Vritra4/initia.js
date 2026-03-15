@@ -605,6 +605,3 @@ export function msgWithDefaults<S extends DescMessage>(
 export function defaultTimeout(): bigint {
   return BigInt(Date.now() + 10 * 60_000) * 1_000_000n
 }
-
-/** @deprecated Internal: adds _schemas to a msgs object for legacy createMsgs() schema aggregation. */
-export type WithSchemas<T> = T & { readonly _schemas: readonly DescMessage[] }

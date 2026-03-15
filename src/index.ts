@@ -103,9 +103,19 @@ export {
   type TypedFactoryOptions,
 } from './wallet/typed-context'
 
-export { getServicesForChain } from './client/services'
-
 export { buildFromChain, type FromChainOptions, type FromChainResult } from './client/from-chain'
+
+// =============================================================================
+// Chain Config - ChainConfigBuilder and pre-built chain configs
+// =============================================================================
+
+export {
+  createChainConfig,
+  ChainConfigBuilder,
+  type ChainConfig,
+  type CoreMsgMethods,
+} from './chain-config'
+export { createBaseConfig, initiaChain, minievmChain, minimoveChain, miniwasmChain } from './chains'
 
 export { WalletBridge } from './wallet'
 

@@ -2,20 +2,44 @@
  * Client factory - Create gRPC clients from chain info and transport.
  */
 
+import type { DescService } from '@bufbuild/protobuf'
 import type { Transport } from '@connectrpc/connect'
 import type { ChainInfo, ChainInfoForType } from '../provider/types'
 import { createGrpcClient } from './grpc-client'
 import { wrapClientWithCache } from './cached-client'
-import { getServiceRegistry } from './services'
+import type { ChainConfigBuilder } from '../chain-config'
+import { initiaChain } from '../chains/initia'
+import { minievmChain } from '../chains/minievm'
+import { minimoveChain } from '../chains/minimove'
+import { miniwasmChain } from '../chains/miniwasm'
+import { createBaseConfig } from '../chains/common'
 import type {
   AuthConfig,
   Client,
+  ChainType,
   InitiaClient,
   MinievmClient,
   MiniwasmClient,
   MinimoveClient,
   BaseClient,
 } from './types'
+
+const chainConfigs: Record<string, ChainConfigBuilder<any, any>> = {
+  initia: initiaChain,
+  minievm: minievmChain,
+  minimove: minimoveChain,
+  miniwasm: miniwasmChain,
+}
+
+function getServicesAndRegistry(chainType: ChainType, network: string) {
+  const config = chainConfigs[chainType]
+  if (!config) {
+    const base = createBaseConfig().build()
+    return { services: base.services as Record<string, DescService>, typeRegistry: base.registry }
+  }
+  const built = config.build(network)
+  return { services: built.services as Record<string, DescService>, typeRegistry: built.registry }
+}
 
 /**
  * Create a gRPC client from chain info and an existing transport.
@@ -90,12 +114,10 @@ export function createClientWithTransport(
   contextAuth?: AuthConfig,
   contextHeaders?: Record<string, string>
 ): Client {
-  const registry = getServiceRegistry(chainInfo.chainType)
-  const services = registry.getServices(chainInfo.network)
-  const typeRegistry = registry.getRegistry()
+  const { services, typeRegistry } = getServicesAndRegistry(chainInfo.chainType, chainInfo.network)
 
   // Type assertion is safe here because:
-  // 1. getServiceRegistry returns the correct service set for the chain type
+  // 1. getServicesAndRegistry returns the correct service set for the chain type
   // 2. createGrpcClient creates clients matching the service set
   // 3. The function overloads guarantee the correct return type based on input
   const client = createGrpcClient(

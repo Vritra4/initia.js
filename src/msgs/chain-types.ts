@@ -6,11 +6,11 @@
  * circular dependencies: chain-config.ts → msgs/types.ts → chains/*.ts → chain-config.ts.
  */
 
+import type { createBaseConfig } from '../chains/common'
 import type { initiaChain } from '../chains/initia'
 import type { minievmChain } from '../chains/minievm'
 import type { minimoveChain } from '../chains/minimove'
 import type { miniwasmChain } from '../chains/miniwasm'
-import type { CoreMsgMethods } from '../chain-config'
 import type { ChainType } from '../client/types'
 
 /**
@@ -39,8 +39,9 @@ export type MiniwasmMsgs = ReturnType<typeof miniwasmChain.build>['msgs']
 
 /**
  * Base message builders for generic Cosmos SDK chains.
+ * Includes common modules (bank, ibc, authz, feegrant, etc.) from createBaseConfig().
  */
-export type BaseMsgs = CoreMsgMethods
+export type BaseMsgs = ReturnType<ReturnType<typeof createBaseConfig>['build']>['msgs']
 
 interface MsgsMap {
   initia: InitiaMsgs

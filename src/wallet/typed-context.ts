@@ -16,12 +16,13 @@
  * ```
  */
 
-import type { DescService, Registry } from '@bufbuild/protobuf'
+import type { DescService } from '@bufbuild/protobuf'
 import type { Transport } from '@connectrpc/connect'
 import type { ChainInfoProvider, ChainInfoForType, ChainInfo } from '../provider/types'
 import type { ChainType } from '../client/types'
 import type { TransportOptions } from '../client/transport-common'
 import type { MsgsForChain } from '../msgs/types'
+import type { ChainConfigBuilder } from '../chain-config'
 import {
   buildChainContextFactory,
   type ChainContext,
@@ -116,14 +117,13 @@ function isChainInfo(obj: unknown): obj is ChainInfo {
  *
  * @param chainType - The chain type this factory handles
  * @param createTransport - Platform-specific transport creator
- * @param services - Service registry for this chain type
- * @param msgs - Message builders for this chain type
+ * @param chainConfig - ChainConfigBuilder for this chain type
  * @param options - Additional options (e.g., getDefaultChainId for L1)
  *
  * @example
  * ```typescript
  * export const createInitiaContext = buildTypedFactory(
- *   'initia', createTransport, InitiaServices, initiaMsgs,
+ *   'initia', createTransport, initiaChain,
  *   { getDefaultChainId: n => L1_CHAIN_IDS[n] }
  * )
  * ```
@@ -131,21 +131,24 @@ function isChainInfo(obj: unknown): obj is ChainInfo {
 export function buildTypedFactory<T extends ChainType>(
   chainType: T,
   createTransport: (chainInfo: ChainInfo, options?: TransportOptions) => Transport,
-  services: {
-    getServices(network?: string): Record<string, DescService>
-    getRegistry(): Registry
-  },
-  msgs: MsgsForChain<T>,
+  chainConfig: ChainConfigBuilder<any, any>,
   options?: TypedFactoryOptions
 ): TypedContextFactory<T> {
   const getDefaultChainId = options?.getDefaultChainId
 
-  // Resolve type registry once — ServiceRegistryBuilder types are static (registered at module load)
-  const typeRegistry = services.getRegistry()
+  // Build default config once — services, msgs, and registry are derived from it
+  const defaultConfig = chainConfig.build()
+  const typeRegistry = defaultConfig.registry
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
+  const msgs = defaultConfig.msgs as unknown as MsgsForChain<T>
 
   const create = buildChainContextFactory(
     createTransport,
-    chainInfo => services.getServices(chainInfo.network),
+    chainInfo => {
+      // For network-specific builds, use the network; otherwise use default config
+      const config = chainInfo.network ? chainConfig.build(chainInfo.network) : defaultConfig
+      return config.services as Record<string, DescService>
+    },
     () => msgs as MsgsForChain<ChainType>,
     {
       tokenResolver: options?.tokenResolver,
