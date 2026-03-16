@@ -112,6 +112,11 @@ describe('chain configs', () => {
       const desc = config.registry.getMessage('minievm.evm.v1.MsgCall')
       expect(desc).toBeDefined()
     })
+
+    it('registry contains auth types from addTypes', () => {
+      expect(config.registry.getMessage('minievm.evm.v1.ContractAccount')).toBeDefined()
+      expect(config.registry.getMessage('minievm.evm.v1.ShorthandAccount')).toBeDefined()
+    })
   })
 
   describe('minimove', () => {
@@ -125,6 +130,11 @@ describe('chain configs', () => {
     it('registry can resolve move msg types', () => {
       const desc = config.registry.getMessage('initia.move.v1.MsgExecute')
       expect(desc).toBeDefined()
+    })
+
+    it('registry contains auth types from addTypes', () => {
+      expect(config.registry.getMessage('initia.move.v1.ObjectAccount')).toBeDefined()
+      expect(config.registry.getMessage('initia.move.v1.TableAccount')).toBeDefined()
     })
   })
 
@@ -140,6 +150,40 @@ describe('chain configs', () => {
       const desc = config.registry.getMessage('cosmwasm.wasm.v1.MsgExecuteContract')
       expect(desc).toBeDefined()
     })
+  })
+
+  describe('L2 chains inherit common modules', () => {
+    const l2Chains = [
+      { name: 'minievm', config: minievmChain.build() },
+      { name: 'minimove', config: minimoveChain.build() },
+      { name: 'miniwasm', config: miniwasmChain.build() },
+    ]
+
+    const commonModules = [
+      'bank',
+      'ibc',
+      'ibcCore',
+      'ibcFee',
+      'ibcIca',
+      'authz',
+      'feegrant',
+      'group',
+      'crisis',
+      'upgrade',
+      'consensus',
+      'cosmosAuth',
+      'ibcHooks',
+      'interTx',
+    ]
+
+    for (const { name, config } of l2Chains) {
+      it(`${name} has all common tx modules`, () => {
+        const msgs = config.msgs as unknown as Record<string, Record<string, unknown>>
+        for (const mod of commonModules) {
+          expect(msgs[mod], `${name} should have module "${mod}"`).toBeDefined()
+        }
+      })
+    }
   })
 
   describe('common base', () => {

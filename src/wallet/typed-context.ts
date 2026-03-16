@@ -140,17 +140,22 @@ export function buildTypedFactory<T extends ChainType>(
   const defaultConfig = chainConfig.build()
   const typeRegistry = defaultConfig.registry
 
+  // Cache network-specific builds to avoid rebuilding on every context creation
+  const configByNetwork = new Map<string, ReturnType<typeof chainConfig.build>>()
+  function getConfig(network?: string) {
+    if (!network) return defaultConfig
+    let cached = configByNetwork.get(network)
+    if (!cached) {
+      cached = chainConfig.build(network)
+      configByNetwork.set(network, cached)
+    }
+    return cached
+  }
+
   const create = buildChainContextFactory(
     createTransport,
-    chainInfo => {
-      // For network-specific builds, use the network; otherwise use default config
-      const config = chainInfo.network ? chainConfig.build(chainInfo.network) : defaultConfig
-      return config.services as Record<string, DescService>
-    },
-    (_chainType, network?) => {
-      const config = network ? chainConfig.build(network) : defaultConfig
-      return config.msgs as unknown as MsgsForChain<ChainType>
-    },
+    chainInfo => getConfig(chainInfo.network).services as Record<string, DescService>,
+    (_chainType, network?) => getConfig(network).msgs as unknown as MsgsForChain<ChainType>,
     {
       tokenResolver: options?.tokenResolver,
       enricherFactory: options?.enricherFactory,
