@@ -43,7 +43,6 @@ export {
 } from './response'
 
 // Client Factory
-export { createClientWithTransport } from './client'
 export type { CachedClient } from './cached-client'
 
 // Broadcast
@@ -128,7 +127,6 @@ export {
 
 // High-level helper
 export { buildFromChain, type FromChainOptions, type FromChainResult } from './from-chain'
-export { fromChain } from './from-chain-standalone'
 
 // Gas estimation
 export { estimateGas, type GasEstimate, type EstimateOptions, type SimulateClient } from './gas'

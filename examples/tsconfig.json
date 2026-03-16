@@ -15,7 +15,7 @@
     "paths": {
       "initia.js": ["../src/entry.node.ts"],
       "initia.js/bridge": ["../src/entry.bridge.node.ts"],
-      "initia.js/client": ["../src/entry.client.ts"],
+      "initia.js/client": ["../src/entry.client.node.ts"],
       "initia.js/cosmos": ["../src/entry.cosmos.ts"],
       "initia.js/events": ["../src/entry.events.ts"],
       "initia.js/evm": ["../src/entry.evm.ts"],
