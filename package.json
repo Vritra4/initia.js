@@ -25,8 +25,14 @@
       "import": "./dist/entry.msgs.mjs"
     },
     "./client": {
-      "types": "./dist/entry.client.d.mts",
-      "import": "./dist/entry.client.mjs"
+      "node": {
+        "types": "./dist/entry.client.node.d.mts",
+        "import": "./dist/entry.client.node.mjs"
+      },
+      "default": {
+        "types": "./dist/entry.client.browser.d.mts",
+        "import": "./dist/entry.client.browser.mjs"
+      }
     },
     "./evm": {
       "types": "./dist/entry.evm.d.mts",
@@ -41,8 +47,14 @@
       "import": "./dist/entry.wasm.mjs"
     },
     "./bridge": {
-      "types": "./dist/entry.bridge.d.mts",
-      "import": "./dist/entry.bridge.mjs"
+      "node": {
+        "types": "./dist/entry.bridge.node.d.mts",
+        "import": "./dist/entry.bridge.node.mjs"
+      },
+      "default": {
+        "types": "./dist/entry.bridge.browser.d.mts",
+        "import": "./dist/entry.bridge.browser.mjs"
+      }
     },
     "./provider": {
       "types": "./dist/entry.provider.d.mts",
@@ -79,6 +91,46 @@
     "./modules": {
       "types": "./dist/entry.modules.d.mts",
       "import": "./dist/entry.modules.mjs"
+    },
+    "./initia": {
+      "node": {
+        "types": "./dist/entry.chain.initia.node.d.mts",
+        "import": "./dist/entry.chain.initia.node.mjs"
+      },
+      "default": {
+        "types": "./dist/entry.chain.initia.browser.d.mts",
+        "import": "./dist/entry.chain.initia.browser.mjs"
+      }
+    },
+    "./minievm": {
+      "node": {
+        "types": "./dist/entry.chain.minievm.node.d.mts",
+        "import": "./dist/entry.chain.minievm.node.mjs"
+      },
+      "default": {
+        "types": "./dist/entry.chain.minievm.browser.d.mts",
+        "import": "./dist/entry.chain.minievm.browser.mjs"
+      }
+    },
+    "./minimove": {
+      "node": {
+        "types": "./dist/entry.chain.minimove.node.d.mts",
+        "import": "./dist/entry.chain.minimove.node.mjs"
+      },
+      "default": {
+        "types": "./dist/entry.chain.minimove.browser.d.mts",
+        "import": "./dist/entry.chain.minimove.browser.mjs"
+      }
+    },
+    "./miniwasm": {
+      "node": {
+        "types": "./dist/entry.chain.miniwasm.node.d.mts",
+        "import": "./dist/entry.chain.miniwasm.node.mjs"
+      },
+      "default": {
+        "types": "./dist/entry.chain.miniwasm.browser.d.mts",
+        "import": "./dist/entry.chain.miniwasm.browser.mjs"
+      }
     }
   },
   "bin": {
@@ -86,7 +138,7 @@
   },
   "sideEffects": false,
   "scripts": {
-    "build": "tsdown src/entry.node.ts src/entry.browser.ts src/entry.cosmos.ts src/entry.tx.ts src/entry.msgs.ts src/entry.client.ts src/entry.evm.ts src/entry.move.ts src/entry.wasm.ts src/entry.bridge.ts src/entry.provider.ts src/entry.util.ts src/entry.signer.ts src/entry.events.ts src/entry.usernames.ts src/entry.codegen.ts src/entry.vip.ts src/entry.modules.ts src/codegen/cli.ts --format esm --dts",
+    "build": "tsdown src/entry.node.ts src/entry.browser.ts src/entry.cosmos.ts src/entry.tx.ts src/entry.msgs.ts src/entry.client.node.ts src/entry.client.browser.ts src/entry.evm.ts src/entry.move.ts src/entry.wasm.ts src/entry.bridge.node.ts src/entry.bridge.browser.ts src/entry.provider.ts src/entry.util.ts src/entry.signer.ts src/entry.events.ts src/entry.usernames.ts src/entry.codegen.ts src/entry.vip.ts src/entry.modules.ts src/entry.chain.initia.node.ts src/entry.chain.initia.browser.ts src/entry.chain.minievm.node.ts src/entry.chain.minievm.browser.ts src/entry.chain.minimove.node.ts src/entry.chain.minimove.browser.ts src/entry.chain.miniwasm.node.ts src/entry.chain.miniwasm.browser.ts src/codegen/cli.ts --format esm --dts",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:l2": "vitest run test/e2e/l2.spec.ts --reporter verbose",
@@ -113,11 +165,7 @@
     "@connectrpc/connect": "^2.1.1",
     "@connectrpc/connect-node": "^2.1.1",
     "@connectrpc/connect-web": "^2.1.1",
-    "@initia/initia-proto": "^0.0.0-canary.03f482e",
     "@initia/initia-registry-types": "^1.0.13",
-    "@initia/minievm-proto": "^0.0.0-canary.baf9bf1",
-    "@initia/miniwasm-proto": "^0.0.0-canary.7fdc4e2",
-    "@initia/opinit-proto": "^0.0.0-canary.6635126",
     "@mysten/bcs": "^2.0.1",
     "@noble/curves": "^2.0.1",
     "@noble/hashes": "^2.0.1",
@@ -131,6 +179,10 @@
     "viem": "^2.45.1"
   },
   "devDependencies": {
+    "@initia/initia-proto": "^0.0.0-canary.03f482e",
+    "@initia/minievm-proto": "^0.0.0-canary.baf9bf1",
+    "@initia/miniwasm-proto": "^0.0.0-canary.7fdc4e2",
+    "@initia/opinit-proto": "^0.0.0-canary.6635126",
     "@changesets/cli": "^2.29.8",
     "@types/node": "^25.3.0",
     "esbuild": "^0.27.2",
