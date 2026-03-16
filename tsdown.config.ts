@@ -2,9 +2,9 @@ import { defineConfig } from 'tsdown'
 
 export default defineConfig({
   sourcemap: true,
-  // Inline proto packages into dist — they become tree-shakeable chunks.
+  // Inline BSR proto packages into dist — they become tree-shakeable chunks.
   // Runtime libraries stay external to avoid duplication.
-  noExternal: [/@initia\/.*-proto/],
+  noExternal: [/@buf\//],
   outputOptions: {
     paths: id => {
       if (id.endsWith('.js')) return id

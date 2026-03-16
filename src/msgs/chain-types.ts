@@ -13,28 +13,16 @@ import type { minimoveChain } from '../chains/minimove'
 import type { miniwasmChain } from '../chains/miniwasm'
 import type { ChainType } from '../client/types'
 
-/**
- * Message builders for Initia L1.
- * @deprecated Use `ReturnType<typeof initiaChain.build>['msgs']` directly for full type inference.
- */
+/** Message builders for Initia L1. */
 export type InitiaMsgs = ReturnType<typeof initiaChain.build>['msgs']
 
-/**
- * Message builders for Minievm rollup.
- * @deprecated Use `ReturnType<typeof minievmChain.build>['msgs']` directly for full type inference.
- */
+/** Message builders for Minievm rollup. */
 export type MinievmMsgs = ReturnType<typeof minievmChain.build>['msgs']
 
-/**
- * Message builders for Minimove rollup.
- * @deprecated Use `ReturnType<typeof minimoveChain.build>['msgs']` directly for full type inference.
- */
+/** Message builders for Minimove rollup. */
 export type MinimoveMsgs = ReturnType<typeof minimoveChain.build>['msgs']
 
-/**
- * Message builders for Miniwasm rollup.
- * @deprecated Use `ReturnType<typeof miniwasmChain.build>['msgs']` directly for full type inference.
- */
+/** Message builders for Miniwasm rollup. */
 export type MiniwasmMsgs = ReturnType<typeof miniwasmChain.build>['msgs']
 
 /**

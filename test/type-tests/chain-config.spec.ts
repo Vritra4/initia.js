@@ -1,9 +1,9 @@
 import { expectTypeOf, test } from 'vitest'
 import { createChainConfig } from '../../src/chain-config'
-import { Msg as BankTxMsg } from '@initia/initia-proto/cosmos/bank/v1beta1/tx_pb'
-import { Query as BankQuery } from '@initia/initia-proto/cosmos/bank/v1beta1/query_pb'
-import { Query as AuthQuery } from '@initia/initia-proto/cosmos/auth/v1beta1/query_pb'
-import { Msg as MoveTxMsg } from '@initia/initia-proto/initia/move/v1/tx_pb'
+import { Msg as BankTxMsg } from '@buf/cosmos_cosmos-sdk.bufbuild_es/cosmos/bank/v1beta1/tx_pb'
+import { Query as BankQuery } from '@buf/cosmos_cosmos-sdk.bufbuild_es/cosmos/bank/v1beta1/query_pb'
+import { Query as AuthQuery } from '@buf/cosmos_cosmos-sdk.bufbuild_es/cosmos/auth/v1beta1/query_pb'
+import { Msg as MoveTxMsg } from '@buf/initia-labs_initia.bufbuild_es/initia/move/v1/tx_pb'
 
 test('ChainConfigBuilder type inference', () => {
   const config = createChainConfig()

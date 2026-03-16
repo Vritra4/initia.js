@@ -7,8 +7,8 @@
 import type { Numeric } from '../types'
 import type { Client as ConnectClient } from '@connectrpc/connect'
 import { encodeFunctionData, decodeFunctionResult } from 'viem'
-import type { Query as EvmQuery } from '@initia/minievm-proto/minievm/evm/v1/query_pb'
-import { MsgCallSchema } from '@initia/minievm-proto/minievm/evm/v1/tx_pb'
+import type { Query as EvmQuery } from '@buf/initia-labs_minievm.bufbuild_es/minievm/evm/v1/query_pb'
+import { MsgCallSchema } from '@buf/initia-labs_minievm.bufbuild_es/minievm/evm/v1/tx_pb'
 
 import type { TokenInfo } from '../contracts/types'
 import { Message } from '../msgs/types'

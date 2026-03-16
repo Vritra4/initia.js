@@ -7,12 +7,12 @@
 
 import type { Numeric } from '../types'
 import { create } from '@bufbuild/protobuf'
-import { CoinSchema } from '@initia/initia-proto/cosmos/base/v1beta1/coin_pb'
+import { CoinSchema } from '@buf/cosmos_cosmos-sdk.bufbuild_es/cosmos/base/v1beta1/coin_pb'
 import {
   MsgInitiateTokenDepositSchema,
   MsgFinalizeTokenWithdrawalSchema,
-} from '@initia/opinit-proto/opinit/ophost/v1/tx_pb'
-import { MsgInitiateTokenWithdrawalSchema } from '@initia/opinit-proto/opinit/opchild/v1/tx_pb'
+} from '@buf/initia-labs_opinit.bufbuild_es/opinit/ophost/v1/tx_pb'
+import { MsgInitiateTokenWithdrawalSchema } from '@buf/initia-labs_opinit.bufbuild_es/opinit/opchild/v1/tx_pb'
 import type { ChainInfo, ChainInfoProvider } from '../provider/types'
 import type { InitiaClient } from '../client/types'
 import type { TransportFactory } from '../client/transport-common'
@@ -43,7 +43,7 @@ export class OpBridgeInternal {
 
   constructor(
     private provider: ChainInfoProvider,
-    private createTransport: TransportFactory,
+    private createTransport: TransportFactory
   ) {}
 
   /**
@@ -66,7 +66,7 @@ export class OpBridgeInternal {
       config.services as Record<string, any>,
       undefined,
       undefined,
-      config.registry,
+      config.registry
     )
     this._l1Client = wrapClientWithCache(raw as unknown as InitiaClient, l1Chain.chainId)
     return this._l1Client

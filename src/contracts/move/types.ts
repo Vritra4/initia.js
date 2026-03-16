@@ -6,15 +6,15 @@
  */
 
 import type { Client } from '@connectrpc/connect'
-import type { Query as MoveQuery } from '@initia/initia-proto/initia/move/v1/query_pb'
+import type { Query as MoveQuery } from '@buf/initia-labs_initia.bufbuild_es/initia/move/v1/query_pb'
 import type {
   MsgExecuteJSON,
   MsgExecuteJSONSchema,
   MsgExecuteSchema,
   MsgScriptJSON,
   MsgPublish,
-} from '@initia/initia-proto/initia/move/v1/tx_pb'
-import type { UpgradePolicy } from '@initia/initia-proto/initia/move/v1/types_pb'
+} from '@buf/initia-labs_initia.bufbuild_es/initia/move/v1/tx_pb'
+import type { UpgradePolicy } from '@buf/initia-labs_initia.bufbuild_es/initia/move/v1/types_pb'
 import type { Message } from '../../msgs/types'
 import type { TokenInfo } from '../types'
 
@@ -291,7 +291,7 @@ export type MoveClient = Client<typeof MoveQuery>
  * MsgPublish is used for publishing Move modules.
  */
 export type { MsgExecuteJSON as MsgExecute, MsgScriptJSON as MsgScript, MsgPublish }
-export { UpgradePolicy } from '@initia/initia-proto/initia/move/v1/types_pb'
+export { UpgradePolicy } from '@buf/initia-labs_initia.bufbuild_es/initia/move/v1/types_pb'
 
 // =============================================================================
 // Static ABI Type Inference (Phase 4)

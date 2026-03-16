@@ -179,10 +179,12 @@
     "viem": "^2.45.1"
   },
   "devDependencies": {
-    "@initia/initia-proto": "^0.0.0-canary.03f482e",
-    "@initia/minievm-proto": "^0.0.0-canary.baf9bf1",
-    "@initia/miniwasm-proto": "^0.0.0-canary.7fdc4e2",
-    "@initia/opinit-proto": "^0.0.0-canary.6635126",
+    "@buf/cosmos_cosmos-sdk.bufbuild_es": "2.11.0-20231107180110-5a6ab7bc1431.1",
+    "@buf/cosmos_ibc.bufbuild_es": "2.11.0-20231018090243-cc1d31ac98a0.1",
+    "@buf/cosmwasm_wasmd.bufbuild_es": "latest",
+    "@buf/initia-labs_initia.bufbuild_es": "latest",
+    "@buf/initia-labs_minievm.bufbuild_es": "latest",
+    "@buf/initia-labs_opinit.bufbuild_es": "latest",
     "@changesets/cli": "^2.29.8",
     "@types/node": "^25.3.0",
     "esbuild": "^0.27.2",

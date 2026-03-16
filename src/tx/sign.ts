@@ -12,7 +12,7 @@ import { toBinary, fromBinary, create } from '@bufbuild/protobuf'
 import {
   SignDocSchema,
   TxRawSchema,
-} from '@initia/initia-proto/cosmos/tx/v1beta1/tx_pb'
+} from '@buf/cosmos_cosmos-sdk.bufbuild_es/cosmos/tx/v1beta1/tx_pb'
 import type { DirectSignDoc } from '../signer/types'
 import type { Key } from '../key'
 import type { AminoMsg } from './amino'

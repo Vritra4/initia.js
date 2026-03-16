@@ -8,7 +8,7 @@
 import type { Numeric } from '../../types'
 import type { Client } from '@connectrpc/connect'
 import { create } from '@bufbuild/protobuf'
-import type { Query as WasmQuery } from '@initia/miniwasm-proto/cosmwasm/wasm/v1/query_pb'
+import type { Query as WasmQuery } from '@buf/cosmwasm_wasmd.bufbuild_es/cosmwasm/wasm/v1/query_pb'
 import {
   MsgStoreCodeSchema,
   MsgInstantiateContractSchema,
@@ -24,7 +24,7 @@ import {
   type MsgMigrateContract,
   type MsgUpdateAdmin,
   type MsgClearAdmin,
-} from '@initia/miniwasm-proto/cosmwasm/wasm/v1/tx_pb'
+} from '@buf/cosmwasm_wasmd.bufbuild_es/cosmwasm/wasm/v1/tx_pb'
 
 import { Message } from '../../msgs/types'
 import { toProtoCoins } from '../../msgs/types'

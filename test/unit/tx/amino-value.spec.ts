@@ -16,48 +16,48 @@ import { create } from '@bufbuild/protobuf'
 
 // ============= Schema imports =============
 
-import { MsgSendSchema } from '@initia/initia-proto/cosmos/bank/v1beta1/tx_pb'
-import { CoinSchema } from '@initia/initia-proto/cosmos/base/v1beta1/coin_pb'
+import { MsgSendSchema } from '@buf/cosmos_cosmos-sdk.bufbuild_es/cosmos/bank/v1beta1/tx_pb'
+import { CoinSchema } from '@buf/cosmos_cosmos-sdk.bufbuild_es/cosmos/base/v1beta1/coin_pb'
 import {
   MsgDelegateSchema,
   MsgUndelegateSchema,
   MsgBeginRedelegateSchema,
-} from '@initia/initia-proto/initia/mstaking/v1/tx_pb'
-import { MsgWithdrawDelegatorRewardSchema } from '@initia/initia-proto/cosmos/distribution/v1beta1/tx_pb'
-import { MsgTransferSchema } from '@initia/initia-proto/ibc/applications/transfer/v1/tx_pb'
+} from '@buf/initia-labs_initia.bufbuild_es/initia/mstaking/v1/tx_pb'
+import { MsgWithdrawDelegatorRewardSchema } from '@buf/cosmos_cosmos-sdk.bufbuild_es/cosmos/distribution/v1beta1/tx_pb'
+import { MsgTransferSchema } from '@buf/cosmos_ibc.bufbuild_es/ibc/applications/transfer/v1/tx_pb'
 import {
   MsgExecuteSchema as MsgMoveExecuteSchema,
   MsgScriptSchema,
-} from '@initia/initia-proto/initia/move/v1/tx_pb'
+} from '@buf/initia-labs_initia.bufbuild_es/initia/move/v1/tx_pb'
 import {
   MsgVoteSchema,
   MsgDepositSchema,
-} from '@initia/initia-proto/cosmos/gov/v1/tx_pb'
+} from '@buf/cosmos_cosmos-sdk.bufbuild_es/cosmos/gov/v1/tx_pb'
 import {
   MsgGrantSchema,
   MsgExecSchema,
   MsgRevokeSchema,
-} from '@initia/initia-proto/cosmos/authz/v1beta1/tx_pb'
+} from '@buf/cosmos_cosmos-sdk.bufbuild_es/cosmos/authz/v1beta1/tx_pb'
 import {
   MsgGrantAllowanceSchema,
   MsgRevokeAllowanceSchema,
-} from '@initia/initia-proto/cosmos/feegrant/v1beta1/tx_pb'
+} from '@buf/cosmos_cosmos-sdk.bufbuild_es/cosmos/feegrant/v1beta1/tx_pb'
 import {
   MsgCreateSchema as MsgEvmCreateSchema,
   MsgCallSchema,
-} from '@initia/minievm-proto/minievm/evm/v1/tx_pb'
+} from '@buf/initia-labs_minievm.bufbuild_es/minievm/evm/v1/tx_pb'
 import {
   MsgStoreCodeSchema,
   MsgInstantiateContractSchema,
   MsgExecuteContractSchema,
   MsgMigrateContractSchema,
-} from '@initia/miniwasm-proto/cosmwasm/wasm/v1/tx_pb'
+} from '@buf/cosmwasm_wasmd.bufbuild_es/cosmwasm/wasm/v1/tx_pb'
 import {
   MsgInitiateTokenDepositSchema,
   MsgFinalizeTokenWithdrawalSchema,
-} from '@initia/opinit-proto/opinit/ophost/v1/tx_pb'
-import { MsgInitiateTokenWithdrawalSchema } from '@initia/opinit-proto/opinit/opchild/v1/tx_pb'
-import { MsgUnjailSchema } from '@initia/initia-proto/cosmos/slashing/v1beta1/tx_pb'
+} from '@buf/initia-labs_opinit.bufbuild_es/opinit/ophost/v1/tx_pb'
+import { MsgInitiateTokenWithdrawalSchema } from '@buf/initia-labs_opinit.bufbuild_es/opinit/opchild/v1/tx_pb'
+import { MsgUnjailSchema } from '@buf/cosmos_cosmos-sdk.bufbuild_es/cosmos/slashing/v1beta1/tx_pb'
 
 // ============= Helpers =============
 

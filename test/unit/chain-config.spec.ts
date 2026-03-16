@@ -1,16 +1,16 @@
 import { describe, it, expect } from 'vitest'
 import { createChainConfig } from '../../src/chain-config'
-import { Msg as BankTxMsg } from '@initia/initia-proto/cosmos/bank/v1beta1/tx_pb'
-import { Query as BankQuery } from '@initia/initia-proto/cosmos/bank/v1beta1/query_pb'
-import { Query as AuthQuery } from '@initia/initia-proto/cosmos/auth/v1beta1/query_pb'
-import { Msg as MoveTxMsg } from '@initia/initia-proto/initia/move/v1/tx_pb'
-import { Query as GovQuery } from '@initia/initia-proto/cosmos/gov/v1/query_pb'
-import { Query as GovV1Beta1Query } from '@initia/initia-proto/cosmos/gov/v1beta1/query_pb'
-import { Msg as GovTxMsg } from '@initia/initia-proto/cosmos/gov/v1/tx_pb'
-import { file_cosmos_crypto_ed25519_keys } from '@initia/initia-proto/cosmos/crypto/ed25519/keys_pb'
-import { Msg as ChannelTxMsg } from '@initia/initia-proto/ibc/core/channel/v1/tx_pb'
-import { Msg as ClientTxMsg } from '@initia/initia-proto/ibc/core/client/v1/tx_pb'
-import { Msg as ConnectionTxMsg } from '@initia/initia-proto/ibc/core/connection/v1/tx_pb'
+import { Msg as BankTxMsg } from '@buf/cosmos_cosmos-sdk.bufbuild_es/cosmos/bank/v1beta1/tx_pb'
+import { Query as BankQuery } from '@buf/cosmos_cosmos-sdk.bufbuild_es/cosmos/bank/v1beta1/query_pb'
+import { Query as AuthQuery } from '@buf/cosmos_cosmos-sdk.bufbuild_es/cosmos/auth/v1beta1/query_pb'
+import { Msg as MoveTxMsg } from '@buf/initia-labs_initia.bufbuild_es/initia/move/v1/tx_pb'
+import { Query as GovQuery } from '@buf/cosmos_cosmos-sdk.bufbuild_es/cosmos/gov/v1/query_pb'
+import { Query as GovV1Beta1Query } from '@buf/cosmos_cosmos-sdk.bufbuild_es/cosmos/gov/v1beta1/query_pb'
+import { Msg as GovTxMsg } from '@buf/cosmos_cosmos-sdk.bufbuild_es/cosmos/gov/v1/tx_pb'
+import { file_cosmos_crypto_ed25519_keys } from '@buf/cosmos_cosmos-sdk.bufbuild_es/cosmos/crypto/ed25519/keys_pb'
+import { Msg as ChannelTxMsg } from '@buf/cosmos_ibc.bufbuild_es/ibc/core/channel/v1/tx_pb'
+import { Msg as ClientTxMsg } from '@buf/cosmos_ibc.bufbuild_es/ibc/core/client/v1/tx_pb'
+import { Msg as ConnectionTxMsg } from '@buf/cosmos_ibc.bufbuild_es/ibc/core/connection/v1/tx_pb'
 import { coin } from '../../src/core/coin'
 
 describe('createChainConfig', () => {
@@ -36,17 +36,13 @@ describe('addModule + build', () => {
   })
 
   it('registers query-only module', () => {
-    const config = createChainConfig()
-      .addModule('auth', { query: AuthQuery })
-      .build()
+    const config = createChainConfig().addModule('auth', { query: AuthQuery }).build()
 
     expect(config.services.auth).toBe(AuthQuery)
   })
 
   it('registers tx-only module', () => {
-    const config = createChainConfig()
-      .addModule('move', { tx: MoveTxMsg })
-      .build()
+    const config = createChainConfig().addModule('move', { tx: MoveTxMsg }).build()
 
     expect(typeof config.msgs.move.execute).toBe('function')
     expect(typeof config.msgs.move.publish).toBe('function')
@@ -96,15 +92,36 @@ describe('addModule + build', () => {
       createChainConfig().addModule('empty', {} as any)
     }).toThrow('at least one of query or tx')
   })
+
+  it('rejects empty input in forNetwork()', () => {
+    expect(() => {
+      createChainConfig()
+        .forNetwork('testnet')
+        .addModule('empty', {} as any)
+    }).toThrow('at least one of query or tx')
+  })
+
+  it('throws ValidationError for addModule with empty input', async () => {
+    const { ValidationError } = await import('../../src/errors')
+    expect(() => {
+      createChainConfig().addModule('bad', {} as any)
+    }).toThrow(ValidationError)
+  })
+
+  it('throws ValidationError for invalid tx service (missing .method)', () => {
+    // Passing an object without a .method property throws at addModule time
+    // because extractSchemas validates the service structure
+    expect(() => {
+      createChainConfig().addModule('broken', { tx: { notAService: true } as any })
+    }).toThrow('Expected a GenService with a .method record')
+  })
 })
 
 describe('immutability', () => {
   it('addModule returns new builder without modifying original', () => {
-    const base = createChainConfig()
-      .addModule('auth', { query: AuthQuery })
+    const base = createChainConfig().addModule('auth', { query: AuthQuery })
 
-    const extended = base
-      .addModule('bank', { query: BankQuery, tx: BankTxMsg })
+    const extended = base.addModule('bank', { query: BankQuery, tx: BankTxMsg })
 
     const baseConfig = base.build()
     const extendedConfig = extended.build()
@@ -121,7 +138,7 @@ describe('forNetwork', () => {
     const builder = createChainConfig()
       .addModule('gov', { query: GovQuery, tx: GovTxMsg })
       .forNetwork('testnet')
-        .addModule('gov', { query: GovV1Beta1Query })
+      .addModule('gov', { query: GovV1Beta1Query })
 
     const mainnet = builder.build()
     const testnet = builder.build('testnet')
@@ -135,13 +152,14 @@ describe('forNetwork', () => {
       .addModule('bank', { query: BankQuery, tx: BankTxMsg })
       .addModule('gov', { query: GovQuery, tx: GovTxMsg })
       .forNetwork('testnet')
-        .addModule('gov', { query: GovV1Beta1Query })
+      .addModule('gov', { query: GovV1Beta1Query })
 
     const mainnet = builder.build()
     const testnet = builder.build('testnet')
 
     const msg = mainnet.msgs.bank.send({
-      fromAddress: 'init1a', toAddress: 'init1b',
+      fromAddress: 'init1a',
+      toAddress: 'init1b',
       amount: [coin('uinit', '1000')],
     })
     expect(() => mainnet.msgs.decode(msg.toAny())).not.toThrow()
@@ -158,12 +176,80 @@ describe('addTypes', () => {
   })
 
   it('registered types are in registry', () => {
-    const config = createChainConfig()
-      .addTypes(file_cosmos_crypto_ed25519_keys)
-      .build()
+    const config = createChainConfig().addTypes(file_cosmos_crypto_ed25519_keys).build()
 
     const desc = config.registry.getMessage('cosmos.crypto.ed25519.PubKey')
     expect(desc).toBeDefined()
+  })
+})
+
+describe('module overwrite', () => {
+  it('second addModule with same name replaces the first', () => {
+    const config = createChainConfig()
+      .addModule('bank', { query: BankQuery, tx: BankTxMsg })
+      .addModule('bank', { query: AuthQuery })
+      .build()
+
+    // query replaced to AuthQuery
+    expect(config.services.bank).toBe(AuthQuery)
+    // tx was removed (second call had no tx)
+    expect((config.msgs as any).bank).toBeUndefined()
+  })
+})
+
+describe('multiple network overrides', () => {
+  it('accumulates overrides on the same network', () => {
+    const builder = createChainConfig()
+      .addModule('bank', { query: BankQuery, tx: BankTxMsg })
+      .addModule('gov', { query: GovQuery, tx: GovTxMsg })
+      .forNetwork('testnet')
+      .addModule('gov', { query: GovV1Beta1Query })
+      .forNetwork('testnet')
+      .addModule('bank', { query: AuthQuery })
+
+    const testnet = builder.build('testnet')
+    // both overrides applied
+    expect(testnet.services.gov).toBe(GovV1Beta1Query)
+    expect(testnet.services.bank).toBe(AuthQuery)
+  })
+})
+
+describe('build() idempotency', () => {
+  it('multiple build() calls return equivalent configs', () => {
+    const builder = createChainConfig().addModule('bank', { query: BankQuery, tx: BankTxMsg })
+
+    const config1 = builder.build()
+    const config2 = builder.build()
+
+    expect(config1.services.bank).toBe(config2.services.bank)
+    expect(typeof config1.msgs.bank.send).toBe('function')
+    expect(typeof config2.msgs.bank.send).toBe('function')
+  })
+})
+
+describe('network override decode completeness', () => {
+  it('mainnet config can decode msgs from overridden modules', () => {
+    const builder = createChainConfig()
+      .addModule('gov', { query: GovQuery, tx: GovTxMsg })
+      .forNetwork('testnet')
+      .addModule('gov', { query: GovV1Beta1Query, tx: GovTxMsg })
+
+    const mainnet = builder.build()
+
+    // create a gov msg from mainnet builders
+    const msg = mainnet.msgs.gov.vote({
+      proposalId: 1n,
+      voter: 'init1voter',
+      option: 1,
+      metadata: '',
+    })
+
+    // mainnet decode should work
+    expect(() => mainnet.msgs.decode(msg.toAny())).not.toThrow()
+
+    // testnet decode should also work (schemas from all networks in registry)
+    const testnet = builder.build('testnet')
+    expect(() => testnet.msgs.decode(msg.toAny())).not.toThrow()
   })
 })
 

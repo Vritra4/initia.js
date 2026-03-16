@@ -7,11 +7,11 @@ import { minimoveChain } from '../../../src/chains/minimove'
 import { miniwasmChain } from '../../../src/chains/miniwasm'
 import { createBaseConfig } from '../../../src/chains/common'
 
-import { QueryAccountResponseSchema } from '@initia/initia-proto/cosmos/auth/v1beta1/query_pb'
+import { QueryAccountResponseSchema } from '@buf/cosmos_cosmos-sdk.bufbuild_es/cosmos/auth/v1beta1/query_pb'
 import {
   BaseAccountSchema,
   file_cosmos_auth_v1beta1_auth,
-} from '@initia/initia-proto/cosmos/auth/v1beta1/auth_pb'
+} from '@buf/cosmos_cosmos-sdk.bufbuild_es/cosmos/auth/v1beta1/auth_pb'
 import { anyPack } from '@bufbuild/protobuf/wkt'
 
 describe('wrapResponse with Registry for Any fields', () => {

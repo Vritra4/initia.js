@@ -11,8 +11,10 @@
 import { describe, it, expect } from 'vitest'
 import { create } from '@bufbuild/protobuf'
 import { AnySchema } from '@bufbuild/protobuf/wkt'
-import { MsgSendSchema } from '@initia/initia-proto/cosmos/bank/v1beta1/tx_pb'
-import { Message, normalizeMsg } from '../../../src/msgs/types'
+import { MsgSendSchema } from '@buf/cosmos_cosmos-sdk.bufbuild_es/cosmos/bank/v1beta1/tx_pb'
+import { MsgTransferSchema } from '@buf/cosmos_ibc.bufbuild_es/ibc/applications/transfer/v1/tx_pb'
+import { Message, normalizeMsg, isMessageOf } from '../../../src/msgs/types'
+import { ValidationError } from '../../../src/errors'
 
 // ============= #113: Message class =============
 
@@ -165,6 +167,38 @@ describe('Message.fromAny(schema, any)', () => {
   })
 })
 
+// ============= isMessageOf() =============
+
+describe('isMessageOf()', () => {
+  it('returns true for matching schema', () => {
+    const msg = new Message(MsgSendSchema, {
+      fromAddress: 'init1a',
+      toAddress: 'init1b',
+      amount: [],
+    })
+    expect(isMessageOf(msg, MsgSendSchema)).toBe(true)
+  })
+
+  it('returns false for non-matching schema', () => {
+    const msg = new Message(MsgSendSchema, {
+      fromAddress: 'init1a',
+      toAddress: 'init1b',
+      amount: [],
+    })
+    expect(isMessageOf(msg, MsgTransferSchema)).toBe(false)
+  })
+
+  it('returns false for rawAny (undecoded) messages', () => {
+    const any = create(AnySchema, {
+      typeUrl: '/cosmos.bank.v1beta1.MsgSend',
+      value: new Uint8Array([10, 5]),
+    })
+    const msg = Message.fromAny(any)
+    expect(msg.isDecoded).toBe(false)
+    expect(isMessageOf(msg, MsgSendSchema)).toBe(false)
+  })
+})
+
 // ============= #114: normalizeMsg() =============
 
 describe('normalizeMsg()', () => {
@@ -188,6 +222,12 @@ describe('normalizeMsg()', () => {
     const result = normalizeMsg(any)
     expect(result).toBeInstanceOf(Message)
     expect(result.toAny().typeUrl).toBe(any.typeUrl)
+  })
+
+  it('should throw ValidationError for non-object input', () => {
+    expect(() => normalizeMsg('not-a-message' as any)).toThrow(ValidationError)
+    expect(() => normalizeMsg(42 as any)).toThrow(ValidationError)
+    expect(() => normalizeMsg(null as any)).toThrow(ValidationError)
   })
 })
 

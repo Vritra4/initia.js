@@ -25,7 +25,7 @@ import { hexToBytes } from '../util/hex'
 import { toAmino as protoToAmino, type AminoMsg } from '../tx/amino'
 import { InitiaError, ValidationError, ParseError } from '../errors'
 import type { Coin } from '../core/coin'
-import { CoinSchema } from '@initia/initia-proto/cosmos/base/v1beta1/coin_pb'
+import { CoinSchema } from '@buf/cosmos_cosmos-sdk.bufbuild_es/cosmos/base/v1beta1/coin_pb'
 
 // Chain-specific message types are derived from ChainConfigBuilder in chain-types.ts
 // (kept separate to avoid circular: chain-config.ts → msgs/types.ts → chains/*.ts → chain-config.ts)
