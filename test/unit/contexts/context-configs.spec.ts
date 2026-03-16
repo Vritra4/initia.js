@@ -56,6 +56,6 @@ describe('context configs', () => {
   })
 
   it('cosmos has no tokenResolver', () => {
-    expect(cosmosContextConfig[1].tokenResolver).toBeUndefined()
+    expect((cosmosContextConfig[1] as Record<string, unknown>).tokenResolver).toBeUndefined()
   })
 })

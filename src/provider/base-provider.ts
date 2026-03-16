@@ -6,6 +6,7 @@ import { AssetNotFoundError } from '../errors'
 import { formatUnits, parseUnits } from '../util/units'
 import { convertDenomAmount } from './utils'
 import { formatTokenAmount } from '../util/amount'
+import type { TransportFactory } from '../client/transport-common'
 import type {
   ChainInfo,
   ChainInfoForType,
@@ -25,6 +26,8 @@ import type {
  * Direct subclassing requires implementing 14 abstract methods.
  */
 export abstract class BaseChainDataProvider implements ChainDataProvider {
+  createTransport?: TransportFactory
+
   // === Abstract methods (subclasses must implement) ===
 
   abstract getChainInfo<T extends ChainType = ChainType>(

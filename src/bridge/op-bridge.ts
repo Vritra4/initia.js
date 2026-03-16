@@ -68,7 +68,7 @@ export class OpBridgeInternal {
       undefined,
       config.registry,
     )
-    this._l1Client = wrapClientWithCache(raw, l1Chain.chainId) as unknown as InitiaClient
+    this._l1Client = wrapClientWithCache(raw as unknown as InitiaClient, l1Chain.chainId)
     return this._l1Client
   }
 

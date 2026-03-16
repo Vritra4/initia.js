@@ -278,7 +278,7 @@ export function watchWithdrawal(
       undefined,
       config.registry,
     )
-    const client = wrapClientWithCache(raw, l1Info.chainId) as unknown as InitiaClient
+    const client = wrapClientWithCache(raw as unknown as InitiaClient, l1Info.chainId)
     const ophost = client.ophost
     const resp = await ophost.bridge({ bridgeId })
     const fp = resp.bridgeConfig?.finalizationPeriod
@@ -478,7 +478,7 @@ export function waitForClaimable(
   createTransport: TransportFactory,
 ): Promise<WithdrawalEvent & { status: 'claimable' }> {
   // Wrap watchWithdrawal to match waitForEvent's 3-param watchFn signature
-  const watchFn = (p: ChainInfoProvider, opts: any, cb: any) =>
+  const watchFn = (p: ChainInfoProvider, opts: WatchWithdrawalOptions, cb: (event: WithdrawalEvent) => void) =>
     watchWithdrawal(p, opts, cb, createTransport)
   return waitForEvent(
     watchFn,
