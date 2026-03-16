@@ -136,10 +136,9 @@ export function buildTypedFactory<T extends ChainType>(
 ): TypedContextFactory<T> {
   const getDefaultChainId = options?.getDefaultChainId
 
-  // Build default config once — services, msgs, and registry are derived from it
+  // Build default config once — registry is shared across all networks
   const defaultConfig = chainConfig.build()
   const typeRegistry = defaultConfig.registry
-  const msgs = defaultConfig.msgs as unknown as MsgsForChain<T>
 
   const create = buildChainContextFactory(
     createTransport,
@@ -148,7 +147,10 @@ export function buildTypedFactory<T extends ChainType>(
       const config = chainInfo.network ? chainConfig.build(chainInfo.network) : defaultConfig
       return config.services as Record<string, DescService>
     },
-    () => msgs as MsgsForChain<ChainType>,
+    (_chainType, network?) => {
+      const config = network ? chainConfig.build(network) : defaultConfig
+      return config.msgs as unknown as MsgsForChain<ChainType>
+    },
     {
       tokenResolver: options?.tokenResolver,
       enricherFactory: options?.enricherFactory,

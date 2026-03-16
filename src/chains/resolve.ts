@@ -62,13 +62,14 @@ export function resolveRegistry(chainInfo: ChainInfo) {
   return getCached(chainInfo).registry
 }
 
-/** Resolve ChainType → msgs (for buildChainContextFactory's getMsgs callback) */
+/** Resolve ChainType + network → msgs (for buildChainContextFactory's getMsgs callback) */
 const msgsCache = new Map<string, MsgsForChain<ChainType>>()
-export function resolveMsgs(chainType: ChainType): MsgsForChain<ChainType> {
-  let cached = msgsCache.get(chainType)
+export function resolveMsgs(chainType: ChainType, network?: string): MsgsForChain<ChainType> {
+  const key = network ? `${chainType}:${network}` : chainType
+  let cached = msgsCache.get(key)
   if (!cached) {
-    cached = resolveConfig(chainType).msgs as unknown as MsgsForChain<ChainType>
-    msgsCache.set(chainType, cached)
+    cached = resolveConfig(chainType, network).msgs as unknown as MsgsForChain<ChainType>
+    msgsCache.set(key, cached)
   }
   return cached
 }

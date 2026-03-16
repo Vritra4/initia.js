@@ -1141,7 +1141,7 @@ class ChainContextImpl<T extends ChainType> implements BaseChainContext<T> {
 export function buildChainContextFactory(
   createTransport: (chainInfo: ChainInfo, options?: TransportOptions) => Transport,
   getServices: (chainInfo: ChainInfo) => Record<string, DescService>,
-  getMsgs: (chainType: ChainType) => MsgsForChain<ChainType>,
+  getMsgs: (chainType: ChainType, network?: string) => MsgsForChain<ChainType>,
   factoryOptions?: {
     tokenResolver?: TokenResolver
     enricherFactory?: EnricherFactory
@@ -1179,8 +1179,8 @@ export function buildChainContextFactory(
     ) as unknown as Client
     const client = wrapClientWithCache(rawClient, chainInfo.chainId) as unknown as ClientFor<T>
 
-    // Create message builders from injected resolver
-    const msgs = getMsgs(chainInfo.chainType) as MsgsForChain<T>
+    // Create message builders from injected resolver (network-aware for testnet overrides)
+    const msgs = getMsgs(chainInfo.chainType, chainInfo.network) as MsgsForChain<T>
 
     return new ChainContextImpl<T>(chainInfo, client, msgs, {
       signer: options?.signer,
