@@ -214,7 +214,7 @@ export function watchWithdrawal(
   provider: ChainInfoProvider,
   options: WatchWithdrawalOptions,
   callback: (event: WithdrawalEvent) => void,
-  createTransport: TransportFactory,
+  createTransport: TransportFactory
 ): BridgeWatchHandle {
   const l2Info = provider.getChainInfo(options.l2ChainId)
   if (!l2Info) throw new Error(`Chain not found: ${options.l2ChainId}`)
@@ -269,14 +269,14 @@ export function watchWithdrawal(
   // handleError's default also calls cleanup).
   // Stored as a Promise so propose_output callbacks can await it (avoids race).
   const finalizationMsPromise = (async () => {
-    const config = initiaChain.build()
+    const config = initiaChain.build(l1Info.network)
     const transport = createTransport(l1Info)
     const raw = createGrpcClient(
       transport,
       config.services as Record<string, any>,
       undefined,
       undefined,
-      config.registry,
+      config.registry
     )
     const client = wrapClientWithCache(raw as unknown as InitiaClient, l1Info.chainId)
     const ophost = client.ophost
@@ -475,11 +475,14 @@ export function waitForDeposit(
 export function waitForClaimable(
   provider: ChainInfoProvider,
   options: WatchWithdrawalOptions & { timeout?: number },
-  createTransport: TransportFactory,
+  createTransport: TransportFactory
 ): Promise<WithdrawalEvent & { status: 'claimable' }> {
   // Wrap watchWithdrawal to match waitForEvent's 3-param watchFn signature
-  const watchFn = (p: ChainInfoProvider, opts: WatchWithdrawalOptions, cb: (event: WithdrawalEvent) => void) =>
-    watchWithdrawal(p, opts, cb, createTransport)
+  const watchFn = (
+    p: ChainInfoProvider,
+    opts: WatchWithdrawalOptions,
+    cb: (event: WithdrawalEvent) => void
+  ) => watchWithdrawal(p, opts, cb, createTransport)
   return waitForEvent(
     watchFn,
     provider,

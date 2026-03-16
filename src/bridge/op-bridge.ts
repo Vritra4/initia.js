@@ -59,7 +59,7 @@ export class OpBridgeInternal {
           'Ensure the provider includes L1 chain info for withdrawal status queries.'
       )
     }
-    const config = initiaChain.build()
+    const config = initiaChain.build(l1Chain.network)
     const transport = this.createTransport(l1Chain)
     const raw = createGrpcClient(
       transport,

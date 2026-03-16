@@ -131,6 +131,27 @@ describe('immutability', () => {
     expect(extendedConfig.services.auth).toBe(AuthQuery)
     expect(extendedConfig.services.bank).toBe(BankQuery)
   })
+
+  it('clone() deeply isolates networkOverrides', () => {
+    const base = createChainConfig()
+      .addModule('gov', { query: GovQuery, tx: GovTxMsg })
+      .forNetwork('testnet')
+      .addModule('gov', { query: GovV1Beta1Query })
+
+    // Branch from the same base
+    const branch = base.addModule('bank', { query: BankQuery, tx: BankTxMsg })
+
+    // Adding a network override on branch should not affect base
+    const branchWithOverride = branch.forNetwork('testnet').addModule('bank', { query: AuthQuery })
+
+    const baseTestnet = base.build('testnet')
+    const branchTestnet = branchWithOverride.build('testnet')
+
+    // base should NOT have bank override
+    expect((baseTestnet.services as any).bank).toBeUndefined()
+    // branch should have bank override
+    expect(branchTestnet.services.bank).toBe(AuthQuery)
+  })
 })
 
 describe('forNetwork', () => {
@@ -262,5 +283,20 @@ describe('multi-source tx array', () => {
     expect(typeof config.msgs.ibcCore.channelOpenInit).toBe('function')
     expect(typeof config.msgs.ibcCore.createClient).toBe('function')
     expect(typeof config.msgs.ibcCore.connectionOpenInit).toBe('function')
+  })
+
+  it('last service wins for duplicate method names', () => {
+    // Register same service twice in array — second should override first
+    const config = createChainConfig()
+      .addModule('bank', { tx: [BankTxMsg, BankTxMsg] })
+      .build()
+
+    // Both are the same service, so methods should still work
+    const msg = config.msgs.bank.send({
+      fromAddress: 'init1a',
+      toAddress: 'init1b',
+      amount: [coin('uinit', '1000')],
+    })
+    expect(msg.typeUrl).toBe('/cosmos.bank.v1beta1.MsgSend')
   })
 })

@@ -43,7 +43,9 @@ export function createFungibleAssetToken(
     try {
       return JSON.parse(response.data)
     } catch {
-      return response.data
+      throw new Error(
+        `Failed to parse Move view response for ${moduleName}::${functionName}: ${response.data}`
+      )
     }
   }
 
