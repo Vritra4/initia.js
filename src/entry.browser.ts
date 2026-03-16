@@ -96,6 +96,9 @@ export const fromChain = /* @__PURE__ */ buildFromChain(
  * Create a Wallet instance (browser).
  */
 export function createWallet(options?: { key?: Key; provider?: ChainInfoProvider }): Wallet {
+  if (options?.provider) {
+    options.provider.createTransport = createTransport
+  }
   return new Wallet(createChainContext, options)
 }
 

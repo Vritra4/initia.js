@@ -31,6 +31,7 @@ const l1Chain: ChainInfo = {
   network: 'testnet',
 }
 
+const mockCreateTransport = (() => ({})) as any
 const provider = createMockProvider([l1Chain])
 
 // =============================================================================
@@ -38,7 +39,7 @@ const provider = createMockProvider([l1Chain])
 // =============================================================================
 
 describe('Bridge: router unavailable', () => {
-  const bridge = new Bridge(provider) // no routerUrl
+  const bridge = new Bridge(provider, mockCreateTransport) // no routerUrl
 
   it('route() should throw InitiaError', () => {
     expect(() =>
@@ -98,7 +99,7 @@ describe('Bridge: router available', () => {
     vi.clearAllMocks()
     mockFetch = vi.fn()
     vi.stubGlobal('fetch', mockFetch)
-    bridge = new Bridge(provider, ROUTER_URL)
+    bridge = new Bridge(provider, mockCreateTransport, ROUTER_URL)
   })
 
   it('route() should call RouterClient.route()', async () => {
@@ -171,7 +172,7 @@ describe('Bridge: signOpHook', () => {
   let bridge: Bridge
 
   beforeEach(() => {
-    bridge = new Bridge(provider, ROUTER_URL)
+    bridge = new Bridge(provider, mockCreateTransport, ROUTER_URL)
   })
 
   function createMockSigner(address: string, signResult: Uint8Array): Signer {
@@ -211,7 +212,7 @@ describe('Bridge: signOpHook', () => {
   })
 
   it('should work without routerUrl (signOpHook does not require router)', async () => {
-    const bridgeNoRouter = new Bridge(provider) // no routerUrl
+    const bridgeNoRouter = new Bridge(provider, mockCreateTransport) // no routerUrl
     const signer = createMockSigner('init1addr', new Uint8Array([5, 6]))
 
     const result = await bridgeNoRouter.signOpHook({ chainId: 'evm-1', hook: ['test'] }, signer)

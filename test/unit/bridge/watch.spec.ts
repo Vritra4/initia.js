@@ -3,6 +3,7 @@ import { TimeoutError } from '../../../src/errors'
 import { parseTxEvents } from '../../../src/bridge/watch'
 import type { WsTxResult } from '../../../src/client/websocket'
 import type { ChainInfoProvider, ChainInfo } from '../../../src/provider/types'
+import type { TransportFactory } from '../../../src/client/transport-common'
 
 // ---------------------------------------------------------------------------
 // Mocks
@@ -22,19 +23,28 @@ vi.mock('../../../src/client/websocket/session', () => ({
   })),
 }))
 
-vi.mock('../../../src/client/from-chain-standalone', () => ({
-  fromChain: vi.fn(() => ({
-    client: {
-      ophost: {
-        bridge: vi.fn().mockResolvedValue({
-          bridgeConfig: {
-            finalizationPeriod: { seconds: 3600n, nanos: 0 },
-          },
-        }),
-      },
+// Mock createGrpcClient and wrapClientWithCache
+vi.mock('../../../src/client/grpc-client', () => ({
+  createGrpcClient: vi.fn(() => ({
+    ophost: {
+      bridge: vi.fn().mockResolvedValue({
+        bridgeConfig: {
+          finalizationPeriod: { seconds: 3600n, nanos: 0 },
+        },
+      }),
     },
   })),
 }))
+
+vi.mock('../../../src/client/cached-client', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../../src/client/cached-client')>()
+  return {
+    ...actual,
+    wrapClientWithCache: vi.fn((client: any) => client),
+  }
+})
+
+const mockCreateTransport: TransportFactory = vi.fn(() => ({}) as any)
 
 // ---------------------------------------------------------------------------
 // Helpers reused by the original parseTxEvents tests
@@ -316,7 +326,7 @@ describe('watchWithdrawal', () => {
 
   it('should emit initiated event from L2 subscription', async () => {
     const events: unknown[] = []
-    watchWithdrawal(mockProvider, { l2ChainId: 'minimove-1', l2Sequence: 10n }, e => events.push(e))
+    watchWithdrawal(mockProvider, { l2ChainId: 'minimove-1', l2Sequence: 10n }, e => events.push(e), mockCreateTransport)
 
     await new Promise(r => setTimeout(r, 10))
 
@@ -329,7 +339,7 @@ describe('watchWithdrawal', () => {
 
   it('should emit proposed event from L1 propose_output', async () => {
     const events: unknown[] = []
-    watchWithdrawal(mockProvider, { l2ChainId: 'minimove-1', l2Sequence: 10n }, e => events.push(e))
+    watchWithdrawal(mockProvider, { l2ChainId: 'minimove-1', l2Sequence: 10n }, e => events.push(e), mockCreateTransport)
 
     // Extra time for the async finalization period fetch to settle
     await new Promise(r => setTimeout(r, 50))
@@ -343,7 +353,7 @@ describe('watchWithdrawal', () => {
 
   it('should emit claimed event from L1 finalize_token_withdrawal', async () => {
     const events: unknown[] = []
-    watchWithdrawal(mockProvider, { l2ChainId: 'minimove-1', l2Sequence: 10n }, e => events.push(e))
+    watchWithdrawal(mockProvider, { l2ChainId: 'minimove-1', l2Sequence: 10n }, e => events.push(e), mockCreateTransport)
 
     await new Promise(r => setTimeout(r, 10))
 
@@ -424,7 +434,7 @@ describe('waitForClaimable', () => {
 
   it('should reject on timeout with TimeoutError', async () => {
     await expect(
-      waitForClaimable(mockProvider, { l2ChainId: 'minimove-1', l2Sequence: 10n, timeout: 50 })
+      waitForClaimable(mockProvider, { l2ChainId: 'minimove-1', l2Sequence: 10n, timeout: 50 }, mockCreateTransport)
     ).rejects.toThrow(TimeoutError)
   })
 
@@ -441,7 +451,7 @@ describe('waitForClaimable', () => {
         l2Sequence: 10n,
         timeout: 50,
         onError: onErrorSpy,
-      })
+      }, mockCreateTransport)
     ).rejects.toThrow(TimeoutError)
 
     // onError should NOT be called by the underlying watcher's own timeout

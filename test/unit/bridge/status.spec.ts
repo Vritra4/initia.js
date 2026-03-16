@@ -6,6 +6,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { ConnectError, Code } from '@connectrpc/connect'
 import { base64 } from '@scure/base'
 import type { ChainInfo, ChainInfoProvider } from '../../../src/provider/types'
+import type { TransportFactory } from '../../../src/client/transport-common'
 
 // Hoist mock objects so they're available in vi.mock factory
 const { mockOphost } = vi.hoisted(() => ({
@@ -17,18 +18,23 @@ const { mockOphost } = vi.hoisted(() => ({
   },
 }))
 
-// Mock fromChain to return our mock L1 client
-vi.mock('../../../src/client/from-chain-standalone', () => ({
-  fromChain: vi.fn(() => ({
-    client: { ophost: mockOphost },
-    chainId: 'initiation-2',
-    chainType: 'initia' as const,
-    network: 'testnet',
-  })),
+// Mock createGrpcClient and wrapClientWithCache to return our mock L1 client
+vi.mock('../../../src/client/grpc-client', () => ({
+  createGrpcClient: vi.fn(() => ({ ophost: mockOphost })),
 }))
+
+vi.mock('../../../src/client/cached-client', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../../src/client/cached-client')>()
+  return {
+    ...actual,
+    wrapClientWithCache: vi.fn((client: any) => client),
+  }
+})
 
 // Must import Bridge AFTER vi.mock
 import { Bridge } from '../../../src/bridge/bridge'
+
+const mockCreateTransport: TransportFactory = vi.fn(() => ({}) as any)
 
 /** Minimal mock provider. */
 function createMockProvider(chains: ChainInfo[]): ChainInfoProvider {
@@ -139,7 +145,7 @@ describe('Bridge: Status Determination', () => {
   describe('getWithdrawals', () => {
     it('should return empty array when no withdrawals', async () => {
       const provider = createMockProvider([l1Chain, l2Chain])
-      const bridge = new Bridge(provider)
+      const bridge = new Bridge(provider, mockCreateTransport)
 
       mockFetch.mockResolvedValueOnce(mockFetchList([]))
 
@@ -151,7 +157,7 @@ describe('Bridge: Status Determination', () => {
 
     it('should determine pending status (output not yet proposed)', async () => {
       const provider = createMockProvider([l1Chain, l2Chain])
-      const bridge = new Bridge(provider)
+      const bridge = new Bridge(provider, mockCreateTransport)
 
       // output_index=15 > latestProposed=10 → pending
       mockFetch.mockResolvedValueOnce(mockFetchList([makeExecutorWithdrawal({ output_index: 15 })]))
@@ -166,7 +172,7 @@ describe('Bridge: Status Determination', () => {
 
     it('should determine waiting status with correct claimableAt', async () => {
       const provider = createMockProvider([l1Chain, l2Chain])
-      const bridge = new Bridge(provider)
+      const bridge = new Bridge(provider, mockCreateTransport)
 
       const twoDaysAgoSeconds = BigInt(Math.floor(Date.now() / 1000) - 2 * 86400)
 
@@ -193,7 +199,7 @@ describe('Bridge: Status Determination', () => {
 
     it('should determine claimable status (finalization passed, unclaimed)', async () => {
       const provider = createMockProvider([l1Chain, l2Chain])
-      const bridge = new Bridge(provider)
+      const bridge = new Bridge(provider, mockCreateTransport)
 
       mockFetch.mockResolvedValueOnce(mockFetchList([makeExecutorWithdrawal({ output_index: 5 })]))
 
@@ -206,7 +212,7 @@ describe('Bridge: Status Determination', () => {
 
     it('should determine claimed status', async () => {
       const provider = createMockProvider([l1Chain, l2Chain])
-      const bridge = new Bridge(provider)
+      const bridge = new Bridge(provider, mockCreateTransport)
 
       mockFetch.mockResolvedValueOnce(mockFetchList([makeExecutorWithdrawal({ output_index: 5 })]))
 
@@ -219,7 +225,7 @@ describe('Bridge: Status Determination', () => {
 
     it('should deduplicate outputIndex queries', async () => {
       const provider = createMockProvider([l1Chain, l2Chain])
-      const bridge = new Bridge(provider)
+      const bridge = new Bridge(provider, mockCreateTransport)
 
       // 3 withdrawals with the same output_index=5
       mockFetch.mockResolvedValueOnce(
@@ -242,7 +248,7 @@ describe('Bridge: Status Determination', () => {
 
     it('should only query claimed for claimable withdrawals (not pending/waiting)', async () => {
       const provider = createMockProvider([l1Chain, l2Chain])
-      const bridge = new Bridge(provider)
+      const bridge = new Bridge(provider, mockCreateTransport)
 
       // pending (output_index=15 > latestProposed=10) and claimable (output_index=5)
       mockFetch.mockResolvedValueOnce(
@@ -265,7 +271,7 @@ describe('Bridge: Status Determination', () => {
 
     it('should propagate non-NotFound gRPC errors from outputProposal', async () => {
       const provider = createMockProvider([l1Chain, l2Chain])
-      const bridge = new Bridge(provider)
+      const bridge = new Bridge(provider, mockCreateTransport)
 
       mockFetch.mockResolvedValueOnce(mockFetchList([makeExecutorWithdrawal({ output_index: 5 })]))
 
@@ -281,7 +287,7 @@ describe('Bridge: Status Determination', () => {
 
     it('should throw for missing executorUri', async () => {
       const provider = createMockProvider([l1Chain, l2ChainNoExecutor])
-      const bridge = new Bridge(provider)
+      const bridge = new Bridge(provider, mockCreateTransport)
 
       await expect(bridge.getWithdrawals('minimove-2', 'init1address')).rejects.toThrow(
         'does not have an executorUri'
@@ -291,7 +297,7 @@ describe('Bridge: Status Determination', () => {
     it('should throw when L1 chain not found in provider', async () => {
       // Provider with only L2 chain (no L1)
       const provider = createMockProvider([l2Chain])
-      const bridge = new Bridge(provider)
+      const bridge = new Bridge(provider, mockCreateTransport)
 
       mockFetch.mockResolvedValueOnce(mockFetchList([makeExecutorWithdrawal()]))
 
@@ -304,7 +310,7 @@ describe('Bridge: Status Determination', () => {
   describe('getWithdrawalStatus', () => {
     it('should determine status for a single withdrawal', async () => {
       const provider = createMockProvider([l1Chain, l2Chain])
-      const bridge = new Bridge(provider)
+      const bridge = new Bridge(provider, mockCreateTransport)
 
       mockFetch.mockResolvedValueOnce(
         mockFetchSingle(makeExecutorWithdrawal({ output_index: 5, sequence: 42 }))
@@ -319,7 +325,7 @@ describe('Bridge: Status Determination', () => {
 
     it('should return pending for output not found', async () => {
       const provider = createMockProvider([l1Chain, l2Chain])
-      const bridge = new Bridge(provider)
+      const bridge = new Bridge(provider, mockCreateTransport)
 
       mockFetch.mockResolvedValueOnce(mockFetchSingle(makeExecutorWithdrawal({ output_index: 5 })))
 
@@ -332,7 +338,7 @@ describe('Bridge: Status Determination', () => {
 
     it('should propagate non-NotFound gRPC errors', async () => {
       const provider = createMockProvider([l1Chain, l2Chain])
-      const bridge = new Bridge(provider)
+      const bridge = new Bridge(provider, mockCreateTransport)
 
       mockFetch.mockResolvedValueOnce(mockFetchSingle(makeExecutorWithdrawal({ output_index: 5 })))
 
@@ -345,7 +351,7 @@ describe('Bridge: Status Determination', () => {
 
     it('should throw for missing executorUri', async () => {
       const provider = createMockProvider([l1Chain, l2ChainNoExecutor])
-      const bridge = new Bridge(provider)
+      const bridge = new Bridge(provider, mockCreateTransport)
 
       await expect(bridge.getWithdrawalStatus('minimove-2', 1n)).rejects.toThrow(
         'does not have an executorUri'

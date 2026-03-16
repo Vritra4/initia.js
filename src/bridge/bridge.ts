@@ -30,6 +30,7 @@ import type {
 } from './types'
 import type { FetchWithdrawalsOptions } from './executor'
 import type { Signer } from '../signer/types'
+import type { TransportFactory } from '../client/transport-common'
 import { OpBridgeInternal } from './op-bridge'
 import { RouterClient } from './router-client'
 import { watchDeposit, watchWithdrawal, waitForDeposit, waitForClaimable } from './watch'
@@ -42,9 +43,10 @@ export class Bridge {
 
   constructor(
     private provider: ChainInfoProvider,
-    routerUrl?: string
+    private createTransport: TransportFactory,
+    routerUrl?: string,
   ) {
-    this.opBridge = new OpBridgeInternal(provider)
+    this.opBridge = new OpBridgeInternal(provider, createTransport)
     if (routerUrl) {
       this.router = new RouterClient(routerUrl)
     }
@@ -143,7 +145,7 @@ export class Bridge {
     options: WatchWithdrawalOptions,
     callback: (event: WithdrawalEvent) => void
   ): BridgeWatchHandle {
-    return watchWithdrawal(this.provider, options, callback)
+    return watchWithdrawal(this.provider, options, callback, this.createTransport)
   }
 
   waitForDeposit(
@@ -155,7 +157,7 @@ export class Bridge {
   waitForClaimable(
     options: WatchWithdrawalOptions & { timeout?: number }
   ): Promise<WithdrawalEvent & { status: 'claimable' }> {
-    return waitForClaimable(this.provider, options)
+    return waitForClaimable(this.provider, options, this.createTransport)
   }
 
   // ===========================================================================

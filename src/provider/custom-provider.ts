@@ -383,7 +383,10 @@ export class CustomProvider extends BaseChainDataProvider {
         network === 'mainnet' || network === 'testnet'
           ? ROUTER_URLS[network as 'mainnet' | 'testnet']
           : undefined
-      this._bridge = new Bridge(this, routerUrl)
+      if (!this.createTransport) {
+        throw new Error('createTransport not set — bridge requires transport injection. Use createWallet() or a typed context factory.')
+      }
+      this._bridge = new Bridge(this, this.createTransport, routerUrl)
     }
     return this._bridge
   }

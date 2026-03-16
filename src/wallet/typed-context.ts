@@ -172,6 +172,10 @@ export function buildTypedFactory<T extends ChainType>(
     chainId: string,
     ctxOptions?: ChainContextOptions
   ): ChainContext<T> {
+    // Inject transport factory so provider.bridge works
+    if (!provider.createTransport) {
+      provider.createTransport = createTransport
+    }
     const chainInfo = provider.getChainInfo<T>(chainId)
     if (!chainInfo) throw new Error(`Chain '${chainId}' not found in provider`)
     return create(chainInfo, ctxOptions)
@@ -209,6 +213,7 @@ export function buildTypedFactory<T extends ChainType>(
     // the static import graph, enabling tree-shaking of unused chain services.
     return import('../provider/registry-provider').then(({ createRegistryProvider }) =>
       createRegistryProvider({ network }).then(prov => {
+        if (!prov.createTransport) prov.createTransport = createTransport
         const info = prov.getChainInfo<T>(id)
         if (!info) throw new Error(`Chain '${id}' not found in ${network} registry`)
         return create(info, contextOptions)

@@ -127,6 +127,9 @@ export interface ChainInfoProvider {
    * @returns true if chain is available
    */
   hasChain(chainId: string): boolean
+
+  /** Transport factory for bridge operations. Set by entry points. */
+  createTransport?: import('../client/transport-common').TransportFactory
 }
 
 // =============================================================================

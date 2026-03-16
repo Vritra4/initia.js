@@ -67,6 +67,7 @@ function createMockProvider(chains: ChainInfo[]): ChainInfoProvider {
     getChainInfo: (id: string) => map.get(id) as any,
     listChains: () => chains,
     hasChain: (id: string) => map.has(id),
+    createTransport: (() => ({})) as any,
   }
 }
 

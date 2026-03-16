@@ -137,6 +137,11 @@ export function buildFromChain(
     }
     const provider = options.provider
 
+    // Inject transport factory so provider.bridge works
+    if (!provider.createTransport) {
+      provider.createTransport = createTransport
+    }
+
     const chainInfo = provider.getChainInfo(chainId)
     if (!chainInfo) {
       throw new Error(`Chain not found: ${chainId}`)

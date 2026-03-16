@@ -17,8 +17,10 @@ const mockProvider: ChainInfoProvider = {
   hasChain: () => false,
 }
 
+const mockCreateTransport = (() => ({})) as any
+
 describe('bridge message builders return Message instances', () => {
-  const bridge = new OpBridgeInternal(mockProvider)
+  const bridge = new OpBridgeInternal(mockProvider, mockCreateTransport)
 
   it('deposit() should return a Message', () => {
     const msg = bridge.deposit({

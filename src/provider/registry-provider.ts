@@ -373,7 +373,10 @@ export class RegistryProvider extends BaseChainDataProvider {
     if (!this._bridge) {
       const network = this.refreshOptions.network
       const routerUrl = network ? ROUTER_URLS[network] : undefined
-      this._bridge = new Bridge(this, routerUrl)
+      if (!this.createTransport) {
+        throw new Error('createTransport not set — bridge requires transport injection. Use createWallet() or a typed context factory.')
+      }
+      this._bridge = new Bridge(this, this.createTransport, routerUrl)
     }
     return this._bridge
   }
