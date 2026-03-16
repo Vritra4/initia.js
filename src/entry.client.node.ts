@@ -2,9 +2,6 @@
  * Client entry point (Node.js) — injects native gRPC transport for fromChain.
  */
 
-// client/client (backward compat — will be removed)
-export { createClientWithTransport } from './client/client'
-
 // client/grpc-client
 export { createGrpcClient, type ServiceClients, type QueryClient } from './client/grpc-client'
 

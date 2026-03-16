@@ -11,8 +11,9 @@ import type { TransportOptions } from './client/transport-common'
 import type { Key } from './key'
 import type { ChainInfoProvider } from './provider/types'
 import { createTransport } from './client/transport.browser'
-import { createClientWithTransport } from './client/client'
 import type { Client } from './client/types'
+import { createGrpcClient } from './client/grpc-client'
+import { wrapClientWithCache } from './client/cached-client'
 import { resolveServices, resolveRegistry, resolveMsgs } from './chains/resolve'
 import { buildChainContextFactory } from './wallet/chain-context'
 import { buildTypedFactory } from './wallet/typed-context'
@@ -109,5 +110,8 @@ export function createWallet(options?: { key?: Key; provider?: ChainInfoProvider
  */
 export function createClient(chainInfo: ChainInfo, options?: TransportOptions): Client {
   const transport = createTransport(chainInfo, options)
-  return createClientWithTransport(chainInfo, transport)
+  const services = resolveServices(chainInfo)
+  const typeRegistry = resolveRegistry(chainInfo)
+  const client = createGrpcClient(transport, services as Record<string, any>, undefined, undefined, typeRegistry)
+  return wrapClientWithCache(client as any, chainInfo.chainId) as unknown as Client
 }

@@ -77,7 +77,7 @@ describe.skipIf(SKIP)('Bridge (Integration)', () => {
 
       // Use a dummy address — getWithdrawals will hit Executor API first,
       // but we can verify the L1 client is created and works by querying directly
-      const { fromChain } = await import('../../src/client/from-chain-standalone')
+      const { fromChain } = await import('../../src/entry.node')
       const result = fromChain(l1Chain.chainId, { provider })
       const ophost = (result.client as { ophost: any }).ophost
 
@@ -93,7 +93,7 @@ describe.skipIf(SKIP)('Bridge (Integration)', () => {
     it('should query output proposals for an L2 bridge', async () => {
       const l2 = l2Chains[0]
 
-      const { fromChain } = await import('../../src/client/from-chain-standalone')
+      const { fromChain } = await import('../../src/entry.node')
       const result = fromChain(l1Chain.chainId, { provider })
       const ophost = (result.client as { ophost: any }).ophost
 
