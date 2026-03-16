@@ -6,7 +6,7 @@
  *
  * - `initia.js/client`    — gRPC client, broadcast, gas, transport
  * - `initia.js/tx`        — signing, serialize/deserialize, amino
- * - `initia.js/msgs`      — message builders (baseMsgs, initiaMsgs, ...)
+ * - `initia.js/msgs`      — message builders (Message, msg, msgCustom, ...)
  * - `initia.js/evm`       — EVM contracts, ABI, RPC, events
  * - `initia.js/move`      — Move contracts, BCS, ABI
  * - `initia.js/wasm`      — CosmWasm contracts, schema
@@ -17,7 +17,7 @@
  * - `initia.js/util`      — Hash, address, denom, formatting
  * - `initia.js/usernames` — .init domain resolution
  * - `initia.js/cosmos`    — CosmosRegistryProvider
- * - `initia.js/modules`  — Individual module definitions for custom chains
+ * - `initia.js/modules`  — ChainConfigBuilder, chain configs for custom chains
  * - `initia.js/codegen`  — ABI codegen CLI
  * - `initia.js/vip`      — VIP lock staking, gauge voting, rewards
  *
@@ -87,7 +87,6 @@ export {
 } from './wallet'
 
 export {
-  buildChainContextFactory,
   type ChainContext,
   type ChainContextOptions,
   type GetBalanceOptions,
@@ -95,18 +94,16 @@ export {
   type GetTokenInfoOptions,
 } from './wallet'
 
-export {
-  buildTypedFactory,
-  L1_CHAIN_IDS,
-  type TypedContextOptions,
-  type TypedContextFactory,
-  type TypedFactoryOptions,
+export type {
+  TypedContextOptions,
+  TypedContextFactory,
+  TypedFactoryOptions,
 } from './wallet/typed-context'
 
-export { buildFromChain, type FromChainOptions, type FromChainResult } from './client/from-chain'
+export type { FromChainOptions, FromChainResult } from './client/from-chain'
 
 // =============================================================================
-// Chain Config - ChainConfigBuilder and pre-built chain configs
+// Chain Config - ChainConfigBuilder (chain configs via initia.js/modules)
 // =============================================================================
 
 export {
@@ -115,7 +112,6 @@ export {
   type ChainConfig,
   type CoreMsgMethods,
 } from './chain-config'
-export { createBaseConfig, initiaChain, minievmChain, minimoveChain, miniwasmChain } from './chains'
 
 export { WalletBridge } from './wallet'
 
