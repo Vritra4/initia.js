@@ -64,5 +64,5 @@ export const WASM_CONTRACT = {
 // Protocol constants — not configurable
 export const MODULE = {
   moveStdlib: '0x1',
-  bech32: 'init1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqpqr5e3d1',
+  bech32: 'init1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqpqr5e3d',
 } as const

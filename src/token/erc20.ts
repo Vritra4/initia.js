@@ -87,7 +87,7 @@ const ERC20_ABI = [
   },
 ]
 
-const ZERO_ADDRESS_BECH32 = 'init1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqpqr5e3d'
+const ZERO_ADDRESS_BECH32 = 'init1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqa4qvvl'
 
 /**
  * Create an ERC20 TokenContract adapter.

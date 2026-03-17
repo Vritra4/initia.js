@@ -46,7 +46,7 @@ import type {
 export type EvmQueryClient = Client<typeof EvmQuery>
 
 // Zero address in bech32 format for gRPC query sender
-const ZERO_ADDRESS_BECH32 = 'init1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqpqr5e3d'
+const ZERO_ADDRESS_BECH32 = 'init1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqa4qvvl'
 // Zero address in hex for JSON-RPC from field
 const ZERO_ADDRESS_HEX: `0x${string}` = '0x0000000000000000000000000000000000000000'
 

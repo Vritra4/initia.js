@@ -13,7 +13,7 @@ import { encodeFunctionData, decodeFunctionResult, parseAbi } from 'viem'
 import { createRegistryProvider } from '../src/provider/registry-provider'
 
 // Zero address in bech32 format for minievm (init1 prefix)
-const ZERO_ADDRESS_BECH32 = 'init1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqpqr5e3d'
+const ZERO_ADDRESS_BECH32 = 'init1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqa4qvvl'
 
 const ERC20_ABI = parseAbi([
   'function name() view returns (string)',

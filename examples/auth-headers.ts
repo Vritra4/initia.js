@@ -31,7 +31,7 @@ async function main() {
 
   // Bearer token is automatically included
   const balance = await ctx.client.bank.balance({
-    address: 'init1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqpqr5e3d1',
+    address: 'init1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqpqr5e3d',
     denom: 'uinit',
   })
   console.log('Balance:', balance.balance?.amount)
@@ -44,7 +44,7 @@ async function main() {
   // Switches from bearer to api-key for this single request.
   // The bearer token from context is NOT present — full replacement semantics.
   const overridden = await ctx.client.bank.allBalances(
-    { address: 'init1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqpqr5e3d1' },
+    { address: 'init1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqpqr5e3d' },
     { auth: auth.apiKey('sk-different-provider') }
   )
   console.log('Balances:', overridden.balances.length, 'denoms')
@@ -59,13 +59,13 @@ async function main() {
   })
 
   const account = await ctxWithHeaders.client.auth.account({
-    address: 'init1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqpqr5e3d1',
+    address: 'init1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqpqr5e3d',
   })
   console.log('Account type:', account.account?.typeUrl)
 
   // Per-request headers (additive, overrides same-key)
   await ctxWithHeaders.client.bank.balance(
-    { address: 'init1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqpqr5e3d1', denom: 'uinit' },
+    { address: 'init1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqpqr5e3d', denom: 'uinit' },
     { headers: { 'x-request-id': 'req-123' } }
   )
 
@@ -78,7 +78,7 @@ async function main() {
   const height = latestBlock.block?.header?.height
   if (height && height > 100n) {
     const historical = await ctx.client.bank.balance(
-      { address: 'init1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqpqr5e3d1', denom: 'uinit' },
+      { address: 'init1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqpqr5e3d', denom: 'uinit' },
       { height: height - 100n }
     )
     console.log('Balance 100 blocks ago:', historical.balance?.amount)
