@@ -188,21 +188,30 @@ See the [examples/](./examples) directory for runnable scripts:
 
 - [query.ts](./examples/query.ts) -- Read-only gRPC queries
 - [send.ts](./examples/send.ts) -- Send tokens with high-level API
+- [send-amino.ts](./examples/send-amino.ts) -- Send tokens with Amino signing mode
 - [staking.ts](./examples/staking.ts) -- Delegate, redelegate, undelegate, claim rewards
 - [get-tx.ts](./examples/get-tx.ts) -- Decode transactions with VM-aware arg enrichment
 
 **Smart contracts**
 
 - [move-contract.ts](./examples/move-contract.ts) -- ABI-driven Move contract interactions
+- [move-typed.ts](./examples/move-typed.ts) -- Move contract with full type inference
 - [evm-contract.ts](./examples/evm-contract.ts) -- ABI-driven EVM contract interactions
+- [evm-typed.ts](./examples/evm-typed.ts) -- EVM contract with full type inference
 - [wasm-contract.ts](./examples/wasm-contract.ts) -- CosmWasm contract interactions
+- [wasm-typed.ts](./examples/wasm-typed.ts) -- CosmWasm contract with full type inference
 - [deploy-cw20.ts](./examples/deploy-cw20.ts) -- Deploy and interact with a CW20 token
 
 **RPC & low-level**
 
 - [rpc.ts](./examples/rpc.ts) -- CometBFT RPC (block results, tx search, consensus)
 - [evm-rpc.ts](./examples/evm-rpc.ts) -- EVM JSON-RPC (blocks, logs, receipts)
+- [evm-jsonrpc.ts](./examples/evm-jsonrpc.ts) -- EVM JSON-RPC direct calls
 - [auth-headers.ts](./examples/auth-headers.ts) -- API key / Bearer auth configuration
+- [block-subscription.ts](./examples/block-subscription.ts) -- WebSocket block/event subscriptions
+- [raw-send.ts](./examples/raw-send.ts) -- Low-level direct transaction signing
+- [raw-send-amino.ts](./examples/raw-send-amino.ts) -- Low-level Amino transaction signing
+- [raw-query-historical.ts](./examples/raw-query-historical.ts) -- Query at historical block heights
 
 **Cross-chain**
 
@@ -210,12 +219,17 @@ See the [examples/](./examples) directory for runnable scripts:
 - [smart-route.ts](./examples/smart-route.ts) -- Router API for cross-chain transfers
 - [ibc-transfer.ts](./examples/ibc-transfer.ts) -- IBC transfers between Initia chains
 - [noble-ibc-transfer.ts](./examples/noble-ibc-transfer.ts) -- IBC from external Cosmos chains
+- [osmosis-custom-provider.ts](./examples/osmosis-custom-provider.ts) -- Custom provider for external Cosmos chains
 
 **Utilities**
 
 - [usernames.ts](./examples/usernames.ts) -- `.init` domain resolution
 - [token.ts](./examples/token.ts) -- VM-agnostic token operations
 - [vip.ts](./examples/vip.ts) -- VIP lock staking, gauge voting, and reward claims
+- [address-utils.ts](./examples/address-utils.ts) -- Address type detection and profile lookup
+- [cache-management.ts](./examples/cache-management.ts) -- gRPC response cache control
+- [provider-assets.ts](./examples/provider-assets.ts) -- Provider asset and denom lookup
+- [keystore.ts](./examples/keystore.ts) -- KeyStore multi-key management
 
 ## License
 
