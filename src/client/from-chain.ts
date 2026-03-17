@@ -151,8 +151,6 @@ export function buildFromChain(
     const transport = options.transport ?? createTransport(chainInfo)
     const typeRegistry = getTypeRegistry?.(chainInfo)
 
-    // Cast through unknown: createGrpcClient returns ServiceClients<Record<string, DescService>>
-    // which is structurally correct but too wide for TypeScript to narrow automatically.
     const rawClient = createGrpcClient(
       transport,
       services,

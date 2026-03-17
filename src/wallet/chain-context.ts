@@ -122,7 +122,10 @@ export type { BroadcastResultWithWait, SignBroadcastOptions }
 export { WebSocketSession }
 
 /** Factory that creates enrichers for a specific chain's VM capabilities. */
-export type EnricherFactory = (client: Client, abis: AbiRegistry) => MessageEnricher[]
+export type EnricherFactory = (
+  client: Record<string, unknown>,
+  abis: AbiRegistry
+) => MessageEnricher[]
 
 // =============================================================================
 // Token Resolver
@@ -632,9 +635,7 @@ class ChainContextImpl<T extends ChainType> implements BaseChainContext<T> {
       (options?.enricherFactory
         ? createAbiRegistry()
         : createNoopAbiRegistry())) as AbiRegistryFor<T>
-    this._enrichers = options?.enricherFactory
-      ? options.enricherFactory(client as unknown as Client, this.abis)
-      : []
+    this._enrichers = options?.enricherFactory ? options.enricherFactory(client, this.abis) : []
 
     // Usernames: real service for Initia L1 mainnet/testnet, stub for others
     this.usernames =

@@ -271,14 +271,8 @@ export function watchWithdrawal(
   const finalizationMsPromise = (async () => {
     const config = initiaChain.build(l1Info.network)
     const transport = createTransport(l1Info)
-    const raw = createGrpcClient(
-      transport,
-      config.services as Record<string, any>,
-      undefined,
-      undefined,
-      config.registry
-    )
-    const client = wrapClientWithCache(raw as unknown as InitiaClient, l1Info.chainId)
+    const raw = createGrpcClient(transport, config.services, undefined, undefined, config.registry)
+    const client = wrapClientWithCache(raw, l1Info.chainId) as InitiaClient
     const ophost = client.ophost
     const resp = await ophost.bridge({ bridgeId })
     const fp = resp.bridgeConfig?.finalizationPeriod

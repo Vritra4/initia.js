@@ -9,15 +9,15 @@ export function createClientWithConfig(
   chainInfo: ChainInfo,
   transport: Transport,
   contextAuth?: AuthConfig,
-  contextHeaders?: Record<string, string>,
+  contextHeaders?: Record<string, string>
 ): MinimoveClient {
   const config = minimoveChain.build(chainInfo.network)
   const client = createGrpcClient(
     transport,
-    config.services as Record<string, any>,
+    config.services,
     contextAuth,
     contextHeaders,
-    config.registry,
+    config.registry
   )
-  return wrapClientWithCache(client as any, chainInfo.chainId) as unknown as MinimoveClient
+  return wrapClientWithCache(client, chainInfo.chainId) as MinimoveClient
 }

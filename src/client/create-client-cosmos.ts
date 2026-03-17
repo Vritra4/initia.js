@@ -9,15 +9,15 @@ export function createClientWithConfig(
   chainInfo: ChainInfo,
   transport: Transport,
   contextAuth?: AuthConfig,
-  contextHeaders?: Record<string, string>,
+  contextHeaders?: Record<string, string>
 ): BaseClient {
   const config = /* @__PURE__ */ createBaseConfig().build(chainInfo.network)
   const client = createGrpcClient(
     transport,
-    config.services as Record<string, any>,
+    config.services,
     contextAuth,
     contextHeaders,
-    config.registry,
+    config.registry
   )
-  return wrapClientWithCache(client as any, chainInfo.chainId) as unknown as BaseClient
+  return wrapClientWithCache(client, chainInfo.chainId) as BaseClient
 }

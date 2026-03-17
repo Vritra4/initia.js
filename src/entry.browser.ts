@@ -12,9 +12,8 @@ import type { Key } from './key'
 import type { ChainInfoProvider } from './provider/types'
 import { createTransport } from './client/transport.browser'
 import type { Client } from './client/types'
-import { createGrpcClient } from './client/grpc-client'
-import { wrapClientWithCache } from './client/cached-client'
 import { resolveServices, resolveRegistry, resolveMsgs } from './chains/resolve'
+import { resolveClient } from './client/resolve-client'
 import { buildChainContextFactory } from './wallet/chain-context'
 import { buildTypedFactory } from './wallet/typed-context'
 import { buildFromChain } from './client/from-chain'
@@ -40,19 +39,34 @@ export { createTransport }
 // =============================================================================
 
 export const createInitiaContext = /* @__PURE__ */ buildTypedFactory(
-  'initia', createTransport, initiaContextConfig[0], initiaContextConfig[1]
+  'initia',
+  createTransport,
+  initiaContextConfig[0],
+  initiaContextConfig[1]
 )
 export const createMinievmContext = /* @__PURE__ */ buildTypedFactory(
-  'minievm', createTransport, minievmContextConfig[0], minievmContextConfig[1]
+  'minievm',
+  createTransport,
+  minievmContextConfig[0],
+  minievmContextConfig[1]
 )
 export const createMiniwasmContext = /* @__PURE__ */ buildTypedFactory(
-  'miniwasm', createTransport, miniwasmContextConfig[0], miniwasmContextConfig[1]
+  'miniwasm',
+  createTransport,
+  miniwasmContextConfig[0],
+  miniwasmContextConfig[1]
 )
 export const createMinimoveContext = /* @__PURE__ */ buildTypedFactory(
-  'minimove', createTransport, minimoveContextConfig[0], minimoveContextConfig[1]
+  'minimove',
+  createTransport,
+  minimoveContextConfig[0],
+  minimoveContextConfig[1]
 )
 export const createCosmosContext = /* @__PURE__ */ buildTypedFactory(
-  'other', createTransport, cosmosContextConfig[0], cosmosContextConfig[1]
+  'other',
+  createTransport,
+  cosmosContextConfig[0],
+  cosmosContextConfig[1]
 )
 
 // =============================================================================
@@ -110,8 +124,5 @@ export function createWallet(options?: { key?: Key; provider?: ChainInfoProvider
  */
 export function createClient(chainInfo: ChainInfo, options?: TransportOptions): Client {
   const transport = createTransport(chainInfo, options)
-  const services = resolveServices(chainInfo)
-  const typeRegistry = resolveRegistry(chainInfo)
-  const client = createGrpcClient(transport, services as Record<string, any>, undefined, undefined, typeRegistry)
-  return wrapClientWithCache(client as any, chainInfo.chainId) as unknown as Client
+  return resolveClient(chainInfo, transport)
 }

@@ -6,19 +6,26 @@ import type { QueryClient } from './grpc-client'
 import type { Numeric } from '../types'
 import type { Message } from '../msgs/types'
 
-// Service imports for typing
-import type { Query as AuthQuery } from '@buf/cosmos_cosmos-sdk.bufbuild_es/cosmos/auth/v1beta1/query_pb'
-import type { Query as BankQuery } from '@buf/cosmos_cosmos-sdk.bufbuild_es/cosmos/bank/v1beta1/query_pb'
-import type { Service as TxService } from '@buf/cosmos_cosmos-sdk.bufbuild_es/cosmos/tx/v1beta1/service_pb'
-import type { Service as TendermintService } from '@buf/cosmos_cosmos-sdk.bufbuild_es/cosmos/base/tendermint/v1beta1/query_pb'
-import type { Query as GovQuery } from '@buf/cosmos_cosmos-sdk.bufbuild_es/cosmos/gov/v1/query_pb'
-import type { Query as MstakingQuery } from '@buf/initia-labs_initia.bufbuild_es/initia/mstaking/v1/query_pb'
-import type { Query as MoveQuery } from '@buf/initia-labs_initia.bufbuild_es/initia/move/v1/query_pb'
-import type { Query as InitiaDistributionQuery } from '@buf/initia-labs_initia.bufbuild_es/initia/distribution/v1/query_pb'
-import type { Query as OphostQuery } from '@buf/initia-labs_opinit.bufbuild_es/opinit/ophost/v1/query_pb'
-import type { Query as OpchildQuery } from '@buf/initia-labs_opinit.bufbuild_es/opinit/opchild/v1/query_pb'
+// Derived client types (computed from chain config builders)
+export type {
+  InitiaClient,
+  MinievmClient,
+  MinimoveClient,
+  MiniwasmClient,
+  BaseClient,
+} from './chain-clients'
+import type {
+  InitiaClient,
+  MinievmClient,
+  MinimoveClient,
+  MiniwasmClient,
+  BaseClient,
+} from './chain-clients'
+
+// Service imports for Has*Service structural constraints
 import type { Query as EvmQuery } from '@buf/initia-labs_minievm.bufbuild_es/minievm/evm/v1/query_pb'
 import type { Query as WasmQuery } from '@buf/cosmwasm_wasmd.bufbuild_es/cosmwasm/wasm/v1/query_pb'
+import type { Query as MoveQuery } from '@buf/initia-labs_initia.bufbuild_es/initia/move/v1/query_pb'
 
 /**
  * Supported chain types.
@@ -35,51 +42,6 @@ export type ChainType = 'initia' | 'minievm' | 'miniwasm' | 'minimove' | 'other'
  * Accepts any string for custom networks.
  */
 export type NetworkType = 'mainnet' | 'testnet' | 'local' | (string & {})
-
-/**
- * Base client with services common to all Cosmos SDK chains.
- */
-export interface BaseClient {
-  auth: QueryClient<typeof AuthQuery>
-  bank: QueryClient<typeof BankQuery>
-  tx: QueryClient<typeof TxService>
-  tendermint: QueryClient<typeof TendermintService>
-}
-
-/**
- * Initia L1 client.
- */
-export interface InitiaClient extends BaseClient {
-  mstaking: QueryClient<typeof MstakingQuery>
-  move: QueryClient<typeof MoveQuery>
-  distribution: QueryClient<typeof InitiaDistributionQuery>
-  ophost: QueryClient<typeof OphostQuery>
-  gov: QueryClient<typeof GovQuery>
-}
-
-/**
- * Minievm rollup client.
- */
-export interface MinievmClient extends BaseClient {
-  evm: QueryClient<typeof EvmQuery>
-  opchild: QueryClient<typeof OpchildQuery>
-}
-
-/**
- * Miniwasm rollup client.
- */
-export interface MiniwasmClient extends BaseClient {
-  wasm: QueryClient<typeof WasmQuery>
-  opchild: QueryClient<typeof OpchildQuery>
-}
-
-/**
- * Minimove rollup client.
- */
-export interface MinimoveClient extends BaseClient {
-  move: QueryClient<typeof MoveQuery>
-  opchild: QueryClient<typeof OpchildQuery>
-}
 
 /**
  * Union of all chain-specific clients.

@@ -68,7 +68,7 @@ export function resolveMsgs(chainType: ChainType, network?: string): MsgsForChai
   const key = network ? `${chainType}:${network}` : chainType
   let cached = msgsCache.get(key)
   if (!cached) {
-    cached = resolveConfig(chainType, network).msgs as unknown as MsgsForChain<ChainType>
+    cached = resolveConfig(chainType, network).msgs as MsgsForChain<ChainType>
     msgsCache.set(key, cached)
   }
   return cached

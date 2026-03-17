@@ -19,6 +19,7 @@
 
 import { describe, it, expect, beforeAll } from 'vitest'
 import { createRegistryProvider } from '../../src/provider/registry-provider'
+import { createTransport } from '../../src/entry.node'
 import { MnemonicKey } from '../../src/key/mnemonic-key'
 import { EvmRpcClient } from '../../src/client/evm-rpc'
 import { sendEvmTxAndWait } from '../../src/tx/evm'
@@ -77,6 +78,7 @@ describe.skipIf(SKIP)('Bridge E2E: Sepolia ↔ L2', () => {
 
   beforeAll(async () => {
     provider = await createRegistryProvider({ network: 'testnet' })
+    provider.createTransport = createTransport
     key = new MnemonicKey({ mnemonic: TEST_MNEMONIC! })
     sepoliaRpc = new EvmRpcClient(SEPOLIA_RPC_URL)
     senderEvmAddress = key.evmAddress
@@ -100,11 +102,15 @@ describe.skipIf(SKIP)('Bridge E2E: Sepolia ↔ L2', () => {
     }, 30_000)
 
     it('should find route from Sepolia to L2', async () => {
-      route = await provider.bridge.route({
-        amount: TEST_AMOUNT_WEI,
-        source: { chainId: SEPOLIA_CHAIN_ID, denom: 'ethereum-native' },
-        dest: { chainId: L2_CHAIN, denom: 'uinit' },
-      })
+      try {
+        route = await provider.bridge.route({
+          amount: TEST_AMOUNT_WEI,
+          source: { chainId: SEPOLIA_CHAIN_ID, denom: 'ethereum-native' },
+          dest: { chainId: L2_CHAIN, denom: 'uinit' },
+        })
+      } catch (err) {
+        if (skipInfra(false, `Router API unavailable: ${String(err)}`)) return
+      }
 
       log(`Route found: ${route.operations.length} step(s)`)
       log(`  ${route.source.chainId} → ${route.dest.chainId}`)
@@ -187,11 +193,15 @@ describe.skipIf(SKIP)('Bridge E2E: Sepolia ↔ L2', () => {
     let txs: TransferTx[]
 
     it('should find route from L2 to Sepolia', async () => {
-      route = await provider.bridge.route({
-        amount: '1000000', // 1 INIT
-        source: { chainId: L2_CHAIN, denom: 'uinit' },
-        dest: { chainId: SEPOLIA_CHAIN_ID, denom: 'ethereum-native' },
-      })
+      try {
+        route = await provider.bridge.route({
+          amount: '1000000', // 1 INIT
+          source: { chainId: L2_CHAIN, denom: 'uinit' },
+          dest: { chainId: SEPOLIA_CHAIN_ID, denom: 'ethereum-native' },
+        })
+      } catch (err) {
+        if (skipInfra(false, `Router API unavailable: ${String(err)}`)) return
+      }
 
       log(`Route found: ${route.operations.length} step(s)`)
       log(`  ${route.source.chainId} → ${route.dest.chainId}`)

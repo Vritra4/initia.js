@@ -61,14 +61,8 @@ export class OpBridgeInternal {
     }
     const config = initiaChain.build(l1Chain.network)
     const transport = this.createTransport(l1Chain)
-    const raw = createGrpcClient(
-      transport,
-      config.services as Record<string, any>,
-      undefined,
-      undefined,
-      config.registry
-    )
-    this._l1Client = wrapClientWithCache(raw as unknown as InitiaClient, l1Chain.chainId)
+    const raw = createGrpcClient(transport, config.services, undefined, undefined, config.registry)
+    this._l1Client = wrapClientWithCache(raw, l1Chain.chainId) as InitiaClient
     return this._l1Client
   }
 
