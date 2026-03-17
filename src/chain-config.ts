@@ -21,6 +21,7 @@ import type { Any } from '@bufbuild/protobuf/wkt'
 
 // ─── Core Type Utilities ───────────────────────────────────────────
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 type UnionToIntersection<U> = (U extends any ? (x: U) => void : never) extends (x: infer I) => void
   ? I
   : never
@@ -165,7 +166,7 @@ export class ChainConfigBuilder<
       const schemas = extractSchemas(input.tx)
       next.typeInputs.push(...schemas)
     }
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return, @typescript-eslint/no-explicit-any
     return next as any
   }
 
@@ -217,7 +218,7 @@ export class ChainConfigBuilder<
           const schemas = extractSchemas(input.tx)
           next.typeInputs.push(...schemas)
         }
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-return, @typescript-eslint/no-explicit-any
         return next as any
       },
     } as unknown as NetworkBuilder

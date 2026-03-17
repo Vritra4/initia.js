@@ -131,6 +131,7 @@ function isChainInfo(obj: unknown): obj is ChainInfo {
 export function buildTypedFactory<T extends ChainType>(
   chainType: T,
   createTransport: (chainInfo: ChainInfo, options?: TransportOptions) => Transport,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   chainConfig: ChainConfigBuilder<any, any>,
   options?: TypedFactoryOptions
 ): TypedContextFactory<T> {
