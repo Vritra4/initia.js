@@ -18,7 +18,7 @@
  */
 
 import { describe, it, expect, beforeAll } from 'vitest'
-import { createChainContext } from '../../src/entry.node'
+import { createChainContext, createTransport } from '../../src/entry.node'
 import { createRegistryProvider } from '../../src/provider/registry-provider'
 import { Wallet } from '../../src/wallet/wallet'
 import { MnemonicKey } from '../../src/key/mnemonic-key'
@@ -232,6 +232,7 @@ describe.skipIf(SKIP)('L2 E2E: Deposit -> Transact -> Withdraw', () => {
 
   beforeAll(async () => {
     provider = await createRegistryProvider({ network: 'testnet' })
+    provider.createTransport = createTransport
     const key = new MnemonicKey({ mnemonic: TEST_MNEMONIC! })
     wallet = new Wallet(createChainContext, { key, provider })
 

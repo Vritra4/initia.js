@@ -25,38 +25,18 @@ import { hexToBytes } from '../util/hex'
 import { toAmino as protoToAmino, type AminoMsg } from '../tx/amino'
 import { InitiaError, ValidationError, ParseError } from '../errors'
 import type { Coin } from '../core/coin'
-import type { ChainType } from '../client/types'
-import { CoinSchema } from '@initia/initia-proto/cosmos/base/v1beta1/coin_pb'
+import { CoinSchema } from '@buf/cosmos_cosmos-sdk.bufbuild_es/cosmos/base/v1beta1/coin_pb'
 
-import type { BankModule } from './modules/bank'
-import type { IbcModule } from './modules/ibc'
-import type { IbcCoreModule } from './modules/ibc-core'
-import type { IbcFeeModule } from './modules/ibc-fee'
-import type { IbcIcaModule } from './modules/ibc-ica'
-import type { MstakingModule } from './modules/mstaking'
-import type { DistributionModule } from './modules/distribution'
-import type { MoveModule } from './modules/move'
-import type { GovModule } from './modules/gov'
-import type { AuthzModule } from './modules/authz'
-import type { FeegrantModule } from './modules/feegrant'
-import type { GroupModule } from './modules/group'
-import type { OphostModule } from './modules/ophost'
-import type { OpchildModule } from './modules/opchild'
-import type { EvmModule } from './modules/evm'
-import type { WasmModule } from './modules/wasm'
-import type { SlashingModule } from './modules/slashing'
-import type { EvidenceModule } from './modules/evidence'
-import type { UpgradeModule } from './modules/upgrade'
-import type { CrisisModule } from './modules/crisis'
-import type { AuthModule } from './modules/auth'
-import type { ConsensusModule } from './modules/consensus'
-import type { InitiaBankModule } from './modules/initia-bank'
-import type { InitiaDistributionModule } from './modules/initia-distribution'
-import type { InitiaGovModule } from './modules/initia-gov'
-import type { IbcHooksModule } from './modules/ibchooks'
-import type { InterTxModule } from './modules/intertx'
-import type { DynamicFeeModule } from './modules/dynamicfee'
-import type { RewardModule } from './modules/reward'
+// Chain-specific message types are derived from ChainConfigBuilder in chain-types.ts
+// (kept separate to avoid circular: chain-config.ts → msgs/types.ts → chains/*.ts → chain-config.ts)
+export type {
+  InitiaMsgs,
+  MinievmMsgs,
+  MinimoveMsgs,
+  MiniwasmMsgs,
+  BaseMsgs,
+  MsgsForChain,
+} from './chain-types'
 
 /**
  * Human-readable JSON representation of a message.
@@ -235,83 +215,6 @@ export function normalizeMsg(input: MsgInput): Message {
   // Message.fromAny validates typeUrl (string, non-empty) and value (Uint8Array)
   return Message.fromAny(input)
 }
-
-// =============================================================================
-// Module-based chain composition interfaces
-// =============================================================================
-
-interface CoreModules {
-  bank: BankModule
-  ibc: IbcModule
-  /**
-   * Create a message from any protobuf schema.
-   *
-   * Uses FriendlyCustomInit which preserves proto-optional fields as `?:`
-   * (unlike module builders where FriendlyInit + WithDefaults controls optionality).
-   * DeepFriendly transforms still apply: SDK Coin, Date, hex strings, etc.
-   */
-  custom<T extends DescMessage>(schema: T, data: FriendlyCustomInit<T>): Message<T>
-  /**
-   * Decode a protobuf Any into a typed Message using this chain's registered schemas.
-   * @throws {ParseError} if the typeUrl is not registered in the decode schema map.
-   */
-  decode(any: Any): Message
-}
-
-export interface InitiaMsgs extends CoreModules {
-  ibcCore: IbcCoreModule
-  ibcFee: IbcFeeModule
-  ibcIca: IbcIcaModule
-  mstaking: MstakingModule
-  distribution: DistributionModule
-  move: MoveModule
-  gov: GovModule
-  authz: AuthzModule
-  feegrant: FeegrantModule
-  group: GroupModule
-  ophost: OphostModule
-  slashing: SlashingModule
-  evidence: EvidenceModule
-  upgrade: UpgradeModule
-  crisis: CrisisModule
-  auth: AuthModule
-  consensus: ConsensusModule
-  initiaBank: InitiaBankModule
-  initiaDistribution: InitiaDistributionModule
-  initiaGov: InitiaGovModule
-  ibcHooks: IbcHooksModule
-  interTx: InterTxModule
-  dynamicFee: DynamicFeeModule
-  reward: RewardModule
-}
-
-export interface MinievmMsgs extends CoreModules {
-  evm: EvmModule
-  opchild: OpchildModule
-}
-
-export interface MinimoveMsgs extends CoreModules {
-  move: MoveModule
-  opchild: OpchildModule
-}
-
-export interface MiniwasmMsgs extends CoreModules {
-  wasm: WasmModule
-  opchild: OpchildModule
-}
-
-// eslint-disable-next-line @typescript-eslint/no-empty-object-type
-export interface BaseMsgs extends CoreModules {}
-
-interface MsgsMap {
-  initia: InitiaMsgs
-  minimove: MinimoveMsgs
-  miniwasm: MiniwasmMsgs
-  minievm: MinievmMsgs
-  other: BaseMsgs
-}
-
-export type MsgsForChain<T extends ChainType> = MsgsMap[T]
 
 // =============================================================================
 // FriendlyInit type system and normalizeInit
@@ -702,6 +605,3 @@ export function msgWithDefaults<S extends DescMessage>(
 export function defaultTimeout(): bigint {
   return BigInt(Date.now() + 10 * 60_000) * 1_000_000n
 }
-
-/** Adds _schemas to a msgs object. Not part of the public CoreModules interface, but accessible at runtime for schema aggregation in createMsgs(). */
-export type WithSchemas<T> = T & { readonly _schemas: readonly DescMessage[] }

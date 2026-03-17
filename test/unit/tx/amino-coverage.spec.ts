@@ -32,58 +32,58 @@ import {
 // ============= Schema imports (all schemas used by SDK msg builders) =============
 
 // Bank
-import { MsgSendSchema } from '@initia/initia-proto/cosmos/bank/v1beta1/tx_pb'
-import { CoinSchema } from '@initia/initia-proto/cosmos/base/v1beta1/coin_pb'
+import { MsgSendSchema } from '@buf/cosmos_cosmos-sdk.bufbuild_es/cosmos/bank/v1beta1/tx_pb'
+import { CoinSchema } from '@buf/cosmos_cosmos-sdk.bufbuild_es/cosmos/base/v1beta1/coin_pb'
 
 // IBC
-import { MsgTransferSchema } from '@initia/initia-proto/ibc/applications/transfer/v1/tx_pb'
+import { MsgTransferSchema } from '@buf/cosmos_ibc.bufbuild_es/ibc/applications/transfer/v1/tx_pb'
 
 // Initia mstaking
 import {
   MsgDelegateSchema,
   MsgUndelegateSchema,
   MsgBeginRedelegateSchema,
-} from '@initia/initia-proto/initia/mstaking/v1/tx_pb'
+} from '@buf/initia-labs_initia.bufbuild_es/initia/mstaking/v1/tx_pb'
 
 // Distribution
-import { MsgWithdrawDelegatorRewardSchema } from '@initia/initia-proto/cosmos/distribution/v1beta1/tx_pb'
+import { MsgWithdrawDelegatorRewardSchema } from '@buf/cosmos_cosmos-sdk.bufbuild_es/cosmos/distribution/v1beta1/tx_pb'
 
 // Move
 import {
   MsgExecuteSchema as MsgMoveExecuteSchema,
   MsgScriptSchema,
-} from '@initia/initia-proto/initia/move/v1/tx_pb'
+} from '@buf/initia-labs_initia.bufbuild_es/initia/move/v1/tx_pb'
 
 // Gov v1
 import {
   MsgVoteSchema,
   MsgDepositSchema,
-} from '@initia/initia-proto/cosmos/gov/v1/tx_pb'
+} from '@buf/cosmos_cosmos-sdk.bufbuild_es/cosmos/gov/v1/tx_pb'
 
 // Authz
 import {
   MsgGrantSchema,
   MsgExecSchema,
   MsgRevokeSchema,
-} from '@initia/initia-proto/cosmos/authz/v1beta1/tx_pb'
+} from '@buf/cosmos_cosmos-sdk.bufbuild_es/cosmos/authz/v1beta1/tx_pb'
 
 // Feegrant
 import {
   MsgGrantAllowanceSchema,
   MsgRevokeAllowanceSchema,
-} from '@initia/initia-proto/cosmos/feegrant/v1beta1/tx_pb'
+} from '@buf/cosmos_cosmos-sdk.bufbuild_es/cosmos/feegrant/v1beta1/tx_pb'
 
 // Group
 import {
   MsgCreateGroupSchema,
   MsgVoteSchema as MsgGroupVoteSchema,
-} from '@initia/initia-proto/cosmos/group/v1/tx_pb'
+} from '@buf/cosmos_cosmos-sdk.bufbuild_es/cosmos/group/v1/tx_pb'
 
 // Minievm
 import {
   MsgCreateSchema as MsgEvmCreateSchema,
   MsgCallSchema,
-} from '@initia/minievm-proto/minievm/evm/v1/tx_pb'
+} from '@buf/initia-labs_minievm.bufbuild_es/minievm/evm/v1/tx_pb'
 
 // Miniwasm (CosmWasm)
 import {
@@ -91,14 +91,14 @@ import {
   MsgInstantiateContractSchema,
   MsgExecuteContractSchema,
   MsgMigrateContractSchema,
-} from '@initia/miniwasm-proto/cosmwasm/wasm/v1/tx_pb'
+} from '@buf/cosmwasm_wasmd.bufbuild_es/cosmwasm/wasm/v1/tx_pb'
 
 // OpInit bridge
 import {
   MsgInitiateTokenDepositSchema,
   MsgFinalizeTokenWithdrawalSchema,
-} from '@initia/opinit-proto/opinit/ophost/v1/tx_pb'
-import { MsgInitiateTokenWithdrawalSchema } from '@initia/opinit-proto/opinit/opchild/v1/tx_pb'
+} from '@buf/initia-labs_opinit.bufbuild_es/opinit/ophost/v1/tx_pb'
+import { MsgInitiateTokenWithdrawalSchema } from '@buf/initia-labs_opinit.bufbuild_es/opinit/opchild/v1/tx_pb'
 
 import { create } from '@bufbuild/protobuf'
 import { AnySchema } from '@bufbuild/protobuf/wkt'

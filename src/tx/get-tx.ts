@@ -6,7 +6,7 @@
  */
 
 import type { Abi } from 'abitype'
-import type { GetTxResponse } from '@initia/initia-proto/cosmos/tx/v1beta1/service_pb'
+import type { GetTxResponse } from '@buf/cosmos_cosmos-sdk.bufbuild_es/cosmos/tx/v1beta1/service_pb'
 import type { Any } from '@bufbuild/protobuf/wkt'
 import { ConnectError, Code } from '@connectrpc/connect'
 import { InitiaError } from '../errors'

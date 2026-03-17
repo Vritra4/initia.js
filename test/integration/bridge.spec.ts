@@ -15,7 +15,7 @@ import { describe, it, expect, beforeAll } from 'vitest'
 import { createRegistryProvider, type RegistryProvider } from '../../src/provider/registry-provider'
 import type { Bridge } from '../../src/bridge/bridge'
 import { Wallet } from '../../src/wallet/wallet'
-import { createChainContext } from '../../src/entry.node'
+import { createChainContext, createTransport } from '../../src/entry.node'
 import { MnemonicKey } from '../../src/key/mnemonic-key'
 import type { ChainInfo } from '../../src/provider/types'
 
@@ -37,6 +37,7 @@ describe.skipIf(SKIP)('Bridge (Integration)', () => {
 
   beforeAll(async () => {
     provider = await createRegistryProvider({ network: 'testnet' })
+    provider.createTransport = createTransport
     bridge = provider.bridge
 
     const chains = provider.listChains()
@@ -77,7 +78,7 @@ describe.skipIf(SKIP)('Bridge (Integration)', () => {
 
       // Use a dummy address — getWithdrawals will hit Executor API first,
       // but we can verify the L1 client is created and works by querying directly
-      const { fromChain } = await import('../../src/client/from-chain-standalone')
+      const { fromChain } = await import('../../src/entry.node')
       const result = fromChain(l1Chain.chainId, { provider })
       const ophost = (result.client as { ophost: any }).ophost
 
@@ -93,7 +94,7 @@ describe.skipIf(SKIP)('Bridge (Integration)', () => {
     it('should query output proposals for an L2 bridge', async () => {
       const l2 = l2Chains[0]
 
-      const { fromChain } = await import('../../src/client/from-chain-standalone')
+      const { fromChain } = await import('../../src/entry.node')
       const result = fromChain(l1Chain.chainId, { provider })
       const ophost = (result.client as { ophost: any }).ophost
 

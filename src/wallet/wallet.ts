@@ -17,8 +17,8 @@ import {
   SignerInfoSchema,
   ModeInfoSchema,
   FeeSchema,
-} from '@initia/initia-proto/cosmos/tx/v1beta1/tx_pb'
-import { SignMode } from '@initia/initia-proto/cosmos/tx/signing/v1beta1/signing_pb'
+} from '@buf/cosmos_cosmos-sdk.bufbuild_es/cosmos/tx/v1beta1/tx_pb'
+import { SignMode } from '@buf/cosmos_cosmos-sdk.bufbuild_es/cosmos/tx/signing/v1beta1/signing_pb'
 import { bech32 } from '@scure/base'
 import type { Key } from '../key'
 import { DEFAULT_GAS_LIMIT } from '../constants'

@@ -48,7 +48,10 @@ export class WalletBridge {
     provider: ChainInfoProvider
   ) {
     this.provider = provider
-    this.op = new Bridge(provider)
+    if (!provider.createTransport) {
+      throw new Error('createTransport not set on provider — use createWallet() or a typed context factory')
+    }
+    this.op = new Bridge(provider, provider.createTransport)
   }
 
   /**

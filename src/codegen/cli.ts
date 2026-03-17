@@ -21,7 +21,7 @@ import { readFile, writeFile } from 'node:fs/promises'
 import { resolve } from 'node:path'
 
 import { createGrpcTransport } from '@connectrpc/connect-node'
-import { Query as MoveQuery } from '@initia/initia-proto/initia/move/v1/query_pb'
+import { Query as MoveQuery } from '@buf/initia-labs_initia.bufbuild_es/initia/move/v1/query_pb'
 
 import { createGrpcClient } from '../client/grpc-client'
 import { normalizeUrl } from '../client/transport-common'

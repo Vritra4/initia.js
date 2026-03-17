@@ -9,11 +9,11 @@ import type { Client } from '@connectrpc/connect'
 import { create } from '@bufbuild/protobuf'
 import { encodeFunctionData, decodeFunctionResult, decodeErrorResult, encodeDeployData } from 'viem'
 
-import type { Query as EvmQuery } from '@initia/minievm-proto/minievm/evm/v1/query_pb'
+import type { Query as EvmQuery } from '@buf/initia-labs_minievm.bufbuild_es/minievm/evm/v1/query_pb'
 import {
   MsgCallSchema,
   type MsgCall,
-} from '@initia/minievm-proto/minievm/evm/v1/tx_pb'
+} from '@buf/initia-labs_minievm.bufbuild_es/minievm/evm/v1/tx_pb'
 
 import { Message } from '../../msgs/types'
 import type { HasEvmService } from '../../client/types'

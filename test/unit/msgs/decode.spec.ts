@@ -5,8 +5,8 @@
 import { describe, it, expect } from 'vitest'
 import { createDecode } from '../../../src/msgs/decode'
 import { Message, isMessageOf } from '../../../src/msgs/types'
-import { MsgSendSchema } from '@initia/initia-proto/cosmos/bank/v1beta1/tx_pb'
-import { MsgTransferSchema } from '@initia/initia-proto/ibc/applications/transfer/v1/tx_pb'
+import { MsgSendSchema } from '@buf/cosmos_cosmos-sdk.bufbuild_es/cosmos/bank/v1beta1/tx_pb'
+import { MsgTransferSchema } from '@buf/cosmos_ibc.bufbuild_es/ibc/applications/transfer/v1/tx_pb'
 import { ParseError } from '../../../src/errors'
 
 describe('createDecode', () => {
@@ -82,6 +82,29 @@ describe('createDecode', () => {
       $typeName: 'google.protobuf.Any' as const,
     }
     expect(() => decode(emptyAny)).toThrow(ParseError)
+  })
+
+  it('should throw ParseError for any typeUrl when schema list is empty', () => {
+    const emptyDecode = createDecode([])
+    const any = {
+      typeUrl: '/cosmos.bank.v1beta1.MsgSend',
+      value: new Uint8Array([]),
+      $typeName: 'google.protobuf.Any' as const,
+    }
+    expect(() => emptyDecode(any)).toThrow(ParseError)
+  })
+
+  it('error message includes the unrecognized typeUrl', () => {
+    try {
+      decode({
+        typeUrl: '/foo.bar.Baz',
+        value: new Uint8Array([]),
+        $typeName: 'google.protobuf.Any' as const,
+      })
+      expect.unreachable('should throw')
+    } catch (e) {
+      expect((e as Error).message).toContain('/foo.bar.Baz')
+    }
   })
 
   it('should use last schema when duplicates exist (override semantics)', () => {

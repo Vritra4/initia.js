@@ -8,7 +8,7 @@
 import { describe, it, expect, beforeAll } from 'vitest'
 import { createClient } from '@connectrpc/connect'
 import { createGrpcTransport } from '@connectrpc/connect-node'
-import { Query as EvmQuery } from '@initia/minievm-proto/minievm/evm/v1/query_pb'
+import { Query as EvmQuery } from '@buf/initia-labs_minievm.bufbuild_es/minievm/evm/v1/query_pb'
 import { encodeFunctionData, decodeFunctionResult, parseAbi } from 'viem'
 import { createRegistryProvider } from '../src/provider/registry-provider'
 
@@ -44,7 +44,9 @@ describe('EVM Call via gRPC', () => {
           console.log(`Found ERC20 for native denom "${evm1.nativeDenom}":`, erc20Address)
           return
         }
-      } catch { /* try denom reverse lookup */ }
+      } catch {
+        /* try denom reverse lookup */
+      }
     }
 
     // Fallback: reverse lookup from known ERC20 wrapper address
@@ -61,7 +63,9 @@ describe('EVM Call via gRPC', () => {
             return
           }
         }
-      } catch { /* factory itself may not have a denom mapping */ }
+      } catch {
+        /* factory itself may not have a denom mapping */
+      }
     }
 
     throw new Error('No ERC20 token found on evm-1 testnet')
@@ -90,9 +94,7 @@ describe('EVM Call via gRPC', () => {
     expect(response.error).toBeFalsy()
     expect(response.response).toBeTruthy()
 
-    const data = response.response.startsWith('0x')
-      ? response.response
-      : `0x${response.response}`
+    const data = response.response.startsWith('0x') ? response.response : `0x${response.response}`
     const name = decodeFunctionResult({
       abi: ERC20_ABI,
       functionName: 'name',
@@ -118,9 +120,7 @@ describe('EVM Call via gRPC', () => {
     expect(response.error).toBeFalsy()
     expect(response.response).toBeTruthy()
 
-    const data = response.response.startsWith('0x')
-      ? response.response
-      : `0x${response.response}`
+    const data = response.response.startsWith('0x') ? response.response : `0x${response.response}`
     const decimals = decodeFunctionResult({
       abi: ERC20_ABI,
       functionName: 'decimals',
@@ -149,9 +149,7 @@ describe('EVM Call via gRPC', () => {
     expect(response.error).toBeFalsy()
     expect(response.response).toBeTruthy()
 
-    const data = response.response.startsWith('0x')
-      ? response.response
-      : `0x${response.response}`
+    const data = response.response.startsWith('0x') ? response.response : `0x${response.response}`
     const balance = decodeFunctionResult({
       abi: ERC20_ABI,
       functionName: 'balanceOf',

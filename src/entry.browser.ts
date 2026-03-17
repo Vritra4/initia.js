@@ -2,7 +2,6 @@
  * Browser entry point for initia.js
  *
  * Uses gRPC-web transport compatible with all modern browsers.
- * All APIs are synchronous (no async transport creation needed).
  */
 
 export * from './index'
@@ -12,20 +11,11 @@ import type { TransportOptions } from './client/transport-common'
 import type { Key } from './key'
 import type { ChainInfoProvider } from './provider/types'
 import { createTransport } from './client/transport.browser'
-import { createClientWithTransport } from './client/client'
-import { getServicesForChain, getTypeRegistryForChain } from './client/services'
-import { InitiaServices } from './client/services/initia'
-import { MinievmServices } from './client/services/minievm'
-import { MiniwasmServices } from './client/services/miniwasm'
-import { MinimoveServices } from './client/services/minimove'
-import { createMsgs } from './msgs'
-import { initiaMsgs } from './msgs/initia'
-import { minievmMsgs } from './msgs/minievm'
-import { miniwasmMsgs } from './msgs/miniwasm'
-import { minimoveMsgs } from './msgs/minimove'
 import type { Client } from './client/types'
+import { resolveServices, resolveRegistry, resolveMsgs } from './chains/resolve'
+import { resolveClient } from './client/resolve-client'
 import { buildChainContextFactory } from './wallet/chain-context'
-import { buildTypedFactory, L1_CHAIN_IDS } from './wallet/typed-context'
+import { buildTypedFactory } from './wallet/typed-context'
 import { buildFromChain } from './client/from-chain'
 import { Wallet } from './wallet/wallet'
 import {
@@ -34,30 +24,67 @@ import {
   type WasmEnabled,
   type MoveEnabled,
 } from './token/resolver'
-import { createErc20Token } from './token/erc20'
-import { createCw20Token } from './token/cw20'
-import { createFungibleAssetToken } from './token/fungible-asset'
-import type { AbiRegistry } from './tx/get-tx'
-import type { Abi } from 'abitype'
-import type { MoveModuleAbi } from './contracts/move/types'
-import { createMoveEnricher } from './tx/enrichers/move'
-import { createEvmEnricher } from './tx/enrichers/evm'
-import { createWasmEnricher } from './tx/enrichers/wasm'
+
+// Per-chain context configs (tree-shakeable — each imports only its own chain proto)
+import { initiaContextConfig } from './contexts/initia'
+import { minievmContextConfig } from './contexts/minievm'
+import { minimoveContextConfig } from './contexts/minimove'
+import { miniwasmContextConfig } from './contexts/miniwasm'
+import { cosmosContextConfig } from './contexts/cosmos'
 
 export { createTransport }
+
+// =============================================================================
+// Per-chain typed factories (tree-shakeable)
+// =============================================================================
+
+export const createInitiaContext = /* @__PURE__ */ buildTypedFactory(
+  'initia',
+  createTransport,
+  initiaContextConfig[0],
+  initiaContextConfig[1]
+)
+export const createMinievmContext = /* @__PURE__ */ buildTypedFactory(
+  'minievm',
+  createTransport,
+  minievmContextConfig[0],
+  minievmContextConfig[1]
+)
+export const createMiniwasmContext = /* @__PURE__ */ buildTypedFactory(
+  'miniwasm',
+  createTransport,
+  miniwasmContextConfig[0],
+  miniwasmContextConfig[1]
+)
+export const createMinimoveContext = /* @__PURE__ */ buildTypedFactory(
+  'minimove',
+  createTransport,
+  minimoveContextConfig[0],
+  minimoveContextConfig[1]
+)
+export const createCosmosContext = /* @__PURE__ */ buildTypedFactory(
+  'other',
+  createTransport,
+  cosmosContextConfig[0],
+  cosmosContextConfig[1]
+)
+
+// =============================================================================
+// Runtime-resolved APIs (import all chains via resolve.ts — tree-shaken if unused)
+// =============================================================================
 
 /**
  * Create a ChainContext from chain info (browser).
  *
- * Uses gRPC-web transport.
+ * Note: This imports all chain configs at runtime for dynamic resolution.
+ * If your chain type is known at build time, prefer the typed factories
+ * (createInitiaContext, createMinievmContext, etc.) for smaller bundles.
  */
 export const createChainContext = /* @__PURE__ */ buildChainContextFactory(
   createTransport,
-  getServicesForChain,
-  createMsgs,
+  resolveServices,
+  resolveMsgs,
   {
-    // Generic path: assert client to all VM interfaces, narrow chainType to satisfy overload resolution.
-    // Safe: resolveTokenContract's implementation dispatches on actual chainType at runtime.
     tokenResolver: (client, chainType, token, sender) =>
       resolveTokenContract(
         client as EvmEnabled & WasmEnabled & MoveEnabled,
@@ -65,120 +92,37 @@ export const createChainContext = /* @__PURE__ */ buildChainContextFactory(
         token,
         sender
       ),
-    getTypeRegistry: getTypeRegistryForChain,
-  }
-)
-
-/**
- * Typed context factories — create ChainContext without generic params.
- *
- * Each supports three calling styles:
- * - `await createInitiaContext({ network: 'testnet', signer: key })` — all-in-one
- * - `createInitiaContext(provider, chainId, { signer: key })` — reuse provider
- * - `createInitiaContext(chainInfo, { signer: key })` — direct chainInfo
- *
- * Each factory imports only its own chain's services and msgs,
- * enabling tree-shaking of unused chain types.
- */
-// TokenResolver.client is `unknown` intentionally — keeps chain-context.ts decoupled from VM types for tree-shaking.
-// Each typed factory asserts to the specific VM interface (EvmEnabled/WasmEnabled/MoveEnabled) at this boundary.
-export const createInitiaContext = /* @__PURE__ */ buildTypedFactory(
-  'initia',
-  createTransport,
-  InitiaServices,
-  initiaMsgs,
-  {
-    getDefaultChainId: n => L1_CHAIN_IDS[n],
-    tokenResolver: (_client, _ct, token) =>
-      createFungibleAssetToken((_client as MoveEnabled).move, token),
-    enricherFactory: (client, abis) => [
-      createMoveEnricher(
-        (client as unknown as MoveEnabled).move,
-        abis as AbiRegistry<MoveModuleAbi>
-      ),
-    ],
-  }
-)
-export const createMinievmContext = /* @__PURE__ */ buildTypedFactory(
-  'minievm',
-  createTransport,
-  MinievmServices,
-  minievmMsgs,
-  {
-    tokenResolver: (_client, _ct, token, sender) =>
-      createErc20Token((_client as EvmEnabled).evm, token, sender),
-    enricherFactory: (_client, abis) => [createEvmEnricher(abis as AbiRegistry<Abi>)],
-  }
-)
-export const createMiniwasmContext = /* @__PURE__ */ buildTypedFactory(
-  'miniwasm',
-  createTransport,
-  MiniwasmServices,
-  miniwasmMsgs,
-  {
-    tokenResolver: (_client, _ct, token) => createCw20Token((_client as WasmEnabled).wasm, token),
-    enricherFactory: () => [createWasmEnricher()],
-  }
-)
-export const createMinimoveContext = /* @__PURE__ */ buildTypedFactory(
-  'minimove',
-  createTransport,
-  MinimoveServices,
-  minimoveMsgs,
-  {
-    tokenResolver: (_client, _ct, token) =>
-      createFungibleAssetToken((_client as MoveEnabled).move, token),
-    enricherFactory: (client, abis) => [
-      createMoveEnricher(
-        (client as unknown as MoveEnabled).move,
-        abis as AbiRegistry<MoveModuleAbi>
-      ),
-    ],
+    getTypeRegistry: resolveRegistry,
   }
 )
 
 /**
  * Create a raw gRPC client from chain ID (browser).
  *
- * Uses gRPC-web transport.
+ * Note: Imports all chain configs. Prefer per-chain createClient for smaller bundles.
  */
 export const fromChain = /* @__PURE__ */ buildFromChain(
   createTransport,
-  getServicesForChain,
-  getTypeRegistryForChain
+  resolveServices,
+  resolveRegistry
 )
 
 /**
  * Create a Wallet instance (browser).
- *
- * @param options - Wallet options (key and/or provider)
- * @returns Wallet instance wired with gRPC-web transport
  */
 export function createWallet(options?: { key?: Key; provider?: ChainInfoProvider }): Wallet {
+  if (options?.provider) {
+    options.provider.createTransport = createTransport
+  }
   return new Wallet(createChainContext, options)
 }
 
 /**
- * Create a gRPC client from chain info.
+ * Create a gRPC client from chain info (browser).
  *
- * Uses gRPC-web transport (browser compatible).
- *
- * @param chainInfo - Chain configuration from provider
- * @param options - Transport options
- * @returns gRPC client with chain-appropriate services
- *
- * @example
- * ```typescript
- * import { createClient, createRegistryProvider } from 'initia.js'
- *
- * const provider = await createRegistryProvider()
- * const chainInfo = provider.getChainInfo('interwoven-1')
- * const client = createClient(chainInfo)
- *
- * const balance = await client.bank.balance({ address, denom: 'uinit' })
- * ```
+ * Note: Imports all chain configs. Prefer per-chain subpath imports for smaller bundles.
  */
 export function createClient(chainInfo: ChainInfo, options?: TransportOptions): Client {
   const transport = createTransport(chainInfo, options)
-  return createClientWithTransport(chainInfo, transport)
+  return resolveClient(chainInfo, transport)
 }

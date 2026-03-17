@@ -6,7 +6,10 @@ import type { ChainInfoProvider } from '../provider/types'
 import type { Subscription, WsTxResult } from '../client/websocket'
 import { createSession, type WebSocketSession } from '../client/websocket/session'
 import type { InitiaClient } from '../client/types'
-import { fromChain } from '../client/from-chain-standalone'
+import type { TransportFactory } from '../client/transport-common'
+import { initiaChain } from '../chains/initia'
+import { createGrpcClient } from '../client/grpc-client'
+import { wrapClientWithCache } from '../client/cached-client'
 import { TimeoutError, WebSocketNotAvailableError } from '../errors'
 import { durationToMs } from './utils'
 import type {
@@ -210,7 +213,8 @@ export function watchDeposit(
 export function watchWithdrawal(
   provider: ChainInfoProvider,
   options: WatchWithdrawalOptions,
-  callback: (event: WithdrawalEvent) => void
+  callback: (event: WithdrawalEvent) => void,
+  createTransport: TransportFactory
 ): BridgeWatchHandle {
   const l2Info = provider.getChainInfo(options.l2ChainId)
   if (!l2Info) throw new Error(`Chain not found: ${options.l2ChainId}`)
@@ -265,8 +269,11 @@ export function watchWithdrawal(
   // handleError's default also calls cleanup).
   // Stored as a Promise so propose_output callbacks can await it (avoids race).
   const finalizationMsPromise = (async () => {
-    const { client } = fromChain(l1Info.chainId, { provider })
-    const ophost = (client as InitiaClient).ophost
+    const config = initiaChain.build(l1Info.network)
+    const transport = createTransport(l1Info)
+    const raw = createGrpcClient(transport, config.services, undefined, undefined, config.registry)
+    const client = wrapClientWithCache(raw, l1Info.chainId) as InitiaClient
+    const ophost = client.ophost
     const resp = await ophost.bridge({ bridgeId })
     const fp = resp.bridgeConfig?.finalizationPeriod
     if (!fp) {
@@ -461,10 +468,17 @@ export function waitForDeposit(
  */
 export function waitForClaimable(
   provider: ChainInfoProvider,
-  options: WatchWithdrawalOptions & { timeout?: number }
+  options: WatchWithdrawalOptions & { timeout?: number },
+  createTransport: TransportFactory
 ): Promise<WithdrawalEvent & { status: 'claimable' }> {
+  // Wrap watchWithdrawal to match waitForEvent's 3-param watchFn signature
+  const watchFn = (
+    p: ChainInfoProvider,
+    opts: WatchWithdrawalOptions,
+    cb: (event: WithdrawalEvent) => void
+  ) => watchWithdrawal(p, opts, cb, createTransport)
   return waitForEvent(
-    watchWithdrawal,
+    watchFn,
     provider,
     options,
     'claimable',

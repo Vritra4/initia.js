@@ -7,14 +7,15 @@
 
 import type { Numeric } from '../types'
 import { create } from '@bufbuild/protobuf'
-import { CoinSchema } from '@initia/initia-proto/cosmos/base/v1beta1/coin_pb'
+import { CoinSchema } from '@buf/cosmos_cosmos-sdk.bufbuild_es/cosmos/base/v1beta1/coin_pb'
 import {
   MsgInitiateTokenDepositSchema,
   MsgFinalizeTokenWithdrawalSchema,
-} from '@initia/opinit-proto/opinit/ophost/v1/tx_pb'
-import { MsgInitiateTokenWithdrawalSchema } from '@initia/opinit-proto/opinit/opchild/v1/tx_pb'
+} from '@buf/initia-labs_opinit.bufbuild_es/opinit/ophost/v1/tx_pb'
+import { MsgInitiateTokenWithdrawalSchema } from '@buf/initia-labs_opinit.bufbuild_es/opinit/opchild/v1/tx_pb'
 import type { ChainInfo, ChainInfoProvider } from '../provider/types'
 import type { InitiaClient } from '../client/types'
+import type { TransportFactory } from '../client/transport-common'
 import { Message } from '../msgs/types'
 import type {
   ClaimOptions,
@@ -26,7 +27,9 @@ import type {
 import { parseCoin } from '../core/coin'
 import { hexToBytes } from '@noble/hashes/utils.js'
 import { isNotFoundError } from '../errors'
-import { fromChain } from '../client/from-chain-standalone'
+import { initiaChain } from '../chains/initia'
+import { createGrpcClient } from '../client/grpc-client'
+import { wrapClientWithCache } from '../client/cached-client'
 import { fetchWithdrawals, fetchWithdrawal, type FetchWithdrawalsOptions } from './executor'
 import { calculateWithdrawalHash } from './hash'
 import { durationToMs, timestampToMs } from './utils'
@@ -38,7 +41,10 @@ import { durationToMs, timestampToMs } from './utils'
 export class OpBridgeInternal {
   private _l1Client?: InitiaClient
 
-  constructor(private provider: ChainInfoProvider) {}
+  constructor(
+    private provider: ChainInfoProvider,
+    private createTransport: TransportFactory
+  ) {}
 
   /**
    * Lazily create and cache the L1 ophost gRPC client.
@@ -53,8 +59,10 @@ export class OpBridgeInternal {
           'Ensure the provider includes L1 chain info for withdrawal status queries.'
       )
     }
-    const result = fromChain(l1Chain.chainId, { provider: this.provider })
-    this._l1Client = result.client as InitiaClient
+    const config = initiaChain.build(l1Chain.network)
+    const transport = this.createTransport(l1Chain)
+    const raw = createGrpcClient(transport, config.services, undefined, undefined, config.registry)
+    this._l1Client = wrapClientWithCache(raw, l1Chain.chainId) as InitiaClient
     return this._l1Client
   }
 

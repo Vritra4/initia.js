@@ -5,7 +5,7 @@
  * used by both Node.js and browser transport implementations.
  */
 
-import { ConnectError, Code, type Interceptor } from '@connectrpc/connect'
+import { ConnectError, Code, type Interceptor, type Transport } from '@connectrpc/connect'
 import type { ChainInfo } from '../provider/types'
 
 export type { Interceptor }
@@ -58,6 +58,12 @@ export interface TransportOptions {
    */
   headers?: Record<string, string>
 }
+
+/**
+ * Factory function type for creating platform-specific transports.
+ * Used for transport injection in bridge and provider code.
+ */
+export type TransportFactory = (chainInfo: ChainInfo, options?: TransportOptions) => Transport
 
 /**
  * Create an interceptor that adds custom headers to all requests.

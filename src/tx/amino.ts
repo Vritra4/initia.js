@@ -16,7 +16,7 @@ import {
   field_name as aminoFieldName,
   encoding as aminoEncoding,
   dont_omitempty as aminoDontOmitempty,
-} from '@initia/initia-proto/amino/amino_pb'
+} from '@buf/cosmos_cosmos-sdk.bufbuild_es/amino/amino_pb'
 import { NotImplementedError } from '../errors'
 
 /**

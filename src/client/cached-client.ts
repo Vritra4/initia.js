@@ -57,8 +57,8 @@
  */
 
 import type { Client as ServiceClient } from '@connectrpc/connect'
-import type { Query as MoveQuery } from '@initia/initia-proto/initia/move/v1/query_pb'
-import type { Query as EvmQuery } from '@initia/minievm-proto/minievm/evm/v1/query_pb'
+import type { Query as MoveQuery } from '@buf/initia-labs_initia.bufbuild_es/initia/move/v1/query_pb'
+import type { Query as EvmQuery } from '@buf/initia-labs_minievm.bufbuild_es/minievm/evm/v1/query_pb'
 import { createCacheManager, type CacheManager } from '../cache'
 import {
   cacheKeys,
@@ -68,7 +68,7 @@ import {
   buildCacheKey,
   hashRequestJson,
 } from '../cache/keys'
-import type { Client, QueryOptions } from './types'
+import type { QueryOptions } from './types'
 
 // =============================================================================
 // Types
@@ -354,7 +354,7 @@ function createCachedEvmService(
  * @param chainId - Chain ID for cache key namespacing
  * @returns Client with caching enabled and clearCache() method
  */
-export function wrapClientWithCache<T extends Client>(
+export function wrapClientWithCache<T extends Record<string, unknown>>(
   client: T,
   chainId: string
 ): T & CachedClient {

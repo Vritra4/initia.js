@@ -13,8 +13,8 @@ import { Message } from './types'
  * to narrow the type and access typed `.value` properties.
  *
  * When duplicate typeUrls exist in schemas, the last entry wins (override semantics).
- * This is intentional for createMsgs module injection where custom schemas
- * should override base schemas.
+ * This is intentional for ChainConfigBuilder where network-specific overrides
+ * may replace base module schemas.
  */
 export function createDecode(schemas: DescMessage[]): (packed: Any) => Message {
   const map = new Map<string, DescMessage>()

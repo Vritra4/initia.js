@@ -7,8 +7,8 @@
 
 import type { Numeric } from '../types'
 import type { Client as ConnectClient } from '@connectrpc/connect'
-import { MsgExecuteJSONSchema } from '@initia/initia-proto/initia/move/v1/tx_pb'
-import type { Query as MoveQuery } from '@initia/initia-proto/initia/move/v1/query_pb'
+import { MsgExecuteJSONSchema } from '@buf/initia-labs_initia.bufbuild_es/initia/move/v1/tx_pb'
+import type { Query as MoveQuery } from '@buf/initia-labs_initia.bufbuild_es/initia/move/v1/query_pb'
 
 import type { TokenInfo } from '../contracts/types'
 import { Message } from '../msgs/types'
@@ -43,7 +43,9 @@ export function createFungibleAssetToken(
     try {
       return JSON.parse(response.data)
     } catch {
-      return response.data
+      throw new Error(
+        `Failed to parse Move view response for ${moduleName}::${functionName}: ${response.data}`
+      )
     }
   }
 

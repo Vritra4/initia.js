@@ -2,6 +2,7 @@
  * Provider types for chain information resolution.
  */
 
+import type { Transport } from '@connectrpc/connect'
 import type { ChainType, NetworkType } from '../client/types'
 import type { Coin } from '../core/coin'
 import type { AssetList } from '@initia/initia-registry-types'
@@ -127,6 +128,9 @@ export interface ChainInfoProvider {
    * @returns true if chain is available
    */
   hasChain(chainId: string): boolean
+
+  /** Transport factory for bridge operations. Set by entry points. */
+  createTransport?: (chainInfo: ChainInfo, options?: { timeout?: number; headers?: Record<string, string> }) => Transport
 }
 
 // =============================================================================

@@ -16,12 +16,13 @@
  * ```
  */
 
-import type { DescService, Registry } from '@bufbuild/protobuf'
+import type { DescService } from '@bufbuild/protobuf'
 import type { Transport } from '@connectrpc/connect'
 import type { ChainInfoProvider, ChainInfoForType, ChainInfo } from '../provider/types'
 import type { ChainType } from '../client/types'
 import type { TransportOptions } from '../client/transport-common'
 import type { MsgsForChain } from '../msgs/types'
+import type { ChainConfigBuilder } from '../chain-config'
 import {
   buildChainContextFactory,
   type ChainContext,
@@ -116,14 +117,13 @@ function isChainInfo(obj: unknown): obj is ChainInfo {
  *
  * @param chainType - The chain type this factory handles
  * @param createTransport - Platform-specific transport creator
- * @param services - Service registry for this chain type
- * @param msgs - Message builders for this chain type
+ * @param chainConfig - ChainConfigBuilder for this chain type
  * @param options - Additional options (e.g., getDefaultChainId for L1)
  *
  * @example
  * ```typescript
  * export const createInitiaContext = buildTypedFactory(
- *   'initia', createTransport, InitiaServices, initiaMsgs,
+ *   'initia', createTransport, initiaChain,
  *   { getDefaultChainId: n => L1_CHAIN_IDS[n] }
  * )
  * ```
@@ -131,22 +131,31 @@ function isChainInfo(obj: unknown): obj is ChainInfo {
 export function buildTypedFactory<T extends ChainType>(
   chainType: T,
   createTransport: (chainInfo: ChainInfo, options?: TransportOptions) => Transport,
-  services: {
-    getServices(network?: string): Record<string, DescService>
-    getRegistry(): Registry
-  },
-  msgs: MsgsForChain<T>,
+  chainConfig: ChainConfigBuilder<any, any>,
   options?: TypedFactoryOptions
 ): TypedContextFactory<T> {
   const getDefaultChainId = options?.getDefaultChainId
 
-  // Resolve type registry once — ServiceRegistryBuilder types are static (registered at module load)
-  const typeRegistry = services.getRegistry()
+  // Build default config once — registry is shared across all networks
+  const defaultConfig = chainConfig.build()
+  const typeRegistry = defaultConfig.registry
+
+  // Cache network-specific builds to avoid rebuilding on every context creation
+  const configByNetwork = new Map<string, ReturnType<typeof chainConfig.build>>()
+  function getConfig(network?: string) {
+    if (!network) return defaultConfig
+    let cached = configByNetwork.get(network)
+    if (!cached) {
+      cached = chainConfig.build(network)
+      configByNetwork.set(network, cached)
+    }
+    return cached
+  }
 
   const create = buildChainContextFactory(
     createTransport,
-    chainInfo => services.getServices(chainInfo.network),
-    () => msgs as MsgsForChain<ChainType>,
+    chainInfo => getConfig(chainInfo.network).services as Record<string, DescService>,
+    (_chainType, network?) => getConfig(network).msgs as unknown as MsgsForChain<ChainType>,
     {
       tokenResolver: options?.tokenResolver,
       enricherFactory: options?.enricherFactory,
@@ -170,6 +179,10 @@ export function buildTypedFactory<T extends ChainType>(
     chainId: string,
     ctxOptions?: ChainContextOptions
   ): ChainContext<T> {
+    // Inject transport factory so provider.bridge works
+    if (!provider.createTransport) {
+      provider.createTransport = createTransport
+    }
     const chainInfo = provider.getChainInfo<T>(chainId)
     if (!chainInfo) throw new Error(`Chain '${chainId}' not found in provider`)
     return create(chainInfo, ctxOptions)
@@ -207,6 +220,7 @@ export function buildTypedFactory<T extends ChainType>(
     // the static import graph, enabling tree-shaking of unused chain services.
     return import('../provider/registry-provider').then(({ createRegistryProvider }) =>
       createRegistryProvider({ network }).then(prov => {
+        if (!prov.createTransport) prov.createTransport = createTransport
         const info = prov.getChainInfo<T>(id)
         if (!info) throw new Error(`Chain '${id}' not found in ${network} registry`)
         return create(info, contextOptions)

@@ -33,9 +33,11 @@ const l1Chain: ChainInfo = {
   network: 'testnet',
 }
 
+const mockCreateTransport = (() => ({})) as any
+
 describe('Bridge', () => {
   const provider = createMockProvider([l1Chain, l2Chain])
-  const bridge = new Bridge(provider)
+  const bridge = new Bridge(provider, mockCreateTransport)
 
   describe('getBridgeId', () => {
     it('should return opBridgeId for L2 chain', () => {

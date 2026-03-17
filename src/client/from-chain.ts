@@ -137,6 +137,11 @@ export function buildFromChain(
     }
     const provider = options.provider
 
+    // Inject transport factory so provider.bridge works
+    if (!provider.createTransport) {
+      provider.createTransport = createTransport
+    }
+
     const chainInfo = provider.getChainInfo(chainId)
     if (!chainInfo) {
       throw new Error(`Chain not found: ${chainId}`)
@@ -146,8 +151,6 @@ export function buildFromChain(
     const transport = options.transport ?? createTransport(chainInfo)
     const typeRegistry = getTypeRegistry?.(chainInfo)
 
-    // Cast through unknown: createGrpcClient returns ServiceClients<Record<string, DescService>>
-    // which is structurally correct but too wide for TypeScript to narrow automatically.
     const rawClient = createGrpcClient(
       transport,
       services,

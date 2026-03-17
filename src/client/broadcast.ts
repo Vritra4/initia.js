@@ -2,7 +2,7 @@
  * Broadcast module - Submit signed transactions to the network.
  */
 
-import { BroadcastMode as BsrBroadcastMode } from '@initia/initia-proto/cosmos/tx/v1beta1/service_pb'
+import { BroadcastMode as BsrBroadcastMode } from '@buf/cosmos_cosmos-sdk.bufbuild_es/cosmos/tx/v1beta1/service_pb'
 import { BroadcastError } from '../errors'
 import type { SignedTx, TxOptions } from './types'
 import type { TxResult, WaitForTxOptions } from './websocket'

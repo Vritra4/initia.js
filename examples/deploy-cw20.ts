@@ -16,7 +16,6 @@
 import * as fs from 'node:fs'
 import * as path from 'node:path'
 import { createMiniwasmContext, MnemonicKey } from 'initia.js'
-import { miniwasmMsgs } from 'initia.js/msgs'
 import { findEvent, getEventAttribute } from 'initia.js/events'
 import { TEST_MNEMONIC, SENDER } from './constants'
 
@@ -67,7 +66,7 @@ async function main() {
 
   // 3. Store code
   console.log('\nStoring code...')
-  const storeMsg = miniwasmMsgs.storeCode(key.address, wasmByteCode)
+  const storeMsg = ctx.msgs.wasm.storeCode({ sender: key.address, wasmByteCode })
 
   const storeResult = await ctx.signAndBroadcast([storeMsg], {
     waitForConfirmation: true,
@@ -87,12 +86,14 @@ async function main() {
 
   // 4. Instantiate contract
   console.log('\nInstantiating CW20...')
-  const initMsg = miniwasmMsgs.instantiate(
-    key.address,
-    BigInt(codeId),
-    TOKEN_CONFIG,
-    `cw20-${TOKEN_CONFIG.symbol.toLowerCase()}-${Date.now()}`
-  )
+  const initMsg = ctx.msgs.wasm.instantiateContract({
+    sender: key.address,
+    codeId: BigInt(codeId),
+    msg: new TextEncoder().encode(JSON.stringify(TOKEN_CONFIG)),
+    label: `cw20-${TOKEN_CONFIG.symbol.toLowerCase()}-${Date.now()}`,
+    funds: [],
+    admin: key.address,
+  })
 
   const initResult = await ctx.signAndBroadcast([initMsg], {
     waitForConfirmation: true,

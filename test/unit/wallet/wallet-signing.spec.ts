@@ -11,7 +11,7 @@ import { describe, it, expect } from 'vitest'
 import { Wallet } from '../../../src/wallet/wallet'
 import { RawKey } from '../../../src/key/raw-key'
 import { Message } from '../../../src/msgs/types'
-import { MsgSendSchema } from '@initia/initia-proto/cosmos/bank/v1beta1/tx_pb'
+import { MsgSendSchema } from '@buf/cosmos_cosmos-sdk.bufbuild_es/cosmos/bank/v1beta1/tx_pb'
 import type { CreateTxOptions, WalletSignOptions } from '../../../src/wallet/wallet'
 
 // Deterministic test key

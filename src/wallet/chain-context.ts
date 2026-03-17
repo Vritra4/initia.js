@@ -33,8 +33,8 @@ import {
   SignerInfoSchema,
   ModeInfoSchema,
   FeeSchema,
-} from '@initia/initia-proto/cosmos/tx/v1beta1/tx_pb'
-import { SignMode } from '@initia/initia-proto/cosmos/tx/signing/v1beta1/signing_pb'
+} from '@buf/cosmos_cosmos-sdk.bufbuild_es/cosmos/tx/v1beta1/tx_pb'
+import { SignMode } from '@buf/cosmos_cosmos-sdk.bufbuild_es/cosmos/tx/signing/v1beta1/signing_pb'
 import type { Transport } from '@connectrpc/connect'
 import { Key } from '../key'
 import {
@@ -122,7 +122,10 @@ export type { BroadcastResultWithWait, SignBroadcastOptions }
 export { WebSocketSession }
 
 /** Factory that creates enrichers for a specific chain's VM capabilities. */
-export type EnricherFactory = (client: Client, abis: AbiRegistry) => MessageEnricher[]
+export type EnricherFactory = (
+  client: Record<string, unknown>,
+  abis: AbiRegistry
+) => MessageEnricher[]
 
 // =============================================================================
 // Token Resolver
@@ -632,9 +635,7 @@ class ChainContextImpl<T extends ChainType> implements BaseChainContext<T> {
       (options?.enricherFactory
         ? createAbiRegistry()
         : createNoopAbiRegistry())) as AbiRegistryFor<T>
-    this._enrichers = options?.enricherFactory
-      ? options.enricherFactory(client as unknown as Client, this.abis)
-      : []
+    this._enrichers = options?.enricherFactory ? options.enricherFactory(client, this.abis) : []
 
     // Usernames: real service for Initia L1 mainnet/testnet, stub for others
     this.usernames =
@@ -1141,7 +1142,7 @@ class ChainContextImpl<T extends ChainType> implements BaseChainContext<T> {
 export function buildChainContextFactory(
   createTransport: (chainInfo: ChainInfo, options?: TransportOptions) => Transport,
   getServices: (chainInfo: ChainInfo) => Record<string, DescService>,
-  getMsgs: (chainType: ChainType) => MsgsForChain<ChainType>,
+  getMsgs: (chainType: ChainType, network?: string) => MsgsForChain<ChainType>,
   factoryOptions?: {
     tokenResolver?: TokenResolver
     enricherFactory?: EnricherFactory
@@ -1179,8 +1180,8 @@ export function buildChainContextFactory(
     ) as unknown as Client
     const client = wrapClientWithCache(rawClient, chainInfo.chainId) as unknown as ClientFor<T>
 
-    // Create message builders from injected resolver
-    const msgs = getMsgs(chainInfo.chainType) as MsgsForChain<T>
+    // Create message builders from injected resolver (network-aware for testnet overrides)
+    const msgs = getMsgs(chainInfo.chainType, chainInfo.network) as MsgsForChain<T>
 
     return new ChainContextImpl<T>(chainInfo, client, msgs, {
       signer: options?.signer,

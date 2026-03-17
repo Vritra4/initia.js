@@ -16,8 +16,8 @@ import {
   type MsgPublish,
   type MsgScript,
   type MsgScriptJSON,
-} from '@initia/initia-proto/initia/move/v1/tx_pb'
-import { UpgradePolicy } from '@initia/initia-proto/initia/move/v1/types_pb'
+} from '@buf/initia-labs_initia.bufbuild_es/initia/move/v1/tx_pb'
+import { UpgradePolicy } from '@buf/initia-labs_initia.bufbuild_es/initia/move/v1/types_pb'
 
 import { Message } from '../../msgs/types'
 import type { HasMoveService } from '../../client/types'

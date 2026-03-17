@@ -5,7 +5,7 @@
 import type { Numeric } from '../types'
 import type { Any } from '@bufbuild/protobuf/wkt'
 import { anyIs, anyUnpack } from '@bufbuild/protobuf/wkt'
-import { BaseAccountSchema } from '@initia/initia-proto/cosmos/auth/v1beta1/auth_pb'
+import { BaseAccountSchema } from '@buf/cosmos_cosmos-sdk.bufbuild_es/cosmos/auth/v1beta1/auth_pb'
 import { AccountNotFoundError } from '../errors'
 
 /**
