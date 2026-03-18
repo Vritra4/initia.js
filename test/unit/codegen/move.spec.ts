@@ -1,5 +1,9 @@
-import { describe, it, expect } from 'vitest'
-import { generateMoveAbiString } from '../../../src/codegen/move'
+import { describe, it, expect, vi } from 'vitest'
+import {
+  generateMoveAbiString,
+  generateMoveAbiBatch,
+  generateMoveAbiAll,
+} from '../../../src/codegen/move'
 
 // Minimal valid Move module ABI JSON (coin module)
 const VALID_ABI_JSON = JSON.stringify({
@@ -144,5 +148,111 @@ describe('generateMoveAbiString', () => {
     expect(result).toContain('structs:')
     expect(result).toContain('abilities:')
     expect(result).toContain('fields:')
+  })
+})
+
+// =============================================================================
+// Batch functions
+// =============================================================================
+
+const ORACLE_ABI_JSON = JSON.stringify({
+  address: '0x1',
+  name: 'oracle',
+  friends: [],
+  exposed_functions: [
+    {
+      name: 'get_price',
+      visibility: 'public',
+      is_entry: false,
+      is_view: true,
+      generic_type_params: [],
+      params: ['0x1::string::String'],
+      return: ['u256', 'u64', 'u64'],
+    },
+  ],
+  structs: [],
+})
+
+function createMockContext(moduleAbis: Record<string, string>) {
+  return {
+    client: {
+      move: {
+        module: vi.fn(async ({ moduleName }: { moduleName: string }) => {
+          const abi = moduleAbis[moduleName]
+          if (!abi) throw new Error(`Module not found: ${moduleName}`)
+          return { module: { abi, moduleName } }
+        }),
+        modules: vi.fn(async () => ({
+          modules: Object.entries(moduleAbis).map(([name, abi]) => ({
+            moduleName: name,
+            abi,
+          })),
+        })),
+      },
+    },
+  }
+}
+
+describe('generateMoveAbiBatch', () => {
+  it('should generate multiple modules', async () => {
+    const ctx = createMockContext({
+      coin: VALID_ABI_JSON,
+      oracle: ORACLE_ABI_JSON,
+    })
+
+    const results = await generateMoveAbiBatch(ctx, '0x1', ['coin', 'oracle'])
+
+    expect(results).toHaveLength(2)
+    expect(results[0].moduleName).toBe('coin')
+    expect(results[0].exportName).toBe('COIN_ABI')
+    expect(results[0].content).toContain('export const COIN_ABI =')
+    expect(results[1].moduleName).toBe('oracle')
+    expect(results[1].exportName).toBe('ORACLE_ABI')
+    expect(results[1].content).toContain('export const ORACLE_ABI =')
+  })
+
+  it('should throw if a module is not found', async () => {
+    const ctx = createMockContext({ coin: VALID_ABI_JSON })
+
+    await expect(generateMoveAbiBatch(ctx, '0x1', ['coin', 'nonexistent'])).rejects.toThrow(
+      'Module not found'
+    )
+  })
+})
+
+describe('generateMoveAbiAll', () => {
+  it('should generate all modules from an address', async () => {
+    const ctx = createMockContext({
+      coin: VALID_ABI_JSON,
+      oracle: ORACLE_ABI_JSON,
+    })
+
+    const results = await generateMoveAbiAll(ctx, '0x1')
+
+    expect(results).toHaveLength(2)
+    expect(results.map(r => r.moduleName).sort()).toEqual(['coin', 'oracle'])
+    expect(ctx.client.move.modules).toHaveBeenCalledWith({ address: '0x1' })
+  })
+
+  it('should skip modules without ABI', async () => {
+    const ctx = {
+      client: {
+        move: {
+          module: vi.fn(),
+          modules: vi.fn(async () => ({
+            modules: [
+              { moduleName: 'coin', abi: VALID_ABI_JSON },
+              { moduleName: 'native', abi: '' },
+              { moduleName: 'oracle', abi: ORACLE_ABI_JSON },
+            ],
+          })),
+        },
+      },
+    }
+
+    const results = await generateMoveAbiAll(ctx, '0x1')
+
+    expect(results).toHaveLength(2)
+    expect(results.map(r => r.moduleName).sort()).toEqual(['coin', 'oracle'])
   })
 })

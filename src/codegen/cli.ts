@@ -17,15 +17,16 @@
  * Run `abigen <command> --help` for command-specific options.
  */
 
-import { readFile, writeFile } from 'node:fs/promises'
-import { resolve } from 'node:path'
+import { readFile, writeFile, mkdir } from 'node:fs/promises'
+import { resolve, join } from 'node:path'
 
 import { createGrpcTransport } from '@connectrpc/connect-node'
 import { Query as MoveQuery } from '@buf/initia-labs_initia.bufbuild_es/initia/move/v1/query_pb'
 
 import { createGrpcClient } from '../client/grpc-client'
 import { normalizeUrl } from '../client/transport-common'
-import { generateMoveAbi } from './move'
+import { generateMoveAbi, generateMoveAbiBatch, generateMoveAbiAll } from './move'
+import type { GeneratedModule } from './move'
 import { generateEvmAbiFromJson, generateEvmAbiFromExplorer } from './evm'
 import { generateWasmAbiFromJson } from './wasm'
 
@@ -104,16 +105,21 @@ Common options:
 const MOVE_HELP = `
 abigen move [options]
 
-Fetch a Move module ABI from chain via gRPC and generate a TypeScript file.
+Fetch Move module ABI(s) from chain via gRPC and generate TypeScript file(s).
 
 Required:
   --address <addr>     Module address (e.g., 0x1)
-  --module <name>      Module name (e.g., coin)
   --endpoint <url>     gRPC endpoint URL
 
-Optional:
-  --name <name>        Export variable name (default: derived from module name)
-  --out <path>         Output .ts file path (default: stdout)
+Module selection (one of):
+  --module <name>      Single module name (e.g., coin)
+  --modules <names>    Comma-separated module names (e.g., coin,oracle,staking)
+  --all                Fetch all modules from the address
+
+Output:
+  --out <path>         Output .ts file path (single module only, default: stdout)
+  --outdir <dir>       Output directory (batch mode: one file per module + index.ts)
+  --name <name>        Export variable name (single module only)
 `.trim()
 
 const EVM_HELP = `
@@ -154,28 +160,48 @@ Optional:
 // Command handlers
 // =============================================================================
 
-async function handleMove(flags: Record<string, string>): Promise<string> {
+function createMoveClient(endpoint: string) {
+  const transport = createGrpcTransport({ baseUrl: normalizeUrl(endpoint) })
+  return { client: createGrpcClient(transport, { move: MoveQuery }) }
+}
+
+async function handleMove(flags: Record<string, string>): Promise<string | GeneratedModule[]> {
   const address = flags['address']
-  const moduleName = flags['module']
   const endpoint = flags['endpoint']
 
   if (!address) throw new Error('Missing required option: --address')
-  if (!moduleName) throw new Error('Missing required option: --module')
   if (!endpoint) throw new Error('Missing required option: --endpoint')
 
-  // Create a minimal gRPC client with only the move service
-  const transport = createGrpcTransport({
-    baseUrl: normalizeUrl(endpoint),
-  })
+  const context = createMoveClient(endpoint)
 
-  const client = createGrpcClient(transport, { move: MoveQuery })
+  // Batch: --all
+  if (flags['all'] === 'true') {
+    return generateMoveAbiAll(context, address)
+  }
 
-  return generateMoveAbi(
-    { client },
+  // Batch: --modules (comma-separated)
+  if (flags['modules']) {
+    const names = flags['modules']
+      .split(',')
+      .map(s => s.trim())
+      .filter(Boolean)
+    if (names.length === 0) throw new Error('--modules requires at least one module name')
+    return generateMoveAbiBatch(context, address, names)
+  }
+
+  // Single: --module
+  const moduleName = flags['module']
+  if (!moduleName) {
+    throw new Error('Missing module selection: use --module, --modules, or --all')
+  }
+
+  const content = await generateMoveAbi(
+    context,
     address,
     moduleName,
     flags['name'] ? { exportName: flags['name'] } : undefined
   )
+  return content
 }
 
 async function handleEvm(flags: Record<string, string>): Promise<string> {
@@ -253,6 +279,47 @@ async function writeOutput(content: string, outPath: string | undefined): Promis
   }
 }
 
+/**
+ * Derives a kebab-case filename from a module name.
+ * e.g., "coin" → "coin-abi.ts", "fungibleAsset" → "fungible-asset-abi.ts"
+ */
+function toFileName(moduleName: string): string {
+  return (
+    moduleName
+      .replace(/([a-z0-9])([A-Z])/g, '$1-$2')
+      .replace(/_/g, '-')
+      .toLowerCase() + '-abi.ts'
+  )
+}
+
+/**
+ * Writes batch-generated modules to a directory with a barrel index.ts.
+ */
+async function writeOutputDir(modules: GeneratedModule[], outDir: string): Promise<void> {
+  const absoluteDir = resolve(outDir)
+  await mkdir(absoluteDir, { recursive: true })
+
+  const indexLines: string[] = []
+
+  for (const mod of modules) {
+    const fileName = toFileName(mod.moduleName)
+    const filePath = join(absoluteDir, fileName)
+    await writeFile(filePath, mod.content, 'utf-8')
+    console.error(`  ${fileName}`)
+
+    const importPath = './' + fileName.replace(/\.ts$/, '')
+    indexLines.push(`export { ${mod.exportName} } from '${importPath}'`)
+  }
+
+  // Write barrel index.ts
+  const indexContent =
+    '// Auto-generated barrel export. Do not edit manually.\n\n' + indexLines.join('\n') + '\n'
+  const indexPath = join(absoluteDir, 'index.ts')
+  await writeFile(indexPath, indexContent, 'utf-8')
+  console.error(`  index.ts`)
+  console.error(`Written ${modules.length} modules to ${absoluteDir}`)
+}
+
 // =============================================================================
 // Main
 // =============================================================================
@@ -288,7 +355,7 @@ async function main(): Promise<void> {
     process.exit(0)
   }
 
-  let result: string
+  let result: string | GeneratedModule[]
 
   switch (command) {
     case 'move':
@@ -306,6 +373,17 @@ async function main(): Promise<void> {
       process.exit(1)
   }
 
+  // Batch result (array of modules)
+  if (Array.isArray(result)) {
+    const outDir = flags['outdir']
+    if (!outDir) {
+      throw new Error('Batch mode (--modules or --all) requires --outdir <directory>')
+    }
+    await writeOutputDir(result, outDir)
+    return
+  }
+
+  // Single result
   await writeOutput(result, flags['out'])
 }
 

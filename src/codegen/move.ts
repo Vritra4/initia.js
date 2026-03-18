@@ -128,3 +128,81 @@ export async function generateMoveAbi(
 
   return generateMoveAbiString(abiJson, options)
 }
+
+// =============================================================================
+// Batch: named modules
+// =============================================================================
+
+export interface GeneratedModule {
+  moduleName: string
+  exportName: string
+  content: string
+}
+
+/**
+ * Fetches multiple Move module ABIs and generates TypeScript file strings.
+ *
+ * @param context - Object with a client that has the `move` gRPC service
+ * @param moduleAddress - Module address (hex or bech32)
+ * @param moduleNames - List of module names to fetch
+ * @returns Array of generated modules with their content and metadata
+ */
+export async function generateMoveAbiBatch(
+  context: HasMoveService,
+  moduleAddress: string,
+  moduleNames: string[]
+): Promise<GeneratedModule[]> {
+  const results: GeneratedModule[] = []
+
+  for (const moduleName of moduleNames) {
+    const content = await generateMoveAbi(context, moduleAddress, moduleName)
+    results.push({
+      moduleName,
+      exportName: deriveExportName(moduleName),
+      content,
+    })
+  }
+
+  return results
+}
+
+// =============================================================================
+// Batch: all modules from an address
+// =============================================================================
+
+/**
+ * Fetches all Move module ABIs from an address and generates TypeScript file strings.
+ *
+ * Uses `move.modules()` to discover all modules, then generates each one.
+ * Modules without ABI are silently skipped.
+ *
+ * @param context - Object with a client that has the `move` gRPC service
+ * @param moduleAddress - Module address (hex or bech32)
+ * @returns Array of generated modules with their content and metadata
+ */
+export async function generateMoveAbiAll(
+  context: HasMoveService,
+  moduleAddress: string
+): Promise<GeneratedModule[]> {
+  const response = await context.client.move.modules({ address: moduleAddress })
+  const results: GeneratedModule[] = []
+
+  for (const mod of response.modules) {
+    if (!mod.abi) continue
+
+    try {
+      const content = generateMoveAbiString(mod.abi)
+      const parsed = JSON.parse(mod.abi) as { name?: string }
+      const moduleName = parsed.name ?? mod.moduleName
+      results.push({
+        moduleName,
+        exportName: deriveExportName(moduleName),
+        content,
+      })
+    } catch {
+      // Skip modules with unparseable ABI
+    }
+  }
+
+  return results
+}

@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest'
-import { generateMoveAbiString } from '../../../src/codegen/move'
+import { describe, it, expect, vi } from 'vitest'
+import { generateMoveAbiString, generateMoveAbiBatch } from '../../../src/codegen/move'
 import { generateEvmAbiFromJson } from '../../../src/codegen/evm'
 import { generateWasmAbiFromJson } from '../../../src/codegen/wasm'
 
@@ -70,5 +70,44 @@ describe('codegen integration', () => {
     expect(output).toContain('anyOf')
     expect(output).toContain("'transfer'")
     expect(output).toContain("'balance'")
+  })
+
+  it('Move batch generates independent files with unique exports', async () => {
+    const makeAbi = (name: string) =>
+      JSON.stringify({
+        address: '0x1',
+        name,
+        friends: [],
+        exposed_functions: [],
+        structs: [],
+      })
+
+    const ctx = {
+      client: {
+        move: {
+          module: vi.fn(async ({ moduleName }: { moduleName: string }) => ({
+            module: { abi: makeAbi(moduleName), moduleName },
+          })),
+          modules: vi.fn(),
+        },
+      },
+    }
+
+    const results = await generateMoveAbiBatch(ctx, '0x1', ['coin', 'oracle', 'staking'])
+
+    expect(results).toHaveLength(3)
+
+    // Each file is self-contained with its own import
+    for (const r of results) {
+      expect(r.content).toContain("import type { ReadonlyMoveModuleAbi } from 'initia.js/move'")
+      expect(r.content).toContain('as const satisfies ReadonlyMoveModuleAbi')
+    }
+
+    // Export names are unique
+    const exportNames = results.map(r => r.exportName)
+    expect(new Set(exportNames).size).toBe(3)
+    expect(exportNames).toContain('COIN_ABI')
+    expect(exportNames).toContain('ORACLE_ABI')
+    expect(exportNames).toContain('STAKING_ABI')
   })
 })
